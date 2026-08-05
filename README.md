@@ -1,4 +1,4 @@
-# Tabletop Librarian v0.1.3
+# Tabletop Librarian v0.1.6
 
 Self-hosted tabletop RPG library, rules helper, and character resource server.
 
@@ -6,10 +6,15 @@ Self-hosted tabletop RPG library, rules helper, and character resource server.
 
 - First-run GM account setup
 - Login/logout
-- GM library-folder management
-- Virtual library folders mapped to physical directories
-- Lazy document discovery whenever a library folder is opened
-- PDF, CBZ, CBR, common image, TXT, and Markdown file discovery
+- Filesystem-backed virtual library folders
+- Lazy file discovery
+- Automatic cached covers
+- Selectable folder covers
+- PDF reader with range streaming
+- Image reader
+- CBZ and CBR reader
+- TXT and Markdown reader
+- Basic in-document text search
 - GM-only or player-visible folders
 
 ## Run

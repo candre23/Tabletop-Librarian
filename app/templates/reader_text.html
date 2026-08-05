@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document.display_name }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="reader-shell text-reader-shell">
+    <div class="reader-toolbar sticky-reader-toolbar">
+        <div class="reader-title-group">
+            <a class="button-link secondary-button compact-button" href="/library/{{ folder.name|urlencode }}">Back</a>
+            <div>
+                <div class="eyebrow">{{ folder.name }}</div>
+                <div class="reader-title">{{ document.display_name }}</div>
+            </div>
+        </div>
+
+        <div class="text-search">
+            <input id="textSearch" type="search" placeholder="Find in document">
+            <button id="findPrev" class="secondary-button compact-button">Previous</button>
+            <button id="findNext" class="secondary-button compact-button">Next</button>
+            <span id="searchStatus"></span>
+        </div>
+    </div>
+
+    <article id="textDocument" class="text-document{% if markdown %} markdown-document{% endif %}">
+        {% if markdown %}
+            {{ content|safe }}
+        {% else %}
+            <pre>{{ content }}</pre>
+        {% endif %}
+    </article>
+</section>
+
+<script>
+(() => {
+    const search = document.getElementById("textSearch");
+    const documentRoot = document.getElementById("textDocument");
+    const previous = document.getElementById("findPrev");
+    const next = document.getElementById("findNext");
+    const status = document.getElementById("searchStatus");
+
+    let matches = [];
+    let current = -1;
+
+    function clearMarks() {
+        documentRoot.querySelectorAll("mark.tt-search-match").forEach(mark => {
+            const parent = mark.parentNode;
+            parent.replaceChild(document.createTextNode(mark.textContent), mark);
+            parent.normalize();
+        });
+
+        matches = [];
+        current = -1;
+        status.textContent = "";
+    }
+
+    function buildMatches() {
+        clearMarks();
+
+        const query = search.value.trim();
+        if (!query) return;
+
+        const walker = document.createTreeWalker(
+            documentRoot,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode(node) {
+                    if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+                    if (node.parentElement?.closest("script, style, mark")) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            }
+        );
+
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+
+        const lowerQuery = query.toLocaleLowerCase();
+
+        nodes.forEach(node => {
+            const original = node.nodeValue;
+            const lower = original.toLocaleLowerCase();
+            let start = 0;
+            let index;
+            let found = false;
+            const fragment = document.createDocumentFragment();
+
+            while ((index = lower.indexOf(lowerQuery, start)) !== -1) {
+                found = true;
+                fragment.appendChild(document.createTextNode(original.slice(start, index)));
+
+                const mark = document.createElement("mark");
+                mark.className = "tt-search-match";
+                mark.textContent = original.slice(index, index + query.length);
+                fragment.appendChild(mark);
+                matches.push(mark);
+
+                start = index + query.length;
+            }
+
+            if (found) {
+                fragment.appendChild(document.createTextNode(original.slice(start)));
+                node.parentNode.replaceChild(fragment, node);
+            }
+        });
+
+        if (matches.length) {
+            current = 0;
+            showCurrent();
+        } else {
+            status.textContent = "0 matches";
+        }
+    }
+
+    function showCurrent() {
+        matches.forEach((mark, index) => {
+            mark.classList.toggle("active", index === current);
+        });
+
+        if (!matches.length) {
+            status.textContent = "0 matches";
+            return;
+        }
+
+        matches[current].scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+
+        status.textContent = (current + 1) + " of " + matches.length;
+    }
+
+    function goNext() {
+        if (!matches.length) {
+            buildMatches();
+            return;
+        }
+
+        current = (current + 1) % matches.length;
+        showCurrent();
+    }
+
+    function goPrevious() {
+        if (!matches.length) {
+            buildMatches();
+            return;
+        }
+
+        current = (current - 1 + matches.length) % matches.length;
+        showCurrent();
+    }
+
+    search.addEventListener("input", clearMarks);
+
+    search.addEventListener("keydown", event => {
+        if (event.key !== "Enter") return;
+
+        event.preventDefault();
+
+        if (!matches.length) {
+            buildMatches();
+        } else if (event.shiftKey) {
+            goPrevious();
+        } else {
+            goNext();
+        }
+    });
+
+    next.addEventListener("click", goNext);
+    previous.addEventListener("click", goPrevious);
+})();
+</script>
+{% endblock %}

@@ -1,20 +1,50 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.auth import authenticate, create_initial_gm, ensure_server_config, is_configured
+from app.auth import (
+    authenticate,
+    create_initial_gm,
+    create_user,
+    delete_user,
+    ensure_server_config,
+    get_user,
+    is_configured,
+    list_users,
+    reset_password,
+    set_user_enabled,
+)
 from app.config import APP_NAME, APP_VERSION, STATIC_DIR, TEMPLATE_DIR
-from app.library.manager import add_folder, get_folder, list_folders, remove_folder, scan_folder
+from app.library.covers import cached_cover_path
+from app.library.manager import (
+    add_folder,
+    add_source,
+    get_document,
+    get_folder,
+    list_folders,
+    player_can_see_folder,
+    remove_folder,
+    remove_source,
+    scan_folder,
+    set_file_visibility,
+    set_folder_cover,
+    set_folder_visibility,
+)
+from app.readers.base import safe_document_path
+from app.readers.comic import comic_page, comic_pages
+from app.readers.image import serve_image
+from app.readers.pdf import stream_pdf
+from app.readers.text import read_plain_text, render_markdown
 
 logger = logging.getLogger(__name__)
-
 server_config = ensure_server_config()
 
 app = FastAPI(
@@ -39,19 +69,32 @@ templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 
 def current_user(request: Request) -> dict[str, str] | None:
     username = request.session.get("username")
-    role = request.session.get("role")
 
-    if not username or not role:
+    if not username:
         return None
 
-    return {"username": username, "role": role}
+    user = get_user(username)
+
+    if not user or not user.get("enabled", False):
+        request.session.clear()
+        return None
+
+    request.session["role"] = user["role"]
+
+    return {
+        "username": user["username"],
+        "role": user["role"],
+    }
 
 
-def require_login(request: Request) -> dict[str, str] | RedirectResponse:
-    user = current_user(request)
-    if not user:
-        return RedirectResponse("/login", status_code=303)
-    return user
+def folder_visible_to_user(user: dict[str, str], folder: dict) -> bool:
+    if user["role"] == "gm":
+        return True
+    return player_can_see_folder(folder)
+
+
+def document_visible_to_user(user: dict[str, str], document: dict) -> bool:
+    return user["role"] == "gm" or document.get("visibility") == "players"
 
 
 @app.on_event("startup")
@@ -68,11 +111,25 @@ async def home(request: Request):
     if not user:
         return RedirectResponse("/login", status_code=303)
 
-    visible_folders = [
-        folder
-        for folder in list_folders()
-        if folder.get("visibility") == "players" or user["role"] == "gm"
-    ]
+    folder_cards = []
+
+    for folder in list_folders():
+        if not folder_visible_to_user(user, folder):
+            continue
+
+        cover_key = None
+        cover_path = folder.get("cover")
+
+        if cover_path:
+            scan = scan_folder(folder, generate_covers=True)
+            cover_doc = next(
+                (doc for doc in scan["documents"] if doc["path"] == cover_path),
+                None,
+            )
+            if cover_doc and document_visible_to_user(user, cover_doc):
+                cover_key = cover_doc["key"]
+
+        folder_cards.append({**folder, "cover_key": cover_key})
 
     return templates.TemplateResponse(
         request=request,
@@ -81,7 +138,7 @@ async def home(request: Request):
             "app_name": APP_NAME,
             "app_version": APP_VERSION,
             "user": user,
-            "folders": visible_folders,
+            "folders": folder_cards,
         },
     )
 
@@ -93,7 +150,7 @@ async def library_folder(request: Request, folder_name: str):
         return RedirectResponse("/login", status_code=303)
 
     folder = get_folder(folder_name)
-    if not folder:
+    if not folder or not folder_visible_to_user(user, folder):
         return templates.TemplateResponse(
             request=request,
             name="message.html",
@@ -102,26 +159,15 @@ async def library_folder(request: Request, folder_name: str):
                 "app_version": APP_VERSION,
                 "user": user,
                 "title": "Folder not found",
-                "message": "That library folder does not exist.",
+                "message": "That library folder is not available.",
             },
             status_code=404,
         )
 
-    if folder.get("visibility") == "gm" and user["role"] != "gm":
-        return templates.TemplateResponse(
-            request=request,
-            name="message.html",
-            context={
-                "app_name": APP_NAME,
-                "app_version": APP_VERSION,
-                "user": user,
-                "title": "Access denied",
-                "message": "You do not have access to this folder.",
-            },
-            status_code=403,
-        )
-
     scan = scan_folder(folder)
+    scan["documents"] = [
+        doc for doc in scan["documents"] if document_visible_to_user(user, doc)
+    ]
 
     return templates.TemplateResponse(
         request=request,
@@ -136,8 +182,165 @@ async def library_folder(request: Request, folder_name: str):
     )
 
 
-@app.get("/admin/library", response_class=HTMLResponse)
-async def admin_library(request: Request):
+@app.get("/cover/{folder_name}/{doc_key}")
+async def document_cover(request: Request, folder_name: str, doc_key: str):
+    user = current_user(request)
+    if not user:
+        return Response(status_code=401)
+
+    folder = get_folder(folder_name)
+    if not folder or not folder_visible_to_user(user, folder):
+        return Response(status_code=404)
+
+    document = get_document(folder, doc_key, generate_cover=True)
+
+    if not document or not document_visible_to_user(user, document):
+        return Response(status_code=404)
+
+    source_path = Path(document["path"])
+    cover = cached_cover_path(str(source_path.parent), source_path.name)
+
+    if not cover.exists():
+        return Response(status_code=404)
+
+    return FileResponse(
+        cover,
+        media_type="image/webp",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+@app.get("/read/{folder_name}/{doc_key}", response_class=HTMLResponse)
+async def read_document(request: Request, folder_name: str, doc_key: str):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    folder = get_folder(folder_name)
+    if not folder or not folder_visible_to_user(user, folder):
+        return Response(status_code=404)
+
+    document = get_document(folder, doc_key, generate_cover=False)
+
+    if not document or not document_visible_to_user(user, document):
+        return Response(status_code=404)
+
+    path = Path(document["path"])
+    common = {
+        "app_name": APP_NAME,
+        "app_version": APP_VERSION,
+        "user": user,
+        "folder": folder,
+        "document": document,
+    }
+
+    if document["type"] == "PDF":
+        return templates.TemplateResponse(
+            request=request,
+            name="reader_pdf.html",
+            context=common,
+        )
+
+    if document["type"] == "Image":
+        return templates.TemplateResponse(
+            request=request,
+            name="reader_image.html",
+            context=common,
+        )
+
+    if document["type"] in {"CBZ", "CBR"}:
+        try:
+            page_count = len(comic_pages(path))
+        except Exception:
+            logger.exception("Unable to inspect comic archive %s", path)
+            page_count = 0
+
+        return templates.TemplateResponse(
+            request=request,
+            name="reader_comic.html",
+            context={**common, "page_count": page_count},
+        )
+
+    if document["type"] == "Text":
+        return templates.TemplateResponse(
+            request=request,
+            name="reader_text.html",
+            context={**common, "content": read_plain_text(path), "markdown": False},
+        )
+
+    if document["type"] == "Markdown":
+        return templates.TemplateResponse(
+            request=request,
+            name="reader_text.html",
+            context={**common, "content": render_markdown(path), "markdown": True},
+        )
+
+    return Response(status_code=415)
+
+
+@app.get("/content/{folder_name}/{doc_key}")
+async def document_content(request: Request, folder_name: str, doc_key: str):
+    user = current_user(request)
+    if not user:
+        return Response(status_code=401)
+
+    folder = get_folder(folder_name)
+    if not folder or not folder_visible_to_user(user, folder):
+        return Response(status_code=404)
+
+    document = get_document(folder, doc_key, generate_cover=False)
+
+    if not document or not document_visible_to_user(user, document):
+        return Response(status_code=404)
+
+    path = Path(document["path"])
+
+    if document["type"] == "PDF":
+        return stream_pdf(request, path)
+
+    if document["type"] == "Image":
+        return serve_image(path)
+
+    return Response(status_code=404)
+
+
+@app.get("/comic-page/{folder_name}/{doc_key}/{page_index}")
+async def comic_page_content(
+    request: Request,
+    folder_name: str,
+    doc_key: str,
+    page_index: int,
+):
+    user = current_user(request)
+    if not user:
+        return Response(status_code=401)
+
+    folder = get_folder(folder_name)
+    if not folder or not folder_visible_to_user(user, folder):
+        return Response(status_code=404)
+
+    document = get_document(folder, doc_key, generate_cover=False)
+
+    if (
+        not document
+        or not document_visible_to_user(user, document)
+        or document["type"] not in {"CBZ", "CBR"}
+    ):
+        return Response(status_code=404)
+
+    try:
+        return comic_page(Path(document["path"]), page_index)
+    except Exception:
+        logger.exception(
+            "Unable to render comic page %s from %s",
+            page_index,
+            document["path"],
+        )
+        return Response(status_code=500)
+
+
+@app.get("/admin/users", response_class=HTMLResponse)
+async def admin_users(request: Request):
     user = current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
@@ -146,13 +349,148 @@ async def admin_library(request: Request):
 
     return templates.TemplateResponse(
         request=request,
+        name="admin_users.html",
+        context={
+            "app_name": APP_NAME,
+            "app_version": APP_VERSION,
+            "user": user,
+            "users": list_users(),
+            "error": request.query_params.get("error"),
+            "message": request.query_params.get("message"),
+        },
+    )
+
+
+@app.post("/admin/users/add")
+async def admin_users_add(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    if user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    try:
+        create_user(username, password, "player")
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin/users?error={quote(str(exc))}",
+            status_code=303,
+        )
+
+    return RedirectResponse(
+        f"/admin/users?message={quote('Player account created.')}",
+        status_code=303,
+    )
+
+
+@app.post("/admin/users/toggle")
+async def admin_users_toggle(
+    request: Request,
+    username: str = Form(...),
+    enabled: str = Form(...),
+):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    if user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    try:
+        set_user_enabled(username, enabled == "true")
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin/users?error={quote(str(exc))}",
+            status_code=303,
+        )
+
+    return RedirectResponse("/admin/users", status_code=303)
+
+
+@app.post("/admin/users/password")
+async def admin_users_password(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    if user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    try:
+        if not reset_password(username, password):
+            raise ValueError("User not found.")
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin/users?error={quote(str(exc))}",
+            status_code=303,
+        )
+
+    return RedirectResponse(
+        f"/admin/users?message={quote('Password updated.')}",
+        status_code=303,
+    )
+
+
+@app.post("/admin/users/delete")
+async def admin_users_delete(
+    request: Request,
+    username: str = Form(...),
+):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    if user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    try:
+        if not delete_user(username):
+            raise ValueError("User not found.")
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin/users?error={quote(str(exc))}",
+            status_code=303,
+        )
+
+    return RedirectResponse(
+        f"/admin/users?message={quote('Player account deleted.')}",
+        status_code=303,
+    )
+
+
+@app.get("/admin/library", response_class=HTMLResponse)
+async def admin_library(request: Request):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    if user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    folder_data = []
+
+    for folder in list_folders():
+        folder_data.append(
+            {
+                **folder,
+                "scan": scan_folder(folder),
+            }
+        )
+
+    return templates.TemplateResponse(
+        request=request,
         name="admin_library.html",
         context={
             "app_name": APP_NAME,
             "app_version": APP_VERSION,
             "user": user,
-            "folders": list_folders(),
+            "folders": folder_data,
             "error": request.query_params.get("error"),
+            "message": request.query_params.get("message"),
         },
     )
 
@@ -161,7 +499,6 @@ async def admin_library(request: Request):
 async def admin_library_add(
     request: Request,
     name: str = Form(...),
-    path: str = Form(...),
     visibility: str = Form("players"),
 ):
     user = current_user(request)
@@ -171,14 +508,17 @@ async def admin_library_add(
         return RedirectResponse("/", status_code=303)
 
     try:
-        add_folder(name, path, visibility)
+        add_folder(name, visibility)
     except ValueError as exc:
         return RedirectResponse(
             f"/admin/library?error={quote(str(exc))}",
             status_code=303,
         )
 
-    return RedirectResponse("/admin/library", status_code=303)
+    return RedirectResponse(
+        f"/admin/library?message={quote('Virtual folder created.')}",
+        status_code=303,
+    )
 
 
 @app.post("/admin/library/remove")
@@ -193,6 +533,113 @@ async def admin_library_remove(
         return RedirectResponse("/", status_code=303)
 
     remove_folder(name)
+    return RedirectResponse("/admin/library", status_code=303)
+
+
+@app.post("/admin/library/visibility")
+async def admin_library_visibility(
+    request: Request,
+    name: str = Form(...),
+    visibility: str = Form(...),
+):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    if user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    set_folder_visibility(name, visibility)
+    return RedirectResponse("/admin/library", status_code=303)
+
+
+@app.post("/admin/library/source/add")
+async def admin_library_source_add(
+    request: Request,
+    name: str = Form(...),
+    path: str = Form(...),
+):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    if user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    try:
+        add_source(name, path)
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/admin/library?error={quote(str(exc))}",
+            status_code=303,
+        )
+
+    return RedirectResponse("/admin/library", status_code=303)
+
+
+@app.post("/admin/library/source/remove")
+async def admin_library_source_remove(
+    request: Request,
+    name: str = Form(...),
+    source_type: str = Form(...),
+    source_path: str = Form(...),
+):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    if user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    remove_source(name, source_type, source_path)
+    return RedirectResponse("/admin/library", status_code=303)
+
+
+@app.post("/admin/library/file-visibility")
+async def admin_library_file_visibility(
+    request: Request,
+    name: str = Form(...),
+    doc_key: str = Form(...),
+    visibility: str = Form(...),
+):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    if user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    folder = get_folder(name)
+    document = get_document(folder, doc_key) if folder else None
+
+    if document:
+        set_file_visibility(name, document["path"], visibility)
+
+    return RedirectResponse("/admin/library", status_code=303)
+
+
+@app.post("/admin/library/cover")
+async def admin_library_cover(
+    request: Request,
+    name: str = Form(...),
+    doc_key: str = Form(""),
+):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    if user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    folder = get_folder(name)
+
+    if folder:
+        if doc_key:
+            document = get_document(folder, doc_key)
+            if not document:
+                return RedirectResponse(
+                    f"/admin/library?error={quote('Selected cover file is not available.')}",
+                    status_code=303,
+                )
+            set_folder_cover(name, document["path"])
+        else:
+            set_folder_cover(name, None)
+
     return RedirectResponse("/admin/library", status_code=303)
 
 

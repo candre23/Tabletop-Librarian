@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document.display_name }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="reader-shell">
+    <div class="reader-toolbar">
+        <div class="reader-title-group">
+            <a class="button-link secondary-button compact-button" href="/library/{{ folder.name|urlencode }}">Back</a>
+            <div>
+                <div class="eyebrow">{{ folder.name }}</div>
+                <div class="reader-title">{{ document.display_name }}</div>
+            </div>
+        </div>
+        <div class="reader-note">Use the PDF viewer controls for navigation, zoom, and search.</div>
+    </div>
+
+    <div class="pdf-frame-wrap">
+        <iframe
+            class="pdf-frame"
+            src="/content/{{ folder.name|urlencode }}/{{ document.key }}#view=FitH"
+            title="{{ document.display_name }}"
+        ></iframe>
+    </div>
+</section>
+{% endblock %}

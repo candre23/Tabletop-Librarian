@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <div class="topline">
+        <div>
+            <div class="eyebrow">GM Tools</div>
+            <h1>Manage Users</h1>
+        </div>
+        <a class="button-link secondary-button" href="/">Back to Library</a>
+    </div>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    {% if message %}
+    <div class="success-message">{{ message }}</div>
+    {% endif %}
+
+    <div class="admin-grid">
+        <section>
+            <h2>Accounts</h2>
+
+            <div class="user-list">
+                {% for account in users %}
+                <div class="user-row">
+                    <div class="user-summary">
+                        <strong>{{ account.username }}</strong>
+                        <span>{{ account.role|upper }}</span>
+                        <small>{{ "Enabled" if account.enabled else "Disabled" }}</small>
+                    </div>
+
+                    <div class="user-actions">
+                        {% if account.role == "player" %}
+                        <form method="post" action="/admin/users/toggle">
+                            <input type="hidden" name="username" value="{{ account.username }}">
+                            <input type="hidden" name="enabled" value="{{ 'false' if account.enabled else 'true' }}">
+                            <button type="submit" class="secondary-button">
+                                {{ "Disable" if account.enabled else "Enable" }}
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <details>
+                            <summary class="button-link secondary-button">Password</summary>
+                            <form method="post" action="/admin/users/password" class="inline-admin-form">
+                                <input type="hidden" name="username" value="{{ account.username }}">
+                                <input
+                                    type="password"
+                                    name="password"
+                                    minlength="8"
+                                    placeholder="New password"
+                                    required
+                                >
+                                <button type="submit">Set</button>
+                            </form>
+                        </details>
+
+                        {% if account.role == "player" %}
+                        <form
+                            method="post"
+                            action="/admin/users/delete"
+                            onsubmit="return confirm('Delete player {{ account.username }}?');"
+                        >
+                            <input type="hidden" name="username" value="{{ account.username }}">
+                            <button type="submit" class="danger-button">Delete</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="subpanel">
+            <h2>Add Player</h2>
+
+            <form method="post" action="/admin/users/add" class="auth-form">
+                <label>
+                    Username
+                    <input
+                        type="text"
+                        name="username"
+                        maxlength="64"
+                        autocomplete="off"
+                        required
+                    >
+                </label>
+
+                <label>
+                    Initial password
+                    <input
+                        type="password"
+                        name="password"
+                        minlength="8"
+                        autocomplete="new-password"
+                        required
+                    >
+                </label>
+
+                <button type="submit">Create Player</button>
+            </form>
+        </section>
+    </div>
+</section>
+{% endblock %}

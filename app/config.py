@@ -6,6 +6,9 @@ STATIC_DIR = APP_DIR / "static"
 TEMPLATE_DIR = APP_DIR / "templates"
 DATA_DIR = PROJECT_ROOT / "data"
 LOG_DIR = PROJECT_ROOT / "logs"
+CACHE_DIR = PROJECT_ROOT / "cache"
+COVER_CACHE_DIR = CACHE_DIR / "covers"
+MANUAL_COVER_DIR = DATA_DIR / "covers"
 
 CONFIG_FILE = DATA_DIR / "config.json"
 USERS_FILE = DATA_DIR / "users.json"
@@ -15,7 +18,7 @@ LOG_FILE = LOG_DIR / "server.log"
 APP_HOST = "0.0.0.0"
 APP_PORT = 8080
 APP_NAME = "Tabletop Librarian"
-APP_VERSION = "0.1.3"
+APP_VERSION = "0.1.9"
 
 SUPPORTED_EXTENSIONS = {
     ".pdf": "PDF",
@@ -29,3 +32,6 @@ SUPPORTED_EXTENSIONS = {
     ".txt": "Text",
     ".md": "Markdown",
 }
+
+COVER_WIDTH = 400
+COVER_HEIGHT = 600

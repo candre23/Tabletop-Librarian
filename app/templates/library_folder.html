@@ -12,22 +12,35 @@
         <a class="button-link secondary-button" href="/">Back</a>
     </div>
 
-    {% if not scan.available %}
-    <div class="error">{{ scan.error }}</div>
-    {% elif scan.documents %}
+    {% if scan.missing_sources and user.role == "gm" %}
+    <div class="error">
+        One or more physical sources are unavailable.
+    </div>
+    {% endif %}
+
+    {% if scan.documents %}
     <div class="book-grid">
         {% for doc in scan.documents %}
-        <div class="book-card">
+        <a class="book-card book-link" href="/read/{{ folder.name|urlencode }}/{{ doc.key }}">
+            {% if doc.cover_available %}
+            <img
+                class="cover-image"
+                src="/cover/{{ folder.name|urlencode }}/{{ doc.key }}"
+                alt="{{ doc.display_name }}"
+                loading="lazy"
+            >
+            {% else %}
             <div class="book-placeholder">
                 <span>{{ doc.type }}</span>
             </div>
+            {% endif %}
             <div class="book-title">{{ doc.display_name }}</div>
             <div class="book-type">{{ doc.extension|upper|replace(".", "") }}</div>
-        </div>
+        </a>
         {% endfor %}
     </div>
     {% else %}
-    <div class="empty-state">No supported documents were found in this directory.</div>
+    <div class="empty-state">No visible supported documents were found in this folder.</div>
     {% endif %}
 </section>
 {% endblock %}
