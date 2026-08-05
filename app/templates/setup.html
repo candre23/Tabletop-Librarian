@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Setup - {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="panel auth-panel">
+    <div class="eyebrow">v{{ app_version }}</div>
+    <h1>{{ app_name }}</h1>
+    <p class="intro">Create the initial Game Master account.</p>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/setup" class="auth-form">
+        <label>
+            Username
+            <input
+                type="text"
+                name="username"
+                value="{{ username|default('') }}"
+                maxlength="64"
+                autocomplete="username"
+                required
+                autofocus
+            >
+        </label>
+
+        <label>
+            Password
+            <input
+                type="password"
+                name="password"
+                minlength="8"
+                autocomplete="new-password"
+                required
+            >
+        </label>
+
+        <label>
+            Confirm password
+            <input
+                type="password"
+                name="confirm_password"
+                minlength="8"
+                autocomplete="new-password"
+                required
+            >
+        </label>
+
+        <button type="submit">Create Server</button>
+    </form>
+</section>
+{% endblock %}

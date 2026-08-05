@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Library - {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <div class="topline">
+        <div>
+            <div class="eyebrow">GM Tools</div>
+            <h1>Manage Library</h1>
+        </div>
+        <a class="button-link secondary-button" href="/">Back to Library</a>
+    </div>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <div class="admin-grid">
+        <section>
+            <h2>Library Folders</h2>
+
+            {% if folders %}
+            <div class="source-list">
+                {% for folder in folders %}
+                <div class="source-row">
+                    <div class="source-details">
+                        <strong>{{ folder.name }}</strong>
+                        <span>{{ folder.path }}</span>
+                        <small>{{ "GM only" if folder.visibility == "gm" else "Players and GM" }}</small>
+                    </div>
+                    <form method="post" action="/admin/library/remove" onsubmit="return confirm('Remove this virtual folder? The physical files will not be changed.');">
+                        <input type="hidden" name="name" value="{{ folder.name }}">
+                        <button type="submit" class="danger-button">Remove</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">No folders configured.</div>
+            {% endif %}
+        </section>
+
+        <section class="subpanel">
+            <h2>Add Folder</h2>
+            <form method="post" action="/admin/library/add" class="auth-form">
+                <label>
+                    Library name
+                    <input type="text" name="name" placeholder="RIFTS" required>
+                </label>
+
+                <label>
+                    Physical directory
+                    <input type="text" name="path" placeholder="/mnt/nas/rpg/rifts" required>
+                </label>
+
+                <label>
+                    Visibility
+                    <select name="visibility">
+                        <option value="players">Players and GM</option>
+                        <option value="gm">GM only</option>
+                    </select>
+                </label>
+
+                <button type="submit">Add Folder</button>
+            </form>
+        </section>
+    </div>
+</section>
+{% endblock %}

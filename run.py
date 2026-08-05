@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import logging
 from logging.handlers import RotatingFileHandler
-from pathlib import Path
 
 import uvicorn
 
-from app.config import APP_HOST, APP_PORT, LOG_FILE
+from app.config import APP_HOST, APP_NAME, APP_PORT, LOG_FILE
 
 
 def configure_logging() -> None:
@@ -38,7 +37,12 @@ def configure_logging() -> None:
 
 if __name__ == "__main__":
     configure_logging()
-    logging.getLogger(__name__).info("Starting Tabletop Librarian server on %s:%s", APP_HOST, APP_PORT)
+    logging.getLogger(__name__).info(
+        "Starting %s server on %s:%s",
+        APP_NAME,
+        APP_HOST,
+        APP_PORT,
+    )
     uvicorn.run(
         "app.main:app",
         host=APP_HOST,

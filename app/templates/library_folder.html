@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{{ folder.name }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="panel wide-panel">
+    <div class="topline">
+        <div>
+            <div class="eyebrow">Library</div>
+            <h1>{{ folder.name }}</h1>
+        </div>
+        <a class="button-link secondary-button" href="/">Back</a>
+    </div>
+
+    {% if not scan.available %}
+    <div class="error">{{ scan.error }}</div>
+    {% elif scan.documents %}
+    <div class="book-grid">
+        {% for doc in scan.documents %}
+        <div class="book-card">
+            <div class="book-placeholder">
+                <span>{{ doc.type }}</span>
+            </div>
+            <div class="book-title">{{ doc.display_name }}</div>
+            <div class="book-type">{{ doc.extension|upper|replace(".", "") }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">No supported documents were found in this directory.</div>
+    {% endif %}
+</section>
+{% endblock %}

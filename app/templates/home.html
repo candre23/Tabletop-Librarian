@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel">
+    <div class="topline">
+        <div>
+            <div class="eyebrow">v{{ app_version }}</div>
+            <h1>{{ app_name }}</h1>
+        </div>
+
+        <div class="top-actions">
+            {% if user.role == "gm" %}
+            <a class="button-link secondary-button" href="/admin/library">Manage Library</a>
+            {% endif %}
+            <form method="post" action="/logout">
+                <button type="submit" class="secondary-button">Log Out</button>
+            </form>
+        </div>
+    </div>
+
+    <p class="muted">Signed in as <strong>{{ user.username }}</strong> ({{ user.role|upper }}).</p>
+
+    <h2>Library</h2>
+
+    {% if folders %}
+    <div class="folder-grid">
+        {% for folder in folders %}
+        <a class="folder-card" href="/library/{{ folder.name|urlencode }}">
+            <div class="folder-art">TL</div>
+            <div class="folder-name">{{ folder.name }}</div>
+            {% if folder.visibility == "gm" %}
+            <div class="folder-meta">GM only</div>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        No library folders have been configured yet.
+        {% if user.role == "gm" %}
+        <a href="/admin/library">Add one.</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
