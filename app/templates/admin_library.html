@@ -128,24 +128,51 @@
                     <div class="document-permission-name">
                         <strong>{{ doc.display_name }}</strong>
                         <span>{{ doc.path }}</span>
+                        {% if doc.type == "PDF" and doc.text_status == "scanned" %}
+                        <small class="scan-warning">Scanned PDF: OCR required for search/AI</small>
+                        {% endif %}
                     </div>
 
-                    <form method="post" action="/admin/library/file-visibility">
-                        <input type="hidden" name="name" value="{{ folder.name }}">
-                        <input type="hidden" name="doc_key" value="{{ doc.key }}">
-                        <select name="visibility">
-                            <option value="inherit" {% if doc.visibility_override == "inherit" %}selected{% endif %}>
-                                Inherit folder ({{ "Players" if folder.visibility == "players" else "GM only" }})
-                            </option>
-                            <option value="players" {% if doc.visibility_override == "players" %}selected{% endif %}>
-                                Players and GM
-                            </option>
-                            <option value="gm" {% if doc.visibility_override == "gm" %}selected{% endif %}>
-                                GM only
-                            </option>
-                        </select>
-                        <button type="submit" class="secondary-button">Set</button>
-                    </form>
+                    <div class="document-admin-actions">
+                        <form method="post" action="/admin/library/file-visibility">
+                            <input type="hidden" name="name" value="{{ folder.name }}">
+                            <input type="hidden" name="doc_key" value="{{ doc.key }}">
+                            <select name="visibility">
+                                <option value="inherit" {% if doc.visibility_override == "inherit" %}selected{% endif %}>
+                                    Inherit folder ({{ "Players" if folder.visibility == "players" else "GM only" }})
+                                </option>
+                                <option value="players" {% if doc.visibility_override == "players" %}selected{% endif %}>
+                                    Players and GM
+                                </option>
+                                <option value="gm" {% if doc.visibility_override == "gm" %}selected{% endif %}>
+                                    GM only
+                                </option>
+                            </select>
+                            <button type="submit" class="secondary-button">Set</button>
+                        </form>
+
+                        <details class="cover-details">
+                            <summary class="button-link secondary-button">Cover</summary>
+                            <div class="cover-popup">
+                                <form
+                                    method="post"
+                                    action="/admin/library/manual-cover"
+                                    enctype="multipart/form-data"
+                                >
+                                    <input type="hidden" name="name" value="{{ folder.name }}">
+                                    <input type="hidden" name="doc_key" value="{{ doc.key }}">
+                                    <input type="file" name="cover_file" accept=".png,.jpg,.jpeg,.webp" required>
+                                    <button type="submit">Upload Cover</button>
+                                </form>
+
+                                <form method="post" action="/admin/library/manual-cover/remove">
+                                    <input type="hidden" name="name" value="{{ folder.name }}">
+                                    <input type="hidden" name="doc_key" value="{{ doc.key }}">
+                                    <button type="submit" class="secondary-button">Restore Automatic</button>
+                                </form>
+                            </div>
+                        </details>
+                    </div>
                 </div>
                 {% endfor %}
             </div>

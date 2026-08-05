@@ -7,6 +7,7 @@ from typing import Any
 
 from app.config import LIBRARY_FILE, SUPPORTED_EXTENSIONS
 from app.library.covers import ensure_cover
+from app.library.pdf_status import detect_pdf_text_status
 from app.storage import read_json, write_json
 
 logger = logging.getLogger(__name__)
@@ -281,6 +282,10 @@ def _document_record(
             ensure_cover(str(resolved.parent), resolved.name, doc_type) is not None
         )
 
+    text_status = None
+    if doc_type == "PDF":
+        text_status = detect_pdf_text_status(resolved)
+
     return {
         "key": document_key(resolved),
         "path": resolved_text,
@@ -293,6 +298,7 @@ def _document_record(
         "visibility": effective_visibility,
         "visibility_override": override or "inherit",
         "cover_available": cover_available,
+        "text_status": text_status,
     }
 
 

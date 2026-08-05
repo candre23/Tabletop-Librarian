@@ -9,6 +9,8 @@ LOG_DIR = PROJECT_ROOT / "logs"
 CACHE_DIR = PROJECT_ROOT / "cache"
 COVER_CACHE_DIR = CACHE_DIR / "covers"
 MANUAL_COVER_DIR = DATA_DIR / "covers"
+UPLOAD_DIR = DATA_DIR / "uploads"
+PDF_STATUS_CACHE_DIR = CACHE_DIR / "pdf_status"
 
 CONFIG_FILE = DATA_DIR / "config.json"
 USERS_FILE = DATA_DIR / "users.json"
@@ -18,7 +20,7 @@ LOG_FILE = LOG_DIR / "server.log"
 APP_HOST = "0.0.0.0"
 APP_PORT = 8080
 APP_NAME = "Tabletop Librarian"
-APP_VERSION = "0.1.9"
+APP_VERSION = "0.1.10"
 
 SUPPORTED_EXTENSIONS = {
     ".pdf": "PDF",

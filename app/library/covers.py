@@ -12,7 +12,7 @@ from pathlib import Path
 import fitz
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
-from app.config import COVER_CACHE_DIR, COVER_HEIGHT, COVER_WIDTH
+from app.config import COVER_CACHE_DIR, COVER_HEIGHT, COVER_WIDTH, MANUAL_COVER_DIR
 from app.readers.comic import cbr_page_files
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,37 @@ def cover_key(folder_path: str, filename: str) -> str:
 
 def cached_cover_path(folder_path: str, filename: str) -> Path:
     return COVER_CACHE_DIR / f"{cover_key(folder_path, filename)}.webp"
+
+
+def manual_cover_path(folder_path: str, filename: str) -> Path:
+    return MANUAL_COVER_DIR / f"{cover_key(folder_path, filename)}.webp"
+
+
+def get_cover_path(folder_path: str, filename: str) -> Path | None:
+    manual = manual_cover_path(folder_path, filename)
+    if manual.exists():
+        return manual
+
+    cached = cached_cover_path(folder_path, filename)
+    if cached.exists():
+        return cached
+
+    return None
+
+
+def save_manual_cover(folder_path: str, filename: str, source_path: Path) -> Path:
+    MANUAL_COVER_DIR.mkdir(parents=True, exist_ok=True)
+    destination = manual_cover_path(folder_path, filename)
+
+    with Image.open(source_path) as source:
+        image = _fit_cover(source.convert("RGB"))
+        image.save(destination, "WEBP", quality=88, method=4)
+
+    return destination
+
+
+def remove_manual_cover(folder_path: str, filename: str) -> None:
+    manual_cover_path(folder_path, filename).unlink(missing_ok=True)
 
 
 def ensure_cover(folder_path: str, filename: str, doc_type: str) -> Path | None:

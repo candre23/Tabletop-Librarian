@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from urllib.parse import quote
 
-from fastapi import FastAPI, Form, Request
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -23,7 +23,12 @@ from app.auth import (
     set_user_enabled,
 )
 from app.config import APP_NAME, APP_VERSION, STATIC_DIR, TEMPLATE_DIR
-from app.library.covers import cached_cover_path
+from app.library.covers import (
+    cached_cover_path,
+    get_cover_path,
+    remove_manual_cover,
+    save_manual_cover,
+)
 from app.library.manager import (
     add_folder,
     add_source,
@@ -43,6 +48,7 @@ from app.readers.comic import comic_page, comic_pages
 from app.readers.image import serve_image
 from app.readers.pdf import stream_pdf
 from app.readers.text import read_plain_text, render_markdown
+from app.uploads import list_uploads, supported_upload, unique_upload_path
 
 logger = logging.getLogger(__name__)
 server_config = ensure_server_config()
@@ -198,9 +204,9 @@ async def document_cover(request: Request, folder_name: str, doc_key: str):
         return Response(status_code=404)
 
     source_path = Path(document["path"])
-    cover = cached_cover_path(str(source_path.parent), source_path.name)
+    cover = get_cover_path(str(source_path.parent), source_path.name)
 
-    if not cover.exists():
+    if not cover or not cover.exists():
         return Response(status_code=404)
 
     return FileResponse(
@@ -337,6 +343,168 @@ async def comic_page_content(
             document["path"],
         )
         return Response(status_code=500)
+
+
+@app.get("/uploads", response_class=HTMLResponse)
+async def uploads_page(request: Request):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    uploads = list_uploads()
+
+    if user["role"] != "gm":
+        uploads = [
+            item
+            for item in uploads
+            if item["username"].casefold() == user["username"].casefold()
+        ]
+
+    return templates.TemplateResponse(
+        request=request,
+        name="uploads.html",
+        context={
+            "app_name": APP_NAME,
+            "app_version": APP_VERSION,
+            "user": user,
+            "uploads": uploads,
+            "folders": list_folders() if user["role"] == "gm" else [],
+            "error": request.query_params.get("error"),
+            "message": request.query_params.get("message"),
+        },
+    )
+
+
+@app.post("/uploads/add")
+async def upload_file(
+    request: Request,
+    upload: UploadFile = File(...),
+):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    if not upload.filename or not supported_upload(upload.filename):
+        return RedirectResponse(
+            f"/uploads?error={quote('Unsupported file type.')}",
+            status_code=303,
+        )
+
+    destination = unique_upload_path(user["username"], upload.filename)
+
+    with destination.open("wb") as handle:
+        while True:
+            chunk = await upload.read(1024 * 1024)
+            if not chunk:
+                break
+            handle.write(chunk)
+
+    await upload.close()
+
+    logger.info("Upload received from %s: %s", user["username"], destination)
+
+    return RedirectResponse(
+        f"/uploads?message={quote('Upload complete.')}",
+        status_code=303,
+    )
+
+
+@app.post("/uploads/assign")
+async def assign_upload(
+    request: Request,
+    upload_path: str = Form(...),
+    folder_name: str = Form(...),
+):
+    user = current_user(request)
+    if not user or user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    allowed = {item["path"] for item in list_uploads()}
+
+    if upload_path not in allowed:
+        return RedirectResponse(
+            f"/uploads?error={quote('Upload not found.')}",
+            status_code=303,
+        )
+
+    try:
+        add_source(folder_name, upload_path)
+    except ValueError as exc:
+        return RedirectResponse(
+            f"/uploads?error={quote(str(exc))}",
+            status_code=303,
+        )
+
+    return RedirectResponse(
+        f"/uploads?message={quote('Upload added to virtual folder.')}",
+        status_code=303,
+    )
+
+
+@app.post("/admin/library/manual-cover")
+async def admin_manual_cover(
+    request: Request,
+    name: str = Form(...),
+    doc_key: str = Form(...),
+    cover_file: UploadFile = File(...),
+):
+    user = current_user(request)
+    if not user or user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    folder = get_folder(name)
+    document = get_document(folder, doc_key) if folder else None
+
+    if not document:
+        return RedirectResponse(
+            f"/admin/library?error={quote('Document not found.')}",
+            status_code=303,
+        )
+
+    suffix = Path(cover_file.filename or "").suffix.casefold()
+    if suffix not in {".png", ".jpg", ".jpeg", ".webp"}:
+        return RedirectResponse(
+            f"/admin/library?error={quote('Cover must be PNG, JPG, JPEG, or WebP.')}",
+            status_code=303,
+        )
+
+    temp_path = Path(document["path"]).parent / f".ttlibrarian_cover_upload_{document['key']}{suffix}"
+
+    try:
+        with temp_path.open("wb") as handle:
+            while True:
+                chunk = await cover_file.read(1024 * 1024)
+                if not chunk:
+                    break
+                handle.write(chunk)
+
+        source = Path(document["path"])
+        save_manual_cover(str(source.parent), source.name, temp_path)
+    finally:
+        await cover_file.close()
+        temp_path.unlink(missing_ok=True)
+
+    return RedirectResponse("/admin/library", status_code=303)
+
+
+@app.post("/admin/library/manual-cover/remove")
+async def admin_manual_cover_remove(
+    request: Request,
+    name: str = Form(...),
+    doc_key: str = Form(...),
+):
+    user = current_user(request)
+    if not user or user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    folder = get_folder(name)
+    document = get_document(folder, doc_key) if folder else None
+
+    if document:
+        source = Path(document["path"])
+        remove_manual_cover(str(source.parent), source.name)
+
+    return RedirectResponse("/admin/library", status_code=303)
 
 
 @app.get("/admin/users", response_class=HTMLResponse)
