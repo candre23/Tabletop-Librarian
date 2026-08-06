@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Search Index - {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <div class="topline">
+        <div>
+            <div class="eyebrow">GM Tools</div>
+            <h1>Search Index</h1>
+        </div>
+        <a class="button-link secondary-button" href="/">Back to Library</a>
+    </div>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    {% if message %}
+    <div class="success-message">{{ message }}</div>
+    {% endif %}
+
+    <div class="search-index-grid">
+        <section class="subpanel">
+            <h2>Extracted Text Cache</h2>
+
+            <dl class="index-stats">
+                <div>
+                    <dt>Documents</dt>
+                    <dd>{{ status.cached_documents }}</dd>
+                </div>
+                <div>
+                    <dt>Pages</dt>
+                    <dd>{{ status.pages }}</dd>
+                </div>
+                <div>
+                    <dt>Characters</dt>
+                    <dd>{{ "{:,}".format(status.characters) }}</dd>
+                </div>
+                <div>
+                    <dt>Cache Size</dt>
+                    <dd>{{ "%.1f"|format(status.cache_bytes / 1048576) }} MB</dd>
+                </div>
+            </dl>
+
+            <p class="muted">
+                Searchable PDFs, TXT, and Markdown are extracted into a disposable cache.
+                Scanned PDFs are skipped until OCR support is added.
+            </p>
+
+            <div class="index-actions">
+                <form method="post" action="/admin/search/build">
+                    <input type="hidden" name="force" value="false">
+                    <button type="submit">Build / Refresh Cache</button>
+                </form>
+
+                <form method="post" action="/admin/search/build">
+                    <input type="hidden" name="force" value="true">
+                    <button type="submit" class="secondary-button">Rebuild All</button>
+                </form>
+
+                <form
+                    method="post"
+                    action="/admin/search/clear"
+                    onsubmit="return confirm('Clear all extracted text cache files? They can be rebuilt at any time.');"
+                >
+                    <button type="submit" class="danger-button">Clear Cache</button>
+                </form>
+            </div>
+        </section>
+
+        <section class="subpanel">
+            <h2>Next</h2>
+            <p class="muted">
+                The next 0.2 step will build the searchable index from this extracted corpus
+                and add whole-library search with page-aware results.
+            </p>
+        </section>
+    </div>
+</section>
+{% endblock %}

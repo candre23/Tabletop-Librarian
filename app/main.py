@@ -49,6 +49,8 @@ from app.readers.image import serve_image
 from app.readers.pdf import stream_pdf
 from app.readers.text import read_plain_text, render_markdown
 from app.uploads import list_uploads, supported_upload, unique_upload_path
+from app.search.extract import build_text_cache, clear_text_cache, text_cache_status
+from app.search.query import search_library
 
 logger = logging.getLogger(__name__)
 server_config = ensure_server_config()
@@ -345,6 +347,35 @@ async def comic_page_content(
         return Response(status_code=500)
 
 
+@app.get("/search", response_class=HTMLResponse)
+async def search_page(request: Request, q: str = ""):
+    user = current_user(request)
+
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    search_data = {
+        "query": q,
+        "results": [],
+        "searched_documents": 0,
+        "uncached_documents": 0,
+    }
+
+    if q.strip():
+        search_data = search_library(q.strip(), user["role"], limit=100)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="search.html",
+        context={
+            "app_name": APP_NAME,
+            "app_version": APP_VERSION,
+            "user": user,
+            **search_data,
+        },
+    )
+
+
 @app.get("/uploads", response_class=HTMLResponse)
 async def uploads_page(request: Request):
     user = current_user(request)
@@ -505,6 +536,77 @@ async def admin_manual_cover_remove(
         remove_manual_cover(str(source.parent), source.name)
 
     return RedirectResponse("/admin/library", status_code=303)
+
+
+@app.get("/admin/search", response_class=HTMLResponse)
+async def admin_search(request: Request):
+    user = current_user(request)
+
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    if user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_search.html",
+        context={
+            "app_name": APP_NAME,
+            "app_version": APP_VERSION,
+            "user": user,
+            "status": text_cache_status(),
+            "error": request.query_params.get("error"),
+            "message": request.query_params.get("message"),
+        },
+    )
+
+
+@app.post("/admin/search/build")
+async def admin_search_build(
+    request: Request,
+    force: str = Form("false"),
+):
+    user = current_user(request)
+
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    if user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    summary = build_text_cache(force=(force == "true"))
+
+    message = (
+        f"Processed {summary['documents_seen']} documents: "
+        f"{summary['extracted']} extracted, "
+        f"{summary['cached']} already current, "
+        f"{summary['skipped_scanned']} scanned PDFs skipped, "
+        f"{summary['errors']} errors."
+    )
+
+    return RedirectResponse(
+        f"/admin/search?message={quote(message)}",
+        status_code=303,
+    )
+
+
+@app.post("/admin/search/clear")
+async def admin_search_clear(request: Request):
+    user = current_user(request)
+
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    if user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    clear_text_cache()
+
+    return RedirectResponse(
+        f"/admin/search?message={quote('Extracted-text cache cleared.')}",
+        status_code=303,
+    )
 
 
 @app.get("/admin/users", response_class=HTMLResponse)

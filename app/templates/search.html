@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Search - {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="panel search-page-panel">
+    <div class="topline">
+        <div>
+            <div class="eyebrow">Library</div>
+            <h1>Search</h1>
+        </div>
+        <a class="button-link secondary-button" href="/">Back to Library</a>
+    </div>
+
+    <form method="get" action="/search" class="library-search-form">
+        <input
+            type="search"
+            name="q"
+            value="{{ query }}"
+            placeholder="Search all available books and documents"
+            autofocus
+            required
+        >
+        <button type="submit">Search</button>
+    </form>
+
+    {% if query %}
+    <div class="search-summary">
+        {% if results %}
+        {{ results|length }} result{{ "" if results|length == 1 else "s" }}
+        across {{ searched_documents }} indexed document{{ "" if searched_documents == 1 else "s" }}.
+        {% else %}
+        No matches found across {{ searched_documents }} indexed document{{ "" if searched_documents == 1 else "s" }}.
+        {% endif %}
+
+        {% if uncached_documents %}
+        <span>
+            {{ uncached_documents }} visible text-capable document{{ "" if uncached_documents == 1 else "s" }}
+            {{ "is" if uncached_documents == 1 else "are" }} not currently indexed.
+        </span>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if results %}
+    <div class="search-results">
+        {% for result in results %}
+        <a
+            class="search-result"
+            href="/read/{{ result.folder_name|urlencode }}/{{ result.doc_key }}{% if result.type == 'PDF' %}?page={{ result.page }}{% endif %}"
+        >
+            <div class="search-result-heading">
+                <strong>{{ result.display_name }}</strong>
+                <span>{{ result.folder_name }}</span>
+                {% if result.type == "PDF" %}
+                <span>Page {{ result.page }}</span>
+                {% endif %}
+            </div>
+            <p>{{ result.snippet }}</p>
+        </a>
+        {% endfor %}
+    </div>
+    {% elif query %}
+    <div class="empty-state">No matching text was found.</div>
+    {% endif %}
+</section>
+{% endblock %}

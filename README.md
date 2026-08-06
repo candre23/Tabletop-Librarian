@@ -1,19 +1,15 @@
-# Tabletop Librarian v0.1.10
+# Tabletop Librarian v0.2.1
 
 Self-hosted tabletop RPG library, rules helper, and character resource server.
 
-## v0.1 functionality
+## Phase 0.2 work
 
-- First-run GM account setup and player management
-- Filesystem-backed virtual library folders
-- Multiple directories and individual files per virtual folder
-- Folder and per-document visibility controls
-- Automatic and manually overridden covers
-- PDF, image, CBR, CBZ, TXT, and Markdown readers
-- PDF range streaming
-- Basic in-document search
-- Player uploads with GM assignment into virtual folders
-- Scanned-PDF detection for future OCR support
+- Page-aware text extraction for searchable PDFs
+- Text extraction for TXT and Markdown
+- Disposable extracted-text cache
+- Source size/mtime validation so changed documents are re-extracted
+- Scanned PDFs skipped pending OCR support
+- GM Search Index management page
 
 ## Run
 

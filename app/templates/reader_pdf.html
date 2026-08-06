@@ -18,7 +18,7 @@
     <div class="pdf-frame-wrap">
         <iframe
             class="pdf-frame"
-            src="/content/{{ folder.name|urlencode }}/{{ document.key }}#view=FitH"
+            src="/content/{{ folder.name|urlencode }}/{{ document.key }}#page={{ request.query_params.get('page', '1') }}&view=FitH"
             title="{{ document.display_name }}"
         ></iframe>
     </div>
