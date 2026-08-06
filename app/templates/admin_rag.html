@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}RAG Corpus - {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <div class="topline">
+        <div>
+            <div class="eyebrow">GM Tools</div>
+            <h1>RAG Corpus</h1>
+        </div>
+        <a class="button-link secondary-button" href="/">Back to Library</a>
+    </div>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    {% if message %}
+    <div class="success-message">{{ message }}</div>
+    {% endif %}
+
+    <div class="rag-config-grid">
+        <section class="subpanel rag-admin-panel">
+            <h2>Context Chunks</h2>
+
+            <dl class="index-stats">
+                <div><dt>Documents</dt><dd>{{ status.documents }}</dd></div>
+                <div><dt>Pages</dt><dd>{{ status.pages }}</dd></div>
+                <div><dt>Chunks</dt><dd>{{ status.chunks }}</dd></div>
+                <div><dt>Cache Size</dt><dd>{{ "%.1f"|format(status.cache_bytes / 1048576) }} MB</dd></div>
+            </dl>
+
+            <div class="index-actions">
+                <form method="post" action="/admin/rag/build">
+                    <button type="submit">Build / Rebuild Corpus</button>
+                </form>
+
+                <form
+                    method="post"
+                    action="/admin/rag/clear"
+                    onsubmit="return confirm('Clear the disposable RAG chunk cache?');"
+                >
+                    <button type="submit" class="danger-button">Clear</button>
+                </form>
+            </div>
+        </section>
+
+        <section class="subpanel rag-admin-panel">
+            <h2>Semantic Embeddings</h2>
+
+            <dl class="index-stats">
+                <div><dt>Vectors</dt><dd>{{ embedding_status.vectors }}</dd></div>
+                <div><dt>Dimensions</dt><dd>{{ embedding_status.dimensions }}</dd></div>
+                <div><dt>Backend</dt><dd class="small-stat">{{ embedding_status.backend }}</dd></div>
+                <div><dt>Cache Size</dt><dd>{{ "%.1f"|format(embedding_status.cache_bytes / 1048576) }} MB</dd></div>
+            </dl>
+
+            <p class="muted">
+                Model: {{ embedding_status.model }}.
+                The first build downloads and converts the model to OpenVINO format.
+                Later runs use the saved local model.
+            </p>
+
+            <div class="index-actions">
+                <form method="post" action="/admin/rag/embeddings/build">
+                    <button type="submit">Build Embeddings</button>
+                </form>
+
+                <form
+                    method="post"
+                    action="/admin/rag/embeddings/clear"
+                    onsubmit="return confirm('Clear the semantic embedding cache?');"
+                >
+                    <button type="submit" class="danger-button">Clear</button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <section class="subpanel rag-test-box">
+        <h2>Hybrid Retrieval</h2>
+        <p class="muted">
+            Retrieval combines lexical matches with semantic similarity.
+        </p>
+        <a class="button-link secondary-button" href="/rag-test">Test Hybrid Retrieval</a>
+    </section>
+</section>
+{% endblock %}

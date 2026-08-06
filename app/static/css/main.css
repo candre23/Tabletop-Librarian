@@ -1308,3 +1308,168 @@ body > .shell > .panel .folder-card {
         grid-template-columns: 1fr;
     }
 }
+
+.rag-admin-panel {
+    margin-top: 24px;
+}
+
+.rag-results {
+    display: grid;
+    gap: 14px;
+    margin-top: 20px;
+}
+
+.rag-result {
+    border: 1px solid #3c444a;
+    border-radius: 10px;
+    padding: 16px;
+    background: #121619;
+}
+
+.rag-result pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    margin: 12px 0;
+    padding: 14px;
+    border-radius: 8px;
+    background: #0c0f11;
+    color: #c8d0d5;
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+.rag-config-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 24px;
+}
+
+.rag-config-grid .rag-admin-panel {
+    margin-top: 0;
+}
+
+.rag-test-box {
+    margin-top: 18px;
+}
+
+.small-stat {
+    font-size: 0.9rem !important;
+}
+
+.rag-score-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    color: #8faec5;
+    font-size: 0.78rem;
+}
+
+@media (max-width: 900px) {
+    .rag-config-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+.rag-test-form {
+    display: grid;
+    gap: 18px;
+    margin-top: 20px;
+}
+
+.rag-query-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.rag-query-row input[type="search"] {
+    flex: 1;
+}
+
+.rag-scope-panel {
+    padding: 18px;
+}
+
+.rag-scope-grid {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 18px;
+}
+
+.rag-scope-field {
+    display: grid;
+    gap: 8px;
+}
+
+.rag-scope-field label {
+    font-weight: 600;
+    color: #a9cae3;
+}
+
+.scope-help {
+    margin: 0;
+    font-size: 0.82rem;
+}
+
+.rag-doc-list {
+    border: 1px solid #364147;
+    border-radius: 10px;
+    background: #0f1316;
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+}
+
+.rag-doc-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #151a1d;
+    border: 1px solid #293238;
+}
+
+.rag-doc-item input {
+    margin-top: 3px;
+}
+
+.rag-doc-meta {
+    display: grid;
+    gap: 4px;
+}
+
+.rag-doc-name {
+    font-weight: 600;
+    color: #eef3f7;
+}
+
+.rag-doc-folder {
+    font-size: 0.78rem;
+    color: #8ea5b5;
+}
+
+.compact-empty-state {
+    margin: 0;
+    min-height: 0;
+    padding: 24px 16px;
+}
+
+.rag-scope-summary {
+    margin-top: 16px;
+}
+
+@media (max-width: 960px) {
+    .rag-query-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .rag-scope-grid {
+        grid-template-columns: 1fr;
+    }
+}

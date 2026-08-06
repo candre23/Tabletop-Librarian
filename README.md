@@ -1,15 +1,16 @@
-# Tabletop Librarian v0.2.1
+# Tabletop Librarian v0.3.3
 
 Self-hosted tabletop RPG library, rules helper, and character resource server.
 
-## Phase 0.2 work
+## Phase 0.3 work
 
-- Page-aware text extraction for searchable PDFs
-- Text extraction for TXT and Markdown
-- Disposable extracted-text cache
-- Source size/mtime validation so changed documents are re-extracted
-- Scanned PDFs skipped pending OCR support
-- GM Search Index management page
+- RAG context chunks with page/source metadata
+- OpenVINO CPU semantic embeddings
+- all-MiniLM-L6-v2 embedding model
+- Locally saved converted OpenVINO model
+- Hybrid lexical + semantic retrieval
+- Folder- and file-scoped hybrid retrieval
+- Permission-aware retrieval for GM/player access
 
 ## Run
 
@@ -18,6 +19,10 @@ source .venv/bin/activate
 python run.py
 ```
 
-Open `http://SERVER-IP:8080/`.
+For first-time semantic setup:
 
-Stop with `Ctrl+C`.
+1. Build the Search Index text cache.
+2. Build the RAG corpus.
+3. Build Embeddings from the RAG Corpus page.
+
+The first embedding build requires internet access to obtain the model.

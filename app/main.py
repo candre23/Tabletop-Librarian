@@ -51,6 +51,9 @@ from app.readers.text import read_plain_text, render_markdown
 from app.uploads import list_uploads, supported_upload, unique_upload_path
 from app.search.extract import build_text_cache, clear_text_cache, text_cache_status
 from app.search.query import search_library
+from app.rag.chunks import build_chunk_cache, chunk_cache_status, clear_chunk_cache
+from app.rag.retrieve import available_rag_scope, retrieve_chunks
+from app.rag.embeddings import build_embeddings, clear_embeddings, embedding_status
 
 logger = logging.getLogger(__name__)
 server_config = ensure_server_config()
@@ -606,6 +609,151 @@ async def admin_search_clear(request: Request):
     return RedirectResponse(
         f"/admin/search?message={quote('Extracted-text cache cleared.')}",
         status_code=303,
+    )
+
+
+
+@app.get("/admin/rag", response_class=HTMLResponse)
+async def admin_rag(request: Request):
+    user = current_user(request)
+
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    if user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_rag.html",
+        context={
+            "app_name": APP_NAME,
+            "app_version": APP_VERSION,
+            "user": user,
+            "status": chunk_cache_status(),
+            "embedding_status": embedding_status(),
+            "message": request.query_params.get("message"),
+            "error": request.query_params.get("error"),
+        },
+    )
+
+
+@app.post("/admin/rag/build")
+async def admin_rag_build(request: Request):
+    user = current_user(request)
+
+    if not user or user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    summary = build_chunk_cache()
+
+    message = (
+        f"RAG corpus built: {summary['documents']} documents, "
+        f"{summary['pages']} pages, {summary['chunks']} chunks."
+    )
+
+    return RedirectResponse(
+        f"/admin/rag?message={quote(message)}",
+        status_code=303,
+    )
+
+
+@app.post("/admin/rag/embeddings/build")
+async def admin_rag_embeddings_build(request: Request):
+    user = current_user(request)
+
+    if not user or user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    try:
+        summary = build_embeddings()
+    except Exception as exc:
+        logger.exception("Embedding build failed")
+        return RedirectResponse(
+            f"/admin/rag?error={quote(str(exc))}",
+            status_code=303,
+        )
+
+    message = (
+        f"Embeddings built: {summary['vectors']} vectors, "
+        f"{summary['dimensions']} dimensions."
+    )
+
+    return RedirectResponse(
+        f"/admin/rag?message={quote(message)}",
+        status_code=303,
+    )
+
+
+@app.post("/admin/rag/embeddings/clear")
+async def admin_rag_embeddings_clear(request: Request):
+    user = current_user(request)
+
+    if not user or user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    clear_embeddings()
+
+    return RedirectResponse(
+        f"/admin/rag?message={quote('Embedding cache cleared.')}",
+        status_code=303,
+    )
+
+@app.post("/admin/rag/clear")
+async def admin_rag_clear(request: Request):
+    user = current_user(request)
+
+    if not user or user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    clear_chunk_cache()
+
+    return RedirectResponse(
+        f"/admin/rag?message={quote('RAG chunk cache cleared.')}",
+        status_code=303,
+    )
+
+
+@app.get("/rag-test", response_class=HTMLResponse)
+async def rag_test(request: Request, q: str = "", folder: str = ""):
+    user = current_user(request)
+
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    selected_documents = request.query_params.getlist("docs")
+    scope = available_rag_scope(
+        user["role"],
+        selected_folder=folder,
+        selected_documents=selected_documents,
+    )
+
+    document_scope = scope["selected_document_paths"] or None
+    folder_scope = scope["selected_folder"] or None
+
+    results = (
+        retrieve_chunks(
+            q.strip(),
+            user["role"],
+            limit=8,
+            folder_scope=folder_scope,
+            document_paths=document_scope,
+        )
+        if q.strip()
+        else []
+    )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="rag_test.html",
+        context={
+            "app_name": APP_NAME,
+            "app_version": APP_VERSION,
+            "user": user,
+            "query": q,
+            "results": results,
+            "scope": scope,
+        },
     )
 
 

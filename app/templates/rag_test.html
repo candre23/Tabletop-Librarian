@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}RAG Retrieval Test - {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="panel search-page-panel">
+    <div class="topline">
+        <div>
+            <div class="eyebrow">Development Tool</div>
+            <h1>Hybrid RAG Retrieval Test</h1>
+        </div>
+        <a class="button-link secondary-button" href="/">Back to Library</a>
+    </div>
+
+    <form method="get" action="/rag-test" class="rag-test-form">
+        <div class="rag-query-row">
+            <input
+                type="search"
+                name="q"
+                value="{{ query }}"
+                placeholder="Ask a rules-style question"
+                autofocus
+                required
+            >
+            <button type="submit">Retrieve</button>
+        </div>
+
+        <section class="subpanel rag-scope-panel">
+            <div class="rag-scope-grid">
+                <div class="rag-scope-field">
+                    <label for="folder-scope">Folder Scope</label>
+                    <select id="folder-scope" name="folder">
+                        <option value="">Entire visible library</option>
+                        {% for folder_name in scope.folders %}
+                        <option value="{{ folder_name }}" {% if folder_name == scope.selected_folder %}selected{% endif %}>
+                            {{ folder_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="muted scope-help">
+                        Choose a virtual folder to keep retrieval within one game system or campaign.
+                    </p>
+                </div>
+
+                <div class="rag-scope-field">
+                    <label>Document Scope</label>
+                    <p class="muted scope-help">
+                        Leave all unchecked to search every document in the current folder scope.
+                    </p>
+                    <div class="rag-doc-list">
+                        {% if scope.documents %}
+                            {% for document in scope.documents %}
+                            <label class="rag-doc-item">
+                                <input type="checkbox" name="docs" value="{{ document.path }}" {% if document.selected %}checked{% endif %}>
+                                <span class="rag-doc-meta">
+                                    <span class="rag-doc-name">{{ document.display_name }}</span>
+                                    <span class="rag-doc-folder">{{ document.folder_name }} · {{ document.type }}</span>
+                                </span>
+                            </label>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state compact-empty-state">No visible documents are available for this scope.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </section>
+    </form>
+
+    <div class="rag-scope-summary muted">
+        Current scope:
+        {% if scope.selected_folder %}
+            folder <strong>{{ scope.selected_folder }}</strong>
+        {% else %}
+            <strong>entire visible library</strong>
+        {% endif %}
+        {% if scope.selected_document_paths %}
+            with <strong>{{ scope.selected_document_paths|length }}</strong> specific document(s) selected.
+        {% else %}
+            with <strong>all documents</strong> in scope included.
+        {% endif %}
+    </div>
+
+    {% if query and not results %}
+    <div class="empty-state">
+        No relevant chunks found. Build both the RAG corpus and embeddings first.
+    </div>
+    {% endif %}
+
+    {% if results %}
+    <div class="rag-results">
+        {% for result in results %}
+        <section class="rag-result">
+            <div class="search-result-heading">
+                <strong>{{ result.display_name }}</strong>
+                <span>{{ result.folder_name }}</span>
+                {% if result.type == "PDF" %}
+                <span>Page {{ result.page }}</span>
+                {% endif %}
+            </div>
+
+            <div class="rag-score-row">
+                <span>
+                    Semantic:
+                    {% if result.semantic_score is not none %}
+                    {{ "%.3f"|format(result.semantic_score) }}
+                    {% else %}
+                    n/a
+                    {% endif %}
+                </span>
+                <span>
+                    Lexical:
+                    {% if result.lexical_score is not none %}
+                    {{ "%.2f"|format(result.lexical_score) }}
+                    {% else %}
+                    n/a
+                    {% endif %}
+                </span>
+            </div>
+
+            <pre>{{ result.text }}</pre>
+
+            <a
+                class="button-link secondary-button compact-button"
+                href="/read/{{ result.folder_name|urlencode }}/{{ result.doc_key }}{% if result.type == 'PDF' %}?page={{ result.page }}{% endif %}"
+            >
+                Open Source
+            </a>
+        </section>
+        {% endfor %}
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
