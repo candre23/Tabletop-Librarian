@@ -1,6 +1,84 @@
 {% extends "base.html" %}
 
-{% block title %}RAG Corpus - {{ app_name }}{% endblock %}
+{% block title %}RAG Corpus - {{ app_name }}
+<script>
+(() => {
+    const panel = document.getElementById("embedding-progress");
+    const stage = document.getElementById("embedding-progress-stage");
+    const percent = document.getElementById("embedding-progress-percent");
+    const track = document.getElementById("embedding-progress-track");
+    const bar = document.getElementById("embedding-progress-bar");
+    const message = document.getElementById("embedding-progress-message");
+    const buildButton = document.getElementById("embedding-build-button");
+    const clearButton = document.querySelector('form[action="/admin/rag/embeddings/clear"] button');
+    const modelSelect = document.getElementById("embedding-model");
+    const applyButton = document.querySelector(".embedding-model-row button");
+
+    const labels = {
+        starting: "Starting",
+        downloading_model: "Downloading model",
+        loading_model: "Loading model",
+        saving_model: "Saving model",
+        embedding: "Embedding chunks",
+        saving_index: "Saving index",
+        complete: "Complete",
+        error: "Build failed",
+        idle: "Ready",
+    };
+
+    function setBusy(busy) {
+        if (buildButton) buildButton.disabled = busy;
+        if (clearButton) clearButton.disabled = busy;
+        if (modelSelect) modelSelect.disabled = busy;
+        if (applyButton) applyButton.disabled = busy;
+    }
+
+    function render(data) {
+        const build = data.build || {};
+        const visible = build.running || build.stage === "complete" || build.stage === "error";
+        panel.hidden = !visible;
+        setBusy(!!build.running);
+        if (!visible) return;
+
+        stage.textContent = labels[build.stage] || build.stage || "Building";
+        message.textContent = build.message || "";
+
+        const determinate =
+            build.stage === "embedding" ||
+            build.stage === "saving_index" ||
+            build.stage === "complete";
+
+        track.classList.toggle("indeterminate", build.running && !determinate);
+
+        if (determinate) {
+            const value = Math.max(0, Math.min(100, Number(build.percent || 0)));
+            bar.style.width = value + "%";
+            percent.textContent = Math.round(value) + "%";
+        } else {
+            bar.style.width = "";
+            percent.textContent = "";
+        }
+
+    }
+
+    async function poll() {
+        try {
+            const response = await fetch("/admin/rag/embeddings/status", {
+                cache: "no-store",
+                headers: {"Accept": "application/json"},
+            });
+            if (!response.ok) return;
+            render(await response.json());
+        } catch (_) {
+        }
+    }
+
+    poll();
+    setInterval(poll, 1000);
+})();
+</script>
+
+{% endblock %}
 
 {% block content %}
 <section class="panel">
@@ -12,35 +90,21 @@
         <a class="button-link secondary-button" href="/">Back to Library</a>
     </div>
 
-    {% if error %}
-    <div class="error">{{ error }}</div>
-    {% endif %}
-
-    {% if message %}
-    <div class="success-message">{{ message }}</div>
-    {% endif %}
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    {% if message %}<div class="success-message">{{ message }}</div>{% endif %}
 
     <div class="rag-config-grid">
         <section class="subpanel rag-admin-panel">
             <h2>Context Chunks</h2>
-
             <dl class="index-stats">
                 <div><dt>Documents</dt><dd>{{ status.documents }}</dd></div>
                 <div><dt>Pages</dt><dd>{{ status.pages }}</dd></div>
                 <div><dt>Chunks</dt><dd>{{ status.chunks }}</dd></div>
                 <div><dt>Cache Size</dt><dd>{{ "%.1f"|format(status.cache_bytes / 1048576) }} MB</dd></div>
             </dl>
-
             <div class="index-actions">
-                <form method="post" action="/admin/rag/build">
-                    <button type="submit">Build / Rebuild Corpus</button>
-                </form>
-
-                <form
-                    method="post"
-                    action="/admin/rag/clear"
-                    onsubmit="return confirm('Clear the disposable RAG chunk cache?');"
-                >
+                <form method="post" action="/admin/rag/build"><button type="submit">Build / Rebuild Corpus</button></form>
+                <form method="post" action="/admin/rag/clear" onsubmit="return confirm('Clear the disposable RAG chunk cache?');">
                     <button type="submit" class="danger-button">Clear</button>
                 </form>
             </div>
@@ -49,41 +113,175 @@
         <section class="subpanel rag-admin-panel">
             <h2>Semantic Embeddings</h2>
 
+            <form method="post" action="/admin/rag/embeddings/model" class="embedding-model-form">
+                <label for="embedding-model">Embedding Model</label>
+                <div class="embedding-model-row">
+                    <select id="embedding-model" name="model_key">
+                        {% for model in embedding_models %}
+                        <option value="{{ model.key }}" {% if model.selected %}selected{% endif %}>
+                            {{ model.label }} — {{ model.model }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="secondary-button">Apply</button>
+                </div>
+            </form>
+
+            <p class="muted embedding-model-description">{{ embedding_status.description }}</p>
+
             <dl class="index-stats">
+                <div><dt>Model</dt><dd class="small-stat">{{ embedding_status.model_label }}</dd></div>
                 <div><dt>Vectors</dt><dd>{{ embedding_status.vectors }}</dd></div>
                 <div><dt>Dimensions</dt><dd>{{ embedding_status.dimensions }}</dd></div>
                 <div><dt>Backend</dt><dd class="small-stat">{{ embedding_status.backend }}</dd></div>
                 <div><dt>Cache Size</dt><dd>{{ "%.1f"|format(embedding_status.cache_bytes / 1048576) }} MB</dd></div>
             </dl>
 
-            <p class="muted">
-                Model: {{ embedding_status.model }}.
-                The first build downloads and converts the model to OpenVINO format.
-                Later runs use the saved local model.
-            </p>
+            {% if not embedding_status.cache_matches_model %}
+            <p class="muted">No embedding cache exists for the selected model.</p>
+            {% endif %}
 
             <div class="index-actions">
-                <form method="post" action="/admin/rag/embeddings/build">
-                    <button type="submit">Build Embeddings</button>
-                </form>
-
-                <form
-                    method="post"
-                    action="/admin/rag/embeddings/clear"
-                    onsubmit="return confirm('Clear the semantic embedding cache?');"
-                >
+                <form method="post" action="/admin/rag/embeddings/build"><button type="submit" id="embedding-build-button">Build Embeddings</button></form>
+                <form method="post" action="/admin/rag/embeddings/clear" onsubmit="return confirm('Clear the semantic embedding cache?');">
                     <button type="submit" class="danger-button">Clear</button>
                 </form>
+            </div>
+
+            <div class="embedding-progress" id="embedding-progress" hidden>
+                <div class="embedding-progress-topline">
+                    <strong id="embedding-progress-stage">Building embeddings</strong>
+                    <span id="embedding-progress-percent"></span>
+                </div>
+                <div class="embedding-progress-track" id="embedding-progress-track">
+                    <div class="embedding-progress-bar" id="embedding-progress-bar"></div>
+                </div>
+                <div class="muted embedding-progress-message" id="embedding-progress-message"></div>
             </div>
         </section>
     </div>
 
     <section class="subpanel rag-test-box">
         <h2>Hybrid Retrieval</h2>
-        <p class="muted">
-            Retrieval combines lexical matches with semantic similarity.
-        </p>
-        <a class="button-link secondary-button" href="/rag-test">Test Hybrid Retrieval</a>
+        <p class="muted">Retrieval combines lexical matches with semantic similarity.</p>
+        <div class="index-actions">
+            <a class="button-link secondary-button" href="/rag-test">Test Hybrid Retrieval</a>
+            <a class="button-link secondary-button" href="/ask">Open Ask</a>
+        </div>
+    </section>
+
+    <section class="subpanel rag-test-box">
+        <h2>Local AI Provider</h2>
+        <p class="muted">Connect Tabletop Librarian to a local OpenAI-compatible server such as llama.cpp. The API key is stored only on this server and is never displayed after saving.</p>
+
+        <form method="post" action="/admin/ai/save" class="ai-provider-form">
+            <label for="ai-base-url">Base URL</label>
+            <input id="ai-base-url" name="base_url" type="text" value="{{ ai_settings.base_url }}" placeholder="http://192.168.1.23:8080/v1" required>
+
+            <label for="ai-model">Model / Alias</label>
+            <input id="ai-model" name="model" type="text" value="{{ ai_settings.model }}" placeholder="qwen3.5-9b-q5" required>
+
+            <label for="ai-api-key">API Key</label>
+            <input id="ai-api-key" name="api_key" type="password" value="" placeholder="{% if ai_settings.has_api_key %}Saved - leave blank to keep current key{% else %}Enter API key{% endif %}">
+
+            <div class="ai-provider-grid">
+                <div>
+                    <label for="ai-timeout">Timeout (seconds)</label>
+                    <input id="ai-timeout" name="timeout" type="number" min="5" max="600" value="{{ ai_settings.timeout }}">
+                </div>
+                <div>
+                    <label for="ai-temperature">Temperature</label>
+                    <input id="ai-temperature" name="temperature" type="number" min="0" max="2" step="0.05" value="{{ ai_settings.temperature }}">
+                </div>
+                <div>
+                    <label for="ai-max-tokens">Max Output Tokens</label>
+                    <input id="ai-max-tokens" name="max_tokens" type="number" min="64" max="8192" value="{{ ai_settings.max_tokens }}">
+                </div>
+            </div>
+
+            <div class="index-actions">
+                <button type="submit">Save Provider</button>
+                <button type="submit" formaction="/admin/ai/test" class="secondary-button">Save & Test Connection</button>
+            </div>
+        </form>
     </section>
 </section>
+
+<script>
+(() => {
+    const panel = document.getElementById("embedding-progress");
+    const stage = document.getElementById("embedding-progress-stage");
+    const percent = document.getElementById("embedding-progress-percent");
+    const track = document.getElementById("embedding-progress-track");
+    const bar = document.getElementById("embedding-progress-bar");
+    const message = document.getElementById("embedding-progress-message");
+    const buildButton = document.getElementById("embedding-build-button");
+    const clearButton = document.querySelector('form[action="/admin/rag/embeddings/clear"] button');
+    const modelSelect = document.getElementById("embedding-model");
+    const applyButton = document.querySelector(".embedding-model-row button");
+
+    const labels = {
+        starting: "Starting",
+        downloading_model: "Downloading model",
+        loading_model: "Loading model",
+        saving_model: "Saving model",
+        embedding: "Embedding chunks",
+        saving_index: "Saving index",
+        complete: "Complete",
+        error: "Build failed",
+        idle: "Ready",
+    };
+
+    function setBusy(busy) {
+        if (buildButton) buildButton.disabled = busy;
+        if (clearButton) clearButton.disabled = busy;
+        if (modelSelect) modelSelect.disabled = busy;
+        if (applyButton) applyButton.disabled = busy;
+    }
+
+    function render(data) {
+        const build = data.build || {};
+        const visible = build.running || build.stage === "complete" || build.stage === "error";
+        panel.hidden = !visible;
+        setBusy(!!build.running);
+        if (!visible) return;
+
+        stage.textContent = labels[build.stage] || build.stage || "Building";
+        message.textContent = build.message || "";
+
+        const determinate =
+            build.stage === "embedding" ||
+            build.stage === "saving_index" ||
+            build.stage === "complete";
+
+        track.classList.toggle("indeterminate", build.running && !determinate);
+
+        if (determinate) {
+            const value = Math.max(0, Math.min(100, Number(build.percent || 0)));
+            bar.style.width = value + "%";
+            percent.textContent = Math.round(value) + "%";
+        } else {
+            bar.style.width = "";
+            percent.textContent = "";
+        }
+
+    }
+
+    async function poll() {
+        try {
+            const response = await fetch("/admin/rag/embeddings/status", {
+                cache: "no-store",
+                headers: {"Accept": "application/json"},
+            });
+            if (!response.ok) return;
+            render(await response.json());
+        } catch (_) {
+        }
+    }
+
+    poll();
+    setInterval(poll, 1000);
+})();
+</script>
+
 {% endblock %}

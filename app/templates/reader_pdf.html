@@ -1,26 +1,63 @@
 {% extends "base.html" %}
-
 {% block title %}{{ document.display_name }} - {{ app_name }}{% endblock %}
-
 {% block content %}
 <section class="reader-shell">
     <div class="reader-toolbar">
         <div class="reader-title-group">
             <a class="button-link secondary-button compact-button" href="/library/{{ folder.name|urlencode }}">Back</a>
-            <div>
-                <div class="eyebrow">{{ folder.name }}</div>
-                <div class="reader-title">{{ document.display_name }}</div>
-            </div>
+            <div><div class="eyebrow">{{ folder.name }}</div><div class="reader-title">{{ document.display_name }}</div></div>
         </div>
-        <div class="reader-note">Use the PDF viewer controls for navigation, zoom, and search.</div>
+        <div class="reader-toolbar-actions">
+            <div class="reader-note">Use the PDF viewer controls for navigation, zoom, and search.</div>
+            <button type="button" class="secondary-button compact-button" id="ask-file-toggle">Ask this file</button>
+        </div>
     </div>
 
-    <div class="pdf-frame-wrap">
-        <iframe
-            class="pdf-frame"
-            src="/content/{{ folder.name|urlencode }}/{{ document.key }}#page={{ request.query_params.get('page', '1') }}&view=FitH"
-            title="{{ document.display_name }}"
-        ></iframe>
+    <div class="reader-split" id="reader-split">
+        <div class="reader-document-pane">
+            <div class="pdf-frame-wrap">
+                <iframe id="pdf-document-frame" class="pdf-frame" src="/content/{{ folder.name|urlencode }}/{{ document.key }}#page={{ request.query_params.get('page', '1') }}&view=FitH" title="{{ document.display_name }}"></iframe>
+            </div>
+        </div>
+        <aside class="reader-ai-pane" id="reader-ai-pane" hidden>
+            <div class="reader-ai-pane-toolbar"><strong>Ask this file</strong><button type="button" class="secondary-button compact-button" id="ask-file-close">Close</button></div>
+            <iframe id="ask-file-frame" class="reader-ai-frame" title="Ask {{ document.display_name }}" loading="lazy"></iframe>
+        </aside>
     </div>
 </section>
+
+<script>
+(() => {
+    const split=document.getElementById("reader-split"),pane=document.getElementById("reader-ai-pane"),ask=document.getElementById("ask-file-frame"),pdf=document.getElementById("pdf-document-frame"),toggle=document.getElementById("ask-file-toggle"),close=document.getElementById("ask-file-close");
+    let loaded=false;
+    const contentUrl="/content/{{ folder.name|urlencode }}/{{ document.key }}";
+
+    function openAsk(){
+        if(!loaded){ask.src="/ask?embed=1&split=1&folder={{ folder.name|urlencode }}&doc={{ document.key }}";loaded=true;}
+        pane.hidden=false;split.classList.add("with-ai");toggle.hidden=true;
+    }
+    function closeAsk(){pane.hidden=true;split.classList.remove("with-ai");toggle.hidden=false;}
+
+    toggle.addEventListener("click",openAsk);
+    close.addEventListener("click",closeAsk);
+
+    let currentAskResponseId=null;
+
+    window.addEventListener("message",event=>{
+        if(event.origin!==window.location.origin||!event.data)return;
+
+        if(event.data.type==="ttl-ask-ready"){
+            currentAskResponseId=event.data.responseId||null;
+            return;
+        }
+
+        if(event.data.type!=="ttl-source-jump")return;
+        if(event.data.docKey!=="{{ document.key }}")return;
+        if(currentAskResponseId&&event.data.responseId!==currentAskResponseId)return;
+
+        const page=parseInt(event.data.page||"0",10);
+        if(page)pdf.src=contentUrl+"#page="+page+"&view=FitH";
+    });
+})();
+</script>
 {% endblock %}

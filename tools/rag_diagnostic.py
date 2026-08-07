@@ -13,7 +13,15 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from app.rag.chunks import chunk_cache_status
 from app.rag.embeddings import embedding_status
-from app.rag.retrieve import retrieve_chunks
+from app.rag.retrieve import available_rag_scope, retrieve_chunks
+
+FOLDER_SCOPE = "Eldritch"
+
+TARGET_DOCUMENTS = [
+    "Eldritch Core Rules Book",
+    "Eldritch Eldritch Monsters",
+    "Eldritch The Crypt of Kur-Ka",
+]
 
 QUESTIONS = [
     "How many Character Points does a starting character get, and what are the restrictions on Masteries at character creation?",
@@ -32,29 +40,87 @@ QUESTIONS = [
     "If the PCs encounter the giant spider in Kur-Ka, what rules information would I need to run that fight?",
 ]
 
+
 def fmt_score(value, digits=3):
     if value is None:
         return "n/a"
     return f"{value:.{digits}f}"
 
+
+def resolve_document_scope() -> tuple[list[str], list[str]]:
+    scope = available_rag_scope(
+        "gm",
+        selected_folder=FOLDER_SCOPE,
+    )
+
+    wanted = {name.casefold(): name for name in TARGET_DOCUMENTS}
+    found_paths = []
+    found_names = []
+
+    for document in scope["documents"]:
+        display_name = document.get("display_name", "")
+        key = display_name.casefold()
+
+        if key in wanted:
+            found_paths.append(document["path"])
+            found_names.append(display_name)
+
+    missing = [
+        wanted[key]
+        for key in wanted
+        if key not in {name.casefold() for name in found_names}
+    ]
+
+    if missing:
+        available = "\n".join(
+            f"  - {document.get('display_name', '')}"
+            for document in scope["documents"]
+        )
+        raise RuntimeError(
+            "Could not locate all diagnostic books in the Eldritch virtual folder.\n"
+            f"Missing: {', '.join(missing)}\n"
+            "Available Eldritch documents:\n"
+            f"{available}"
+        )
+
+    return found_paths, found_names
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Run scoped Tabletop Librarian hybrid RAG diagnostics."
+    )
     parser.add_argument("--limit", type=int, default=8)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output = args.output or Path(f"rag_diagnostic_results_{timestamp}.txt")
+    output = args.output or Path(
+        f"rag_diagnostic_eldritch_scoped_{timestamp}.txt"
+    )
 
     chunks = chunk_cache_status()
     embeddings = embedding_status()
 
+    try:
+        document_paths, document_names = resolve_document_scope()
+    except Exception as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+
     lines = [
         "TABLETOP LIBRARIAN HYBRID RAG DIAGNOSTIC",
+        "SCOPED TO ELDRITCH TEST BOOKS",
         "=" * 72,
         f"Generated: {datetime.now().isoformat(timespec='seconds')}",
         f"Python: {sys.version.split()[0]}",
         f"Platform: {platform.platform()}",
+        "",
+        "RETRIEVAL SCOPE",
+        "-" * 72,
+        f"Virtual folder: {FOLDER_SCOPE}",
+        "Documents:",
+        *[f"  - {name}" for name in document_names],
         "",
         "CORPUS STATUS",
         "-" * 72,
@@ -72,14 +138,22 @@ def main() -> int:
 
     for number, question in enumerate(QUESTIONS, start=1):
         start = time.perf_counter()
+
         try:
-            results = retrieve_chunks(question, user_role="gm", limit=args.limit)
+            results = retrieve_chunks(
+                question,
+                user_role="gm",
+                limit=args.limit,
+                folder_scope=FOLDER_SCOPE,
+                document_paths=document_paths,
+            )
             error = None
         except Exception as exc:
             results = []
             error = f"{type(exc).__name__}: {exc}"
 
         elapsed = time.perf_counter() - start
+
         lines += [
             "",
             "=" * 72,
@@ -117,6 +191,7 @@ def main() -> int:
             ]
 
     total_elapsed = time.perf_counter() - total_start
+
     lines += [
         "",
         "=" * 72,
@@ -124,16 +199,24 @@ def main() -> int:
         "=" * 72,
         f"Questions: {len(QUESTIONS)}",
         f"Results requested per question: {args.limit}",
+        f"Scope folder: {FOLDER_SCOPE}",
+        f"Scope documents: {len(document_paths)}",
         f"Total diagnostic time: {total_elapsed:.3f} seconds",
         "",
     ]
 
     output.write_text("\n".join(lines), encoding="utf-8")
+
     print(f"Diagnostic complete: {output.resolve()}")
+    print(f"Scope: {FOLDER_SCOPE} / {len(document_paths)} books")
+    for name in document_names:
+        print(f"  - {name}")
     print(f"Questions tested: {len(QUESTIONS)}")
     print(f"Total time: {total_elapsed:.1f} seconds")
     print("Upload the generated .txt file back to ChatGPT for analysis.")
+
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

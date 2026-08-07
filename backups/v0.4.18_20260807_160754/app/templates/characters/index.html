@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Characters - Tabletop Librarian</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+  <style>
+    .ttl-char-wrap { max-width: 1100px; margin: 0 auto; padding: 28px 22px 60px; }
+    .ttl-char-head { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:24px; }
+    .ttl-char-head h1 { margin:0; }
+    .ttl-char-grid { display:grid; grid-template-columns: minmax(0,1fr) 340px; gap:24px; }
+    .ttl-card { border:1px solid rgba(127,127,127,.28); border-radius:12px; padding:18px; background:rgba(127,127,127,.06); }
+    .ttl-character-list { display:grid; gap:10px; }
+    .ttl-character-row { display:flex; justify-content:space-between; align-items:center; gap:18px; border:1px solid rgba(127,127,127,.2); border-radius:9px; padding:13px 15px; }
+    .ttl-character-row a { font-weight:650; }
+    .ttl-muted { opacity:.72; font-size:.92rem; }
+    .ttl-form-row { display:grid; gap:6px; margin-bottom:14px; }
+    .ttl-form-row input,.ttl-form-row select { width:100%; box-sizing:border-box; padding:9px 10px; }
+    .ttl-button { display:inline-block; padding:9px 14px; border-radius:8px; cursor:pointer; text-decoration:none; }
+    .ttl-draft-badge { display:inline-block; margin-left:6px; padding:2px 6px; border:1px solid rgba(127,127,127,.3); border-radius:999px; font-size:.74rem; opacity:.78; }
+    .ttl-section-gap { margin-top:24px; }
+    @media (max-width: 780px) { .ttl-char-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  {% include "_global_nav.html" %}
+  <main class="ttl-char-wrap">
+    <div class="ttl-char-head">
+      <div>
+        <h1>Characters</h1>
+        <div class="ttl-muted">Signed in as {{ username }}</div>
+      </div>
+      <a href="/">Back to Library</a>
+    </div>
+
+    <div class="ttl-char-grid">
+      <div>
+        <section class="ttl-card">
+          <h2>Your Characters</h2>
+          {% if characters %}
+            <div class="ttl-character-list">
+              {% for character in characters %}
+                <div class="ttl-character-row">
+                  <div>
+                    <a href="/characters/{{ character.character_id }}">{{ character.display_name }}</a>
+                    <div class="ttl-muted">
+                      {{ character.system_id }} · updated {{ character.updated_at or "unknown" }}
+                    </div>
+                  </div>
+                  <a href="/characters/{{ character.character_id }}">Edit</a>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="ttl-muted">No completed characters yet.</p>
+          {% endif %}
+        </section>
+
+        {% if drafts %}
+          <section class="ttl-card ttl-section-gap">
+            <h2>Creation Drafts</h2>
+            <div class="ttl-character-list">
+              {% for draft in drafts %}
+                <div class="ttl-character-row">
+                  <div>
+                    <a href="/characters/create/{{ draft.draft_id }}">{{ draft.display_name }}</a>
+                    <span class="ttl-draft-badge">Draft</span>
+                    <div class="ttl-muted">
+                      {{ draft.system_id }} · updated {{ draft.updated_at or "unknown" }}
+                    </div>
+                  </div>
+                  <a href="/characters/create/{{ draft.draft_id }}">Resume</a>
+                </div>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+      </div>
+
+      <aside class="ttl-card">
+        <h2>New Character</h2>
+        {% if packs %}
+          <form id="ttl-new-character-form" method="post" action="/characters/create/start">
+            <div class="ttl-form-row">
+              <label for="system_id">System</label>
+              <select id="system_id" name="system_id" required>
+                {% for pack in packs %}
+                  <option value="{{ pack.id }}" data-has-creation="{{ '1' if pack.has_creation else '0' }}">{{ pack.name }} ({{ pack.version }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div id="ttl-name-row" class="ttl-form-row" style="display:none;">
+              <label for="character_name">Character name</label>
+              <input id="character_name" name="character_name" maxlength="120">
+              <div class="ttl-muted">This System Pack does not define a creation workflow.</div>
+            </div>
+            <button id="ttl-create-button" type="submit" class="ttl-button">Begin Creation</button>
+          </form>
+        {% else %}
+          <p class="ttl-muted">No valid System Packs are installed.</p>
+        {% endif %}
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      const select = document.getElementById("system_id");
+      const nameRow = document.getElementById("ttl-name-row");
+      const nameInput = document.getElementById("character_name");
+      const button = document.getElementById("ttl-create-button");
+      if (!select || !nameRow || !nameInput || !button) return;
+
+      function refresh() {
+        const option = select.options[select.selectedIndex];
+        const hasCreation = option && option.dataset.hasCreation === "1";
+        nameRow.style.display = hasCreation ? "none" : "grid";
+        nameInput.required = !hasCreation;
+        button.textContent = hasCreation ? "Begin Creation" : "Create Character";
+      }
+
+      select.addEventListener("change", refresh);
+      refresh();
+    })();
+  </script>
+</body>
+</html>

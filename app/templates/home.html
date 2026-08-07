@@ -2,32 +2,17 @@
 
 {% block content %}
 <section class="panel">
-    <div class="topline">
+    <div class="topline ttl-home-title-row">
         <div>
             <div class="eyebrow">v{{ app_version }}</div>
             <h1>{{ app_name }}</h1>
         </div>
 
-        <div class="top-actions">
-            <a class="button-link secondary-button" href="/uploads">Uploads</a>
-            {% if user.role == "gm" %}
-            <a class="button-link secondary-button" href="/admin/rag">RAG Corpus</a>
-            <a class="button-link secondary-button" href="/admin/search">Search Index</a>
-            <a class="button-link secondary-button" href="/admin/users">Manage Users</a>
-            <a class="button-link secondary-button" href="/admin/library">Manage Library</a>
-            {% endif %}
-            <form method="post" action="/logout">
-                <button type="submit" class="secondary-button">Log Out</button>
-            </form>
-        </div>
+        <form method="get" action="/search" class="home-search-form ttl-home-search">
+            <input type="search" name="q" placeholder="Search library" required>
+            <button type="submit">Search</button>
+        </form>
     </div>
-
-    <p class="muted">Signed in as <strong>{{ user.username }}</strong> ({{ user.role|upper }}).</p>
-
-    <form method="get" action="/search" class="home-search-form">
-        <input type="search" name="q" placeholder="Search library" required>
-        <button type="submit">Search</button>
-    </form>
 
     <h2>Library</h2>
 

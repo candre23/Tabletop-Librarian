@@ -1,4 +1,4 @@
-# Tabletop Librarian v0.3.3
+# Tabletop Librarian v0.3.5
 
 Self-hosted tabletop RPG library, rules helper, and character resource server.
 
@@ -10,6 +10,7 @@ Self-hosted tabletop RPG library, rules helper, and character resource server.
 - Locally saved converted OpenVINO model
 - Hybrid lexical + semantic retrieval
 - Folder- and file-scoped hybrid retrieval
+- Stopword filtering, rare-term lexical reranking, and stronger exact-match scoring
 - Permission-aware retrieval for GM/player access
 
 ## Run
@@ -26,3 +27,5 @@ For first-time semantic setup:
 3. Build Embeddings from the RAG Corpus page.
 
 The first embedding build requires internet access to obtain the model.
+
+- Selectable embedding models: Fast, Balanced, and Quality

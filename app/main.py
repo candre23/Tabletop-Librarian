@@ -1,11 +1,14 @@
 from __future__ import annotations
+import asyncio
+import time
+import uuid
 
 import logging
 from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -53,7 +56,22 @@ from app.search.extract import build_text_cache, clear_text_cache, text_cache_st
 from app.search.query import search_library
 from app.rag.chunks import build_chunk_cache, chunk_cache_status, clear_chunk_cache
 from app.rag.retrieve import available_rag_scope, retrieve_chunks
-from app.rag.embeddings import build_embeddings, clear_embeddings, embedding_status
+from app.rag.embeddings import (
+    clear_embeddings,
+    embedding_build_status,
+    embedding_status,
+    model_options,
+    set_embedding_model,
+    start_embedding_build,
+)
+from app.ai.provider import (
+    chat_completion,
+    provider_settings_for_ui,
+    save_provider_settings,
+    test_provider_connection,
+)
+from app.ai.markdown_render import render_answer_markdown
+from app.ai.citations import attach_citation_excerpts
 
 logger = logging.getLogger(__name__)
 server_config = ensure_server_config()
@@ -632,6 +650,8 @@ async def admin_rag(request: Request):
             "user": user,
             "status": chunk_cache_status(),
             "embedding_status": embedding_status(),
+            "embedding_models": model_options(),
+            "ai_settings": provider_settings_for_ui(),
             "message": request.query_params.get("message"),
             "error": request.query_params.get("error"),
         },
@@ -658,6 +678,35 @@ async def admin_rag_build(request: Request):
     )
 
 
+@app.post("/admin/rag/embeddings/model")
+async def admin_rag_embeddings_model(request: Request):
+    user = current_user(request)
+
+    if not user or user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    form = await request.form()
+    model_key = str(form.get("model_key", "")).strip()
+
+    try:
+        selected = set_embedding_model(model_key)
+    except Exception as exc:
+        return RedirectResponse(
+            f"/admin/rag?error={quote(str(exc))}",
+            status_code=303,
+        )
+
+    message = (
+        f"Embedding model changed to {selected['label']}. "
+        "Build embeddings before using semantic retrieval."
+    )
+
+    return RedirectResponse(
+        f"/admin/rag?message={quote(message)}",
+        status_code=303,
+    )
+
+
 @app.post("/admin/rag/embeddings/build")
 async def admin_rag_embeddings_build(request: Request):
     user = current_user(request)
@@ -666,23 +715,30 @@ async def admin_rag_embeddings_build(request: Request):
         return RedirectResponse("/", status_code=303)
 
     try:
-        summary = build_embeddings()
+        start_embedding_build()
     except Exception as exc:
-        logger.exception("Embedding build failed")
         return RedirectResponse(
             f"/admin/rag?error={quote(str(exc))}",
             status_code=303,
         )
 
-    message = (
-        f"Embeddings built: {summary['vectors']} vectors, "
-        f"{summary['dimensions']} dimensions."
-    )
-
     return RedirectResponse(
-        f"/admin/rag?message={quote(message)}",
+        "/admin/rag?message=Embedding+build+started",
         status_code=303,
     )
+
+
+@app.get("/admin/rag/embeddings/status")
+async def admin_rag_embeddings_status(request: Request):
+    user = current_user(request)
+
+    if not user or user["role"] != "gm":
+        return JSONResponse({"error": "Unauthorized"}, status_code=403)
+
+    return JSONResponse({
+        "build": embedding_build_status(),
+        "embedding": embedding_status(),
+    })
 
 
 @app.post("/admin/rag/embeddings/clear")
@@ -711,6 +767,238 @@ async def admin_rag_clear(request: Request):
     return RedirectResponse(
         f"/admin/rag?message={quote('RAG chunk cache cleared.')}",
         status_code=303,
+    )
+
+
+@app.post("/admin/ai/save")
+async def admin_ai_save(request: Request):
+    user = current_user(request)
+    if not user or user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    form = await request.form()
+    try:
+        save_provider_settings(
+            base_url=str(form.get("base_url", "")),
+            model=str(form.get("model", "")),
+            api_key=str(form.get("api_key", "")),
+            timeout=str(form.get("timeout", "120")),
+            temperature=str(form.get("temperature", "0.2")),
+            max_tokens=str(form.get("max_tokens", "1200")),
+        )
+    except Exception as exc:
+        return RedirectResponse(f"/admin/rag?error={quote(str(exc))}", status_code=303)
+
+    return RedirectResponse(f"/admin/rag?message={quote('AI provider settings saved.')}", status_code=303)
+
+
+@app.post("/admin/ai/test")
+async def admin_ai_test(request: Request):
+    user = current_user(request)
+    if not user or user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    form = await request.form()
+    try:
+        save_provider_settings(
+            base_url=str(form.get("base_url", "")),
+            model=str(form.get("model", "")),
+            api_key=str(form.get("api_key", "")),
+            timeout=str(form.get("timeout", "120")),
+            temperature=str(form.get("temperature", "0.2")),
+            max_tokens=str(form.get("max_tokens", "1200")),
+        )
+        result = await asyncio.to_thread(test_provider_connection)
+    except Exception as exc:
+        return RedirectResponse(f"/admin/rag?error={quote(str(exc))}", status_code=303)
+
+    models = result.get("models", [])
+    message = "AI provider connected successfully."
+    if models:
+        message = "AI provider connected. Available model: " + ", ".join(models[:5])
+
+    return RedirectResponse(f"/admin/rag?message={quote(message)}", status_code=303)
+
+
+@app.get("/ask", response_class=HTMLResponse)
+async def ask_page(
+    request: Request,
+    folder: str = "",
+    embed: str = "",
+    doc: str = "",
+    split: str = "",
+):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    scope = available_rag_scope(
+        user["role"],
+        selected_folder=folder,
+        selected_documents=[],
+        selected_document_keys=[doc] if doc.strip() else [],
+    )
+    response_id = uuid.uuid4().hex
+    return templates.TemplateResponse(
+        request=request,
+        name="ask.html",
+        context={
+            "app_name": APP_NAME,
+            "app_version": APP_VERSION,
+            "user": user,
+            "question": "",
+            "answer": "",
+            "answer_html": "",
+            "answer_model": "",
+            "elapsed_seconds": None,
+            "sources": [],
+            "scope": scope,
+            "provider_configured": provider_settings_for_ui()["configured"],
+            "embed": embed == "1",
+            "split": split == "1",
+            "locked_folder": bool(folder.strip()),
+            "locked_document_key": doc.strip(),
+            "response_id": response_id,
+            "error": None,
+        },
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
+@app.post("/ask", response_class=HTMLResponse)
+async def ask_question(request: Request):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    form = await request.form()
+    question = str(form.get("question", "")).strip()
+    folder = str(form.get("folder", "")).strip()
+    embed = str(form.get("embed", "")).strip() == "1"
+    split = str(form.get("split", "")).strip() == "1"
+    locked_document_key = str(form.get("locked_document_key", "")).strip()
+    selected_document_keys = [str(value) for value in form.getlist("docs") if str(value).strip()]
+
+    if locked_document_key:
+        selected_document_keys = [locked_document_key]
+
+    scope = available_rag_scope(
+        user["role"],
+        selected_folder=folder,
+        selected_documents=[],
+        selected_document_keys=selected_document_keys,
+    )
+
+    provider_configured = provider_settings_for_ui()["configured"]
+    error = None
+    answer = ""
+    answer_html = ""
+    answer_model = ""
+    elapsed_seconds = None
+    sources = []
+
+    if not question:
+        error = "Enter a question."
+    elif not provider_configured:
+        error = "The AI provider has not been configured."
+    else:
+        document_scope = scope["selected_document_paths"] or None
+        folder_scope = scope["selected_folder"] or None
+
+        try:
+            sources = retrieve_chunks(
+                question,
+                user["role"],
+                limit=8,
+                folder_scope=folder_scope,
+                document_paths=document_scope,
+            )
+
+            if not sources:
+                raise RuntimeError("No relevant source passages were found in the selected scope.")
+
+            source_blocks = []
+            for index, source in enumerate(sources, start=1):
+                page = source.get("page")
+                page_label = f", page {page}" if page else ""
+                revision_label = (
+                    " [REVISION/UPDATE CANDIDATE]"
+                    if source.get("revision_candidate")
+                    else ""
+                )
+                source_blocks.append(
+                    f"[{index}] {source['display_name']}{page_label}{revision_label}\n"
+                    f"{source.get('context_text') or source.get('text', '').strip()}"
+                )
+
+            system_prompt = (
+                "You are Tabletop Librarian, a tabletop RPG rules and reference assistant. "
+                "Answer the user's question using only the supplied source passages. "
+                "Do not invent rules, classifications, relationships, facts, names, or interpretations "
+                "that the passages do not explicitly support. "
+                "Treat each numbered source as evidence, not as permission to extrapolate beyond its text. "
+                "For comparisons, compare only attributes explicitly stated in the sources. "
+                "Do not infer that one creature, rule, class, category, or option is stronger, more dangerous, "
+                "higher-ranked, or otherwise superior merely from a label unless the sources explicitly establish "
+                "that relationship. "
+                "If sources conflict, describe the conflict rather than silently choosing or merging them. "
+                "A source marked [REVISION/UPDATE CANDIDATE] must be checked first for explicit language that a rule is now, revised, updated, changed, replaced, or no longer used. "
+                "When that language clearly applies to the user's question, treat the revised rule as controlling and do not present the older formula as the current rule. "
+                "If one source explicitly says a rule is revised, updated, changed, replaced, or now calculated "
+                "differently, identify that as the newer rule and mention the older conflicting rule when relevant. "
+                "Adjacent passages may be included around a primary retrieved passage; use them only when they "
+                "actually support the answer. "
+                "If the evidence is insufficient to answer the question, say exactly what cannot be established. "
+                "When making factual claims, cite the supporting numbered sources using [1], [2], etc. "
+                "Do not add a mechanical explanation, causal explanation, formula, interaction, or consequence unless a supplied passage explicitly states it. "
+                "Do not combine modifiers or invent calculation procedures from separate facts unless the text explicitly tells the reader to do so. "
+                "For direct comparisons, prefer explicit comparable statistics, scores, quantities, or stated rankings over descriptive flavor text. "
+                "Do not override a clear numerical comparison with narrative adjectives unless a source explicitly states that the narrative distinction supersedes the statistic. "
+                "When the question asks for a specific rule, preparation note, procedure, or encounter fact, answer that directly and omit tangential rules even if they are related. "
+                "Prefer the shortest answer that completely answers the user's question, and omit unrelated details."
+            )
+
+            user_prompt = f"Question:\n{question}\n\nSource passages:\n\n" + "\n\n".join(source_blocks)
+            started = time.perf_counter()
+            completion = await asyncio.to_thread(
+                chat_completion,
+                [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+            )
+            elapsed_seconds = time.perf_counter() - started
+            answer = completion["content"]
+            attach_citation_excerpts(answer, sources)
+            answer_html = render_answer_markdown(answer, source_count=len(sources))
+            answer_model = completion["model"]
+        except Exception as exc:
+            error = str(exc)
+
+    response_id = uuid.uuid4().hex
+    return templates.TemplateResponse(
+        request=request,
+        name="ask.html",
+        context={
+            "app_name": APP_NAME,
+            "app_version": APP_VERSION,
+            "user": user,
+            "question": question,
+            "answer": answer,
+            "answer_html": answer_html,
+            "answer_model": answer_model,
+            "elapsed_seconds": elapsed_seconds,
+            "sources": sources,
+            "scope": scope,
+            "provider_configured": provider_configured,
+            "embed": embed,
+            "split": split,
+            "locked_folder": bool(folder.strip()) and embed,
+            "locked_document_key": locked_document_key,
+            "response_id": response_id,
+            "error": error,
+        },
+        headers={"Cache-Control": "no-store, max-age=0"},
     )
 
 
@@ -1180,3 +1468,7 @@ async def health() -> dict[str, str]:
         "application": APP_NAME,
         "version": APP_VERSION,
     }
+
+# Character editor routes (v0.4.3)
+from app.characters.web import router as characters_router
+app.include_router(characters_router)

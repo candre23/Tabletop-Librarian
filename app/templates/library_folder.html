@@ -9,7 +9,15 @@
             <div class="eyebrow">Library</div>
             <h1>{{ folder.name }}</h1>
         </div>
-        <a class="button-link secondary-button" href="/">Back</a>
+        <div class="top-actions">
+            <button
+                type="button"
+                class="secondary-button"
+                id="ask-folder-button"
+                data-folder="{{ folder.name }}"
+            >Ask this folder</button>
+            <a class="button-link secondary-button" href="/">Back</a>
+        </div>
     </div>
 
     {% if scan.missing_sources and user.role == "gm" %}
@@ -43,4 +51,51 @@
     <div class="empty-state">No visible supported documents were found in this folder.</div>
     {% endif %}
 </section>
+
+<dialog class="ask-folder-dialog" id="ask-folder-dialog">
+    <div class="ask-folder-dialog-shell">
+        <div class="ask-folder-dialog-topline">
+            <strong>Ask {{ folder.name }}</strong>
+            <button
+                type="button"
+                class="secondary-button ask-folder-close"
+                id="ask-folder-close"
+            >Close</button>
+        </div>
+        <iframe
+            id="ask-folder-frame"
+            class="ask-folder-frame"
+            title="Ask {{ folder.name }}"
+            loading="lazy"
+        ></iframe>
+    </div>
+</dialog>
+
+<script>
+(() => {
+    const openButton = document.getElementById("ask-folder-button");
+    const dialog = document.getElementById("ask-folder-dialog");
+    const closeButton = document.getElementById("ask-folder-close");
+    const frame = document.getElementById("ask-folder-frame");
+
+    if (!openButton || !dialog || !closeButton || !frame) return;
+
+    let loaded = false;
+
+    openButton.addEventListener("click", () => {
+        if (!loaded) {
+            const folder = encodeURIComponent(openButton.dataset.folder || "");
+            frame.src = "/ask?embed=1&folder=" + folder;
+            loaded = true;
+        }
+        dialog.showModal();
+    });
+
+    closeButton.addEventListener("click", () => dialog.close());
+
+    dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) dialog.close();
+    });
+})();
+</script>
 {% endblock %}

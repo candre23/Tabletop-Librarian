@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel">
+    <div class="topline">
+        <div>
+            <div class="eyebrow">v{{ app_version }}</div>
+            <h1>{{ app_name }}</h1>
+        </div>
+    </div>
+
+    <p class="muted">Signed in as <strong>{{ user.username }}</strong> ({{ user.role|upper }}).</p>
+
+    <form method="get" action="/search" class="home-search-form">
+        <input type="search" name="q" placeholder="Search library" required>
+        <button type="submit">Search</button>
+    </form>
+
+    <h2>Library</h2>
+
+    {% if folders %}
+    <div class="folder-grid">
+        {% for folder in folders %}
+        <a class="folder-card" href="/library/{{ folder.name|urlencode }}">
+            {% if folder.cover_key %}
+            <img
+                class="cover-image"
+                src="/cover/{{ folder.name|urlencode }}/{{ folder.cover_key }}"
+                alt=""
+                loading="lazy"
+            >
+            {% else %}
+            <div class="folder-art">TL</div>
+            {% endif %}
+            <div class="folder-name">{{ folder.name }}</div>
+            {% if folder.visibility == "gm" %}
+            <div class="folder-meta">GM only by default</div>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        No library folders are available.
+        {% if user.role == "gm" %}
+        <a href="/admin/library">Create one.</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
