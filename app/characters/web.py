@@ -11,6 +11,12 @@ from fastapi.templating import Jinja2Templates
 
 from app.characters.schema import default_collection_item, load_character_schema, validate_character_data
 from app.characters.layout import complete_character_layout, load_character_layout
+from app.characters.temporary_effects import (
+    SUPPORTED_OPERATIONS,
+    build_effective_character_values,
+    normalize_temporary_effects,
+    temporary_influence_map,
+)
 from app.compendium import load_compendium
 from app.creation import (
     DraftStorageError,
@@ -156,7 +162,13 @@ def _available_advancement_actions(pack, schema, data):
         if action.available_when:
             try: available=bool(engine.evaluate_expression(action.available_when,data))
             except Exception: available=False
-        rows.append({"id":action.id,"title":action.title,"description":action.description,"available":available})
+        rows.append({
+            "id": action.id,
+            "title": action.title,
+            "description": action.description,
+            "available": available,
+            "changed_fields": list(action.changes),
+        })
     return rows
 
 def _coerce_form_value(field, form: dict[str, Any]) -> Any:
@@ -174,6 +186,17 @@ def _coerce_form_value(field, form: dict[str, Any]) -> Any:
         if isinstance(raw_multi, list):
             return [str(item) for item in raw_multi if str(item)]
         return [str(raw_multi)]
+
+    if field.type == "resource":
+        current_raw = form.get(f"{key}__current")
+        max_raw = form.get(f"{key}__max")
+        current = None if current_raw in (None, "") else float(current_raw)
+        maximum = None if max_raw in (None, "") else float(max_raw)
+        if current is not None and current.is_integer():
+            current = int(current)
+        if maximum is not None and maximum.is_integer():
+            maximum = int(maximum)
+        return {"current": current, "max": maximum}
 
     if field.type == "collection":
         raw_collection = form.get(key)
@@ -231,6 +254,20 @@ def _coerce_json_value(field, raw: Any) -> Any:
         return float(raw)
     if field.type == "enum":
         return raw
+    if field.type == "resource":
+        if raw in (None, ""):
+            return {"current": None, "max": None}
+        if not isinstance(raw, dict):
+            raise ValueError("Resource value must be an object.")
+        result = {}
+        for key in ("current", "max"):
+            value = raw.get(key)
+            if value in (None, ""):
+                result[key] = None
+            else:
+                number = float(value)
+                result[key] = int(number) if number.is_integer() else number
+        return result
     if field.type == "collection":
         if raw in (None, ""):
             return []
@@ -314,6 +351,7 @@ def _editable_field(field) -> bool:
         "reference",
         "multi_reference",
         "collection",
+        "resource",
     }
 
 
@@ -333,6 +371,98 @@ def _load_creation(system_id: str):
             detail=f"System Pack creation workflow is invalid: {detail}",
         )
     return pack, schema, workflow
+
+
+def _temporary_modifiable_fields(schema, data):
+    result = {}
+    for field_id, field in schema.fields.items():
+        value = data.get(field_id)
+        if field.type not in {"integer", "decimal", "calculated"}:
+            continue
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            continue
+        result[field_id] = {
+            "label": field.label,
+            "base": value,
+        }
+    return result
+
+
+def _temporary_effect_state(pack, schema, record):
+    effects = normalize_temporary_effects(record.temporary_effects)
+    base_values = dict(record.data)
+
+    engine = None
+    modifiers = None
+
+    if pack.manifest and pack.manifest.rules:
+        engine, load_issues = load_rule_engine(
+            pack.root / pack.manifest.rules,
+            known_fields=set(schema.fields),
+        )
+        if engine is None:
+            detail = "; ".join(issue.format() for issue in load_issues)
+            raise CharacterStorageError(
+                f"System rules are invalid. {detail}"
+            )
+
+        # Compendium conditional effects must also see temporary changes to
+        # base fields such as level. Build a temporary-adjusted input copy
+        # solely for resolving those effects.
+        adjusted_inputs = build_effective_character_values(
+            data=base_values,
+            effects=effects,
+            engine=None,
+        )
+        compendium = _load_compendium_for_pack(pack)
+        modifiers = resolve_compendium_modifiers(
+            schema,
+            compendium,
+            adjusted_inputs,
+            engine,
+        )
+
+    effective_values = build_effective_character_values(
+        data=base_values,
+        effects=effects,
+        engine=engine,
+        modifiers=modifiers,
+    )
+    influences = temporary_influence_map(
+        effects=effects,
+        engine=engine,
+    )
+
+    modified_fields = {
+        field_id
+        for field_id, effective in effective_values.items()
+        if field_id in base_values
+        and isinstance(effective, (int, float))
+        and not isinstance(effective, bool)
+        and effective != base_values.get(field_id)
+    }
+
+    # A changed compendium conditional may alter a calculated field without a
+    # direct formula dependency on the temporarily modified source. In that
+    # case, surface all active temporary sources as possible influences rather
+    # than hiding the warning.
+    active_sources = sorted(effects)
+    for field_id in modified_fields:
+        if field_id not in influences and active_sources:
+            influences[field_id] = active_sources
+
+    labels = {
+        field_id: field.label
+        for field_id, field in schema.fields.items()
+    }
+
+    return {
+        "effects": effects,
+        "effective_values": effective_values,
+        "modified_fields": modified_fields,
+        "influences": influences,
+        "labels": labels,
+    }
 
 
 def _load_character_layout_for_pack(pack, schema):
@@ -612,6 +742,10 @@ def _display_field_value(field, value, reference_options) -> str:
         values = value if isinstance(value, list) else []
         names = [options.get(str(item), str(item)) for item in values]
         return ", ".join(names) if names else "None"
+    if field.type == "resource":
+        if not isinstance(value, dict):
+            return "0 / 0"
+        return f"{value.get('current', 0)} / {value.get('max', 0)}"
     if field.type == "collection":
         rows = value if isinstance(value, list) else []
         if not rows:
@@ -633,6 +767,7 @@ def _render_character_edit_page(
     error: str | None = None,
     status_code: int = 200,
     unlocked_field: str | None = None,
+    mode: str = "play",
 ):
     compendium = _load_compendium_for_pack(pack)
     reference_options = _reference_options(schema, compendium)
@@ -640,6 +775,7 @@ def _render_character_edit_page(
         schema,
         compendium,
     )
+    temp_state = _temporary_effect_state(pack, schema, record)
     character_layout = _load_character_layout_for_pack(pack, schema)
     core_fields = _core_fields_for_pack(pack, schema)
     return templates.TemplateResponse(
@@ -661,6 +797,16 @@ def _render_character_edit_page(
             "display_field_value": _display_field_value,
             "error": error,
             "advancement_actions": _available_advancement_actions(pack, schema, record.data),
+            "mode": mode if mode in {"play", "configure"} else "play",
+            "temporary_effects": temp_state["effects"],
+            "temporary_effective_values": temp_state["effective_values"],
+            "temporary_modified_fields": temp_state["modified_fields"],
+            "temporary_influences": temp_state["influences"],
+            "temporary_field_labels": temp_state["labels"],
+            "temporary_modifiable_fields": _temporary_modifiable_fields(
+                schema,
+                record.data,
+            ),
         },
         status_code=status_code,
     )
@@ -827,13 +973,22 @@ async def character_creation_evaluate(request: Request, draft_id: str):
         step.fields,
     )
 
+    # Live evaluation should report rule/eligibility/limit problems, but an
+    # untouched required field is normal while the user is still filling out
+    # the step. Required-field enforcement remains authoritative on Next/Save.
+    live_schema_issues = [
+        issue
+        for issue in schema_issues
+        if issue.message != "Required field is missing."
+    ]
+
     issues = [
         {
             "severity": issue.severity,
             "message": issue.message,
             "field": issue.field,
         }
-        for issue in schema_issues
+        for issue in live_schema_issues
     ]
     issues.extend(
         {"severity": "error", "message": message}
@@ -1194,6 +1349,7 @@ async def character_edit(request: Request, character_id: str):
         pack=pack,
         schema=schema,
         unlocked_field=request.query_params.get("unlock_field"),
+        mode=request.query_params.get("mode") or "play",
     )
 
 
@@ -1292,6 +1448,92 @@ async def character_evaluate(request: Request, character_id: str):
     }
 
 
+@router.post("/characters/{character_id}/temporary-effects")
+async def character_temporary_effects(request: Request, character_id: str):
+    username, _role = _identity_from_request(request)
+
+    try:
+        record = load_character(
+            username,
+            character_id,
+            character_root=CHARACTER_ROOT,
+            pack_root=PACK_ROOT,
+        )
+    except CharacterStorageError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    _pack, schema = _load_pack_schema(record.system_id)
+    allowed = _temporary_modifiable_fields(schema, record.data)
+
+    form = await request.form()
+    field_id = str(form.get("field_id") or "").strip()
+    if field_id not in allowed:
+        raise HTTPException(
+            status_code=400,
+            detail="This field does not support temporary modifiers.",
+        )
+
+    action = str(form.get("action") or "add").strip().lower()
+    effects = normalize_temporary_effects(record.temporary_effects)
+    rows = list(effects.get(field_id, []))
+
+    if action == "add":
+        label = str(form.get("label") or "Temporary effect").strip()
+        operation = str(form.get("operation") or "add").strip().lower()
+        if operation not in SUPPORTED_OPERATIONS:
+            raise HTTPException(status_code=400, detail="Invalid modifier operation.")
+
+        try:
+            value = float(str(form.get("value")))
+        except (TypeError, ValueError):
+            raise HTTPException(
+                status_code=400,
+                detail="Temporary modifier value must be numeric.",
+            )
+
+        rows.append(
+            {
+                "label": label or "Temporary effect",
+                "operation": operation,
+                "value": int(value) if value.is_integer() else value,
+                "duration": str(form.get("duration") or "").strip(),
+            }
+        )
+
+    elif action == "remove":
+        try:
+            index = int(str(form.get("index")))
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="Invalid modifier index.")
+
+        if index < 0 or index >= len(rows):
+            raise HTTPException(status_code=400, detail="Modifier index out of range.")
+        rows.pop(index)
+
+    elif action == "clear":
+        rows = []
+
+    else:
+        raise HTTPException(status_code=400, detail="Unknown modifier action.")
+
+    if rows:
+        effects[field_id] = rows
+    else:
+        effects.pop(field_id, None)
+
+    record.temporary_effects = effects
+    save_character(
+        record,
+        character_root=CHARACTER_ROOT,
+        pack_root=PACK_ROOT,
+    )
+
+    return RedirectResponse(
+        url=f"/characters/{character_id}",
+        status_code=303,
+    )
+
+
 @router.post("/characters/{character_id}/save")
 async def character_save(request: Request, character_id: str):
     username, role = _identity_from_request(request)
@@ -1308,13 +1550,18 @@ async def character_save(request: Request, character_id: str):
 
     pack, schema = _load_pack_schema(record.system_id)
     form_data = await request.form()
+    mode = str(form_data.get("mode") or "play")
+    if mode not in {"play", "configure"}:
+        mode = "play"
     unlocked_field = str(form_data.get("unlocked_field") or "").strip() or None
     core_fields = _core_fields_for_pack(pack, schema)
 
     for field_id, field in schema.fields.items():
         if not _editable_field(field):
             continue
-        if field_id in core_fields and field_id != unlocked_field:
+        if mode == "play" and not field.play_editable:
+            continue
+        if mode == "configure" and field_id in core_fields and field_id != unlocked_field:
             continue
         try:
             record.data[field_id] = _coerce_form_value(field, form_data)
@@ -1322,8 +1569,13 @@ async def character_save(request: Request, character_id: str):
             return _render_character_edit_page(
                 request, username=username, role=role, record=record, pack=pack,
                 schema=schema, error=f"Invalid value for {field.label}.",
-                status_code=400, unlocked_field=unlocked_field,
+                status_code=400, unlocked_field=unlocked_field, mode=mode,
             )
+
+    if mode == "configure" and "name" in schema.fields:
+        submitted_name = form_data.get("field__name")
+        if submitted_name is not None:
+            record.data["name"] = str(submitted_name).strip()
 
     try:
         save_character(
@@ -1335,11 +1587,14 @@ async def character_save(request: Request, character_id: str):
         return _render_character_edit_page(
             request, username=username, role=role, record=record, pack=pack,
             schema=schema, error=str(exc), status_code=400,
-            unlocked_field=unlocked_field,
+            unlocked_field=unlocked_field, mode=mode,
         )
 
+    if request.headers.get("X-TTL-Autosave") == "1":
+        return JSONResponse({"saved": True})
+
     return RedirectResponse(
-        url=f"/characters/{character_id}?saved=1",
+        url=f"/characters/{character_id}?saved=1&mode={mode}",
         status_code=303,
     )
 

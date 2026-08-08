@@ -2458,3 +2458,1434 @@ body > .shell > .panel .top-actions button {
 
 /* v0.4.18 advancement */
 .ttl-advancement-buttons{display:grid;gap:10px;margin-top:10px}.ttl-advancement-buttons form{display:flex;align-items:center;gap:12px}.ttl-advancement-buttons .ttl-muted{flex:1}
+
+/* ========================================================================== 
+   v0.4.19 dense character-sheet visual foundation
+   Character-facing pages deliberately use a document/sheet visual language
+   rather than the roomy dark-card language used by the rest of TTL.
+   ========================================================================== */
+
+.ttl-character-ui {
+    --sheet-ink: #162028;
+    --sheet-muted: #52616c;
+    --sheet-paper: #f7f8f8;
+    --sheet-field: #ffffff;
+    --sheet-line: #283943;
+    --sheet-line-soft: #9aa7ae;
+    --sheet-bg: #cbd2d6;
+    --sheet-blue: #1f5f88;
+    --sheet-blue-tint: #e8f2f8;
+    --sheet-teal: #26766f;
+    --sheet-teal-tint: #e7f4f1;
+    --sheet-amber: #94641f;
+    --sheet-amber-tint: #fbf2df;
+    --sheet-plum: #6a4f82;
+    --sheet-plum-tint: #f1ebf6;
+    --sheet-red: #8a4545;
+    --sheet-red-tint: #f8eaea;
+    --sheet-green: #507329;
+    --sheet-green-tint: #eef5e7;
+    color-scheme: light;
+    margin: 0;
+    min-height: 100vh;
+    background: var(--sheet-bg);
+    color: var(--sheet-ink);
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    line-height: 1.22;
+}
+
+.ttl-character-ui a {
+    color: #174f74;
+    font-weight: 700;
+}
+
+.ttl-character-ui h1,
+.ttl-character-ui h2,
+.ttl-character-ui h3,
+.ttl-character-ui p {
+    color: inherit;
+}
+
+/* Compact global navigation while a character workflow is active. */
+.ttl-character-ui .ttl-global-nav {
+    min-height: 34px;
+    background: #17242c;
+    border-bottom: 2px solid #4e93b8;
+    box-shadow: none;
+}
+
+.ttl-character-ui .ttl-global-nav-inner {
+    width: 100%;
+    max-width: none;
+    min-height: 34px;
+    padding: 0 10px;
+    gap: 10px;
+}
+
+.ttl-character-ui .ttl-global-nav-brand {
+    font-size: 14px;
+    letter-spacing: .08em;
+    padding: 0;
+}
+
+.ttl-character-ui .ttl-global-nav-links {
+    gap: 2px;
+}
+
+.ttl-character-ui .ttl-global-nav-links a,
+.ttl-character-ui .ttl-global-nav-account button {
+    min-height: 26px;
+    padding: 4px 8px;
+    border-radius: 2px;
+    font-size: 11px;
+    line-height: 1;
+}
+
+.ttl-character-ui .ttl-global-nav-links a {
+    color: #edf4f7;
+}
+
+.ttl-character-ui .ttl-global-nav-account {
+    gap: 7px;
+}
+
+.ttl-character-ui .ttl-global-nav-user {
+    color: #d6e1e6;
+    font-size: 11px;
+}
+
+.ttl-character-ui .ttl-global-nav-account button {
+    border: 1px solid #8397a2;
+    background: #263944;
+    color: #fff;
+}
+
+/* Character page canvases use nearly all available desktop width. */
+.ttl-character-ui .ttl-char-wrap,
+.ttl-character-ui .ttl-create-wrap {
+    width: calc(100% - 16px);
+    max-width: 1680px;
+    margin: 0 auto;
+    padding: 8px 0 22px;
+}
+
+.ttl-character-ui .ttl-char-head,
+.ttl-character-ui .ttl-create-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+    margin: 0 0 6px;
+    padding: 5px 8px 6px;
+    border: 1px solid #243640;
+    border-left: 5px solid var(--sheet-blue);
+    background: #f9fbfc;
+}
+
+.ttl-character-ui .ttl-char-head h1,
+.ttl-character-ui .ttl-create-head h1 {
+    margin: 0;
+    color: #15242c;
+    font-size: 19px;
+    line-height: 1.05;
+    letter-spacing: .01em;
+}
+
+.ttl-character-ui .ttl-char-head > a,
+.ttl-character-ui .ttl-create-head > a {
+    white-space: nowrap;
+    font-size: 11px;
+}
+
+.ttl-character-ui .ttl-muted {
+    color: var(--sheet-muted);
+    opacity: 1;
+    font-size: 10.5px;
+}
+
+/* Generic cards become square, compact sheet blocks. */
+.ttl-character-ui .ttl-card {
+    border: 1px solid #40515b;
+    border-radius: 2px;
+    padding: 7px;
+    background: var(--sheet-paper);
+    box-shadow: none;
+}
+
+.ttl-character-ui .ttl-card h2 {
+    margin: -7px -7px 6px;
+    padding: 4px 7px;
+    background: #223640;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.1;
+    text-transform: uppercase;
+    letter-spacing: .055em;
+}
+
+/* Main editable sheet. */
+.ttl-character-ui .ttl-sheet-layout {
+    display: grid;
+    gap: 4px;
+}
+
+.ttl-character-ui .ttl-sheet-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin: 0;
+    padding: 0 0 3px;
+    border-bottom: 2px solid #263a45;
+}
+
+.ttl-character-ui .ttl-sheet-tab {
+    min-height: 24px;
+    border: 1px solid #52646f;
+    border-bottom: 0;
+    border-radius: 2px 2px 0 0;
+    padding: 4px 10px;
+    background: #e1e6e9;
+    color: #253740;
+    font-size: 10.5px;
+    font-weight: 800;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.ttl-character-ui .ttl-sheet-tab:hover {
+    background: #f6f8f9;
+}
+
+.ttl-character-ui .ttl-sheet-tab.is-active {
+    background: #263a45;
+    color: #fff;
+}
+
+.ttl-character-ui .ttl-sheet-tab-panel {
+    display: none;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.ttl-character-ui .ttl-sheet-tab-panel.is-active {
+    display: grid;
+}
+
+/* Until v0.4.20 provides explicit page-region spans, generic sections fill
+   the available row. Dense fields inside them still use their declared grid. */
+.ttl-character-ui .ttl-sheet-section {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--sheet-blue);
+    border-radius: 1px;
+    background: var(--sheet-blue-tint);
+}
+
+.ttl-character-ui .ttl-sheet-section-heading {
+    min-height: 23px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0;
+    padding: 3px 6px;
+    background: var(--sheet-blue);
+    color: #fff;
+}
+
+.ttl-character-ui .ttl-sheet-section-heading h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 11.5px;
+    line-height: 1;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .055em;
+}
+
+.ttl-character-ui .ttl-sheet-section-heading p {
+    margin: 0;
+    color: #f2f7fa;
+    font-size: 9.5px;
+}
+
+/* Automatic alternating section colors provide delineation without gaps. */
+.ttl-character-ui .ttl-sheet-tab-panel > .ttl-sheet-section:nth-child(6n + 2) {
+    border-color: var(--sheet-teal);
+    background: var(--sheet-teal-tint);
+}
+.ttl-character-ui .ttl-sheet-tab-panel > .ttl-sheet-section:nth-child(6n + 2) .ttl-sheet-section-heading { background: var(--sheet-teal); }
+.ttl-character-ui .ttl-sheet-tab-panel > .ttl-sheet-section:nth-child(6n + 3) {
+    border-color: var(--sheet-amber);
+    background: var(--sheet-amber-tint);
+}
+.ttl-character-ui .ttl-sheet-tab-panel > .ttl-sheet-section:nth-child(6n + 3) .ttl-sheet-section-heading { background: var(--sheet-amber); }
+.ttl-character-ui .ttl-sheet-tab-panel > .ttl-sheet-section:nth-child(6n + 4) {
+    border-color: var(--sheet-plum);
+    background: var(--sheet-plum-tint);
+}
+.ttl-character-ui .ttl-sheet-tab-panel > .ttl-sheet-section:nth-child(6n + 4) .ttl-sheet-section-heading { background: var(--sheet-plum); }
+.ttl-character-ui .ttl-sheet-tab-panel > .ttl-sheet-section:nth-child(6n + 5) {
+    border-color: var(--sheet-red);
+    background: var(--sheet-red-tint);
+}
+.ttl-character-ui .ttl-sheet-tab-panel > .ttl-sheet-section:nth-child(6n + 5) .ttl-sheet-section-heading { background: var(--sheet-red); }
+.ttl-character-ui .ttl-sheet-tab-panel > .ttl-sheet-section:nth-child(6n + 6) {
+    border-color: var(--sheet-green);
+    background: var(--sheet-green-tint);
+}
+.ttl-character-ui .ttl-sheet-tab-panel > .ttl-sheet-section:nth-child(6n + 6) .ttl-sheet-section-heading { background: var(--sheet-green); }
+
+.ttl-character-ui .ttl-field-grid {
+    display: grid;
+    gap: 3px 5px;
+    padding: 5px;
+}
+
+.ttl-character-ui .ttl-field-grid.ttl-layout-columns-1 { grid-template-columns: 1fr; }
+.ttl-character-ui .ttl-field-grid.ttl-layout-columns-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ttl-character-ui .ttl-field-grid.ttl-layout-columns-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ttl-character-ui .ttl-field-grid.ttl-layout-columns-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.ttl-character-ui .ttl-field {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+    align-content: start;
+}
+
+.ttl-character-ui .ttl-field-wide {
+    grid-column: 1 / -1;
+}
+
+.ttl-character-ui .ttl-field > label,
+.ttl-character-ui .ttl-lockable-label label,
+.ttl-character-ui .ttl-field-label-row label,
+.ttl-character-ui .ttl-collection-cell label {
+    margin: 0;
+    color: #273841;
+    font-size: 9.5px;
+    line-height: 1.05;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .025em;
+}
+
+.ttl-character-ui .ttl-lockable-label,
+.ttl-character-ui .ttl-field-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+.ttl-character-ui .ttl-field input:not([type="checkbox"]),
+.ttl-character-ui .ttl-field select,
+.ttl-character-ui .ttl-field textarea,
+.ttl-character-ui .ttl-collection-cell input:not([type="checkbox"]),
+.ttl-character-ui .ttl-collection-cell select,
+.ttl-character-ui .ttl-collection-cell textarea,
+.ttl-character-ui .ttl-picker-controls input,
+.ttl-character-ui .ttl-picker-controls select,
+.ttl-character-ui .ttl-form-row input,
+.ttl-character-ui .ttl-form-row select {
+    width: 100%;
+    min-height: 25px;
+    box-sizing: border-box;
+    border: 1px solid #6c7b83;
+    border-radius: 1px;
+    padding: 3px 5px;
+    background: var(--sheet-field);
+    color: var(--sheet-ink);
+    font: inherit;
+    font-size: 12px;
+    outline: none;
+}
+
+.ttl-character-ui .ttl-field input:focus,
+.ttl-character-ui .ttl-field select:focus,
+.ttl-character-ui .ttl-field textarea:focus,
+.ttl-character-ui .ttl-collection-cell input:focus,
+.ttl-character-ui .ttl-collection-cell select:focus,
+.ttl-character-ui .ttl-collection-cell textarea:focus {
+    border-color: #0e648f;
+    box-shadow: 0 0 0 1px #0e648f;
+}
+
+.ttl-character-ui .ttl-field textarea {
+    min-height: 58px;
+    resize: vertical;
+}
+
+.ttl-character-ui input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 2px 0;
+    accent-color: var(--sheet-blue);
+}
+
+.ttl-character-ui .ttl-readonly,
+.ttl-character-ui .ttl-core-readonly {
+    min-height: 25px;
+    border: 1px solid #89979e;
+    border-radius: 1px;
+    padding: 4px 5px;
+    background: #e2e7ea;
+    color: #1e3039;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.ttl-character-ui .ttl-derived-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 3px;
+    margin-top: 4px;
+}
+
+.ttl-character-ui .ttl-derived,
+.ttl-character-ui .ttl-derived-item {
+    margin-top: 5px;
+}
+
+.ttl-character-ui .ttl-derived-item {
+    min-width: 0;
+    border: 1px solid #70818a;
+    border-radius: 1px;
+    padding: 4px 5px;
+    background: #e9eef0;
+}
+
+.ttl-character-ui .ttl-derived-value {
+    margin-top: 1px;
+    color: #132a36;
+    font-size: 14px;
+    line-height: 1;
+    font-weight: 900;
+}
+
+/* Small, information-dense controls. */
+.ttl-character-ui button,
+.ttl-character-ui .ttl-button,
+.ttl-character-ui .button-link,
+.ttl-character-ui .secondary-button {
+    min-height: 25px;
+    border: 1px solid #3e535f;
+    border-radius: 2px;
+    padding: 4px 8px;
+    background: #e6ebed;
+    color: #1a2c35;
+    font-size: 10.5px;
+    line-height: 1.05;
+    font-weight: 800;
+    box-shadow: none;
+}
+
+.ttl-character-ui button:hover,
+.ttl-character-ui .ttl-button:hover,
+.ttl-character-ui .button-link:hover,
+.ttl-character-ui .secondary-button:hover {
+    filter: none;
+    background: #f8fafb;
+}
+
+.ttl-character-ui button[type="submit"] {
+    background: #254e66;
+    border-color: #17384a;
+    color: #fff;
+}
+
+.ttl-character-ui button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.ttl-character-ui .ttl-lock-icon,
+.ttl-character-ui .ttl-calc-info {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    padding: 0;
+    border-radius: 2px;
+    font-size: 10px;
+    line-height: 16px;
+}
+
+.ttl-character-ui .ttl-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding-top: 5px;
+    border-top: 1px solid #788991;
+}
+
+.ttl-character-ui .ttl-actions-left,
+.ttl-character-ui .ttl-actions-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Progress becomes a thin workflow strip rather than large cards. */
+.ttl-character-ui .ttl-progress {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin: 0 0 5px;
+}
+
+.ttl-character-ui .ttl-progress-step {
+    flex: 1 1 110px;
+    min-width: 0;
+    border: 1px solid #7b898f;
+    border-radius: 1px;
+    padding: 3px 5px;
+    background: #e5eaec;
+    color: #52616a;
+    text-align: center;
+    font-size: 9.5px;
+    line-height: 1.05;
+}
+
+.ttl-character-ui .ttl-progress-step.is-current {
+    border-color: #1e5675;
+    background: #1f5f88;
+    color: #fff;
+    font-weight: 900;
+}
+
+.ttl-character-ui .ttl-progress-step.is-done {
+    border-color: #3d766f;
+    background: #d8ece8;
+    color: #204e49;
+    font-weight: 700;
+}
+
+.ttl-character-ui .ttl-step-head {
+    margin: -1px -1px 5px;
+    padding: 5px 7px;
+    border-bottom: 2px solid #294653;
+    background: #eef2f4;
+}
+
+.ttl-character-ui .ttl-step-head h2 {
+    margin: 1px 0 0;
+    color: #162d38;
+    font-size: 14px;
+    line-height: 1.05;
+}
+
+/* Alerts/rule panel consume very little vertical space. */
+.ttl-character-ui .ttl-saved,
+.ttl-character-ui .ttl-error,
+.ttl-character-ui #ttl-rule-panel {
+    margin: 0 0 5px !important;
+    border-radius: 1px;
+    padding: 5px 7px;
+    font-size: 10.5px;
+}
+
+.ttl-character-ui .ttl-saved {
+    border: 1px solid #4f7a57;
+    background: #e1f0e3;
+    color: #214a29;
+}
+
+.ttl-character-ui .ttl-error {
+    border: 1px solid #9a4d4d;
+    background: #f7e4e4;
+    color: #6f2020;
+}
+
+.ttl-character-ui #ttl-rule-panel {
+    border-color: #a16f25;
+    background: #fff4dc;
+    color: #50320b;
+}
+
+.ttl-character-ui #ttl-rule-panel ul {
+    margin: 3px 0 0;
+    padding-left: 18px;
+}
+
+/* Advancement actions tuck into a compact command strip. */
+.ttl-character-ui .ttl-advancement-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px !important;
+}
+
+.ttl-character-ui .ttl-advancement-actions > strong {
+    color: #243945;
+    font-size: 10px;
+    text-transform: uppercase;
+}
+
+.ttl-character-ui .ttl-advancement-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.ttl-character-ui .ttl-advancement-buttons form {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0;
+}
+
+.ttl-character-ui .ttl-advancement-buttons .ttl-muted {
+    display: none;
+}
+
+/* Structured collections are compact rows, preparing for the formal table
+   renderer in v0.4.20. */
+.ttl-character-ui .ttl-structured-collection,
+.ttl-character-ui .ttl-collection-rows {
+    gap: 2px;
+}
+
+.ttl-character-ui .ttl-collection-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px;
+    padding: 3px;
+    border: 1px solid #7e8c93;
+    border-radius: 1px;
+    background: #fff;
+}
+
+.ttl-character-ui .ttl-collection-row:nth-child(even) {
+    background: #edf1f3;
+}
+
+.ttl-character-ui .ttl-collection-row-fields {
+    grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+    gap: 3px;
+}
+
+.ttl-character-ui .ttl-collection-cell {
+    gap: 1px;
+}
+
+.ttl-character-ui .ttl-collection-cell textarea {
+    min-height: 38px;
+}
+
+.ttl-character-ui .ttl-collection-row-actions {
+    gap: 2px;
+}
+
+.ttl-character-ui .ttl-row-button {
+    min-height: 23px;
+    padding: 2px 5px;
+    font-size: 9px;
+}
+
+.ttl-character-ui .ttl-collection-add {
+    margin-top: 2px;
+}
+
+/* Picker stays spacious enough to search, but adopts the sheet palette. */
+.ttl-character-ui .ttl-picker-selected {
+    min-height: 23px;
+    gap: 3px;
+}
+
+.ttl-character-ui .ttl-picker-empty {
+    color: #687780;
+    font-size: 10px;
+}
+
+.ttl-character-ui .ttl-picker-chip {
+    gap: 3px;
+    border: 1px solid #5d747f;
+    border-radius: 2px;
+    background: #e7eef2;
+    color: #172a34;
+    padding: 2px 4px 2px 6px;
+    font-size: 10px;
+}
+
+.ttl-character-ui .ttl-picker-chip-ineligible {
+    border-color: #9a5454;
+    background: #f5dfdf;
+}
+
+.ttl-character-ui .ttl-picker-chip-remove {
+    color: #52646d;
+    font-size: 12px;
+}
+
+.ttl-character-ui .ttl-picker-dialog {
+    width: min(760px, calc(100vw - 24px));
+    border: 2px solid #263d49;
+    border-radius: 2px;
+    background: #f4f6f7;
+    color: #162028;
+}
+
+.ttl-character-ui .ttl-picker-dialog::backdrop {
+    background: rgba(10,20,26,.72);
+}
+
+.ttl-character-ui .ttl-picker-dialog-card {
+    gap: 6px;
+    padding: 8px;
+}
+
+.ttl-character-ui .ttl-picker-dialog-head {
+    margin: -8px -8px 0;
+    padding: 5px 7px;
+    background: #263d49;
+    color: #fff;
+}
+
+.ttl-character-ui .ttl-picker-controls {
+    grid-template-columns: minmax(0, 1fr) 180px;
+    gap: 4px;
+}
+
+.ttl-character-ui .ttl-picker-results {
+    gap: 2px;
+    max-height: 560px;
+}
+
+.ttl-character-ui .ttl-picker-result {
+    border: 1px solid #87969e;
+    border-radius: 1px;
+    background: #fff;
+    color: #162028;
+    padding: 5px 6px;
+}
+
+.ttl-character-ui .ttl-picker-result:nth-child(even) {
+    background: #edf1f3;
+}
+
+.ttl-character-ui .ttl-picker-result:hover:not(:disabled),
+.ttl-character-ui .ttl-picker-result.is-selected {
+    border-color: #1f668c;
+    background: #dcecf5;
+}
+
+.ttl-character-ui .ttl-picker-description {
+    color: #4c5d66;
+    font-size: 10px;
+}
+
+.ttl-character-ui .ttl-picker-tags,
+.ttl-character-ui .ttl-picker-ineligible-reason {
+    font-size: 9px;
+}
+
+/* Character-list page follows the same dense visual language. */
+.ttl-character-ui .ttl-char-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(250px, 330px);
+    gap: 5px;
+}
+
+.ttl-character-ui .ttl-character-list {
+    display: grid;
+    gap: 2px;
+}
+
+.ttl-character-ui .ttl-character-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    border: 1px solid #89979e;
+    border-radius: 1px;
+    padding: 4px 6px;
+    background: #fff;
+}
+
+.ttl-character-ui .ttl-character-row:nth-child(even) {
+    background: #edf1f3;
+}
+
+.ttl-character-ui .ttl-character-row a {
+    font-weight: 800;
+}
+
+.ttl-character-ui .ttl-draft-badge {
+    margin-left: 4px;
+    border: 1px solid #617985;
+    border-radius: 2px;
+    padding: 1px 4px;
+    background: #e7eef2;
+    font-size: 9px;
+}
+
+.ttl-character-ui .ttl-section-gap {
+    margin-top: 5px;
+}
+
+.ttl-character-ui .ttl-form-row {
+    display: grid;
+    gap: 2px;
+    margin-bottom: 6px;
+}
+
+.ttl-character-ui .ttl-form-row label {
+    color: #2b3c45;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+    .ttl-character-ui .ttl-derived-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .ttl-character-ui .ttl-field-grid.ttl-layout-columns-4,
+    .ttl-character-ui .ttl-field-grid.ttl-layout-columns-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .ttl-character-ui .ttl-char-wrap,
+    .ttl-character-ui .ttl-create-wrap {
+        width: calc(100% - 8px);
+        padding-top: 4px;
+    }
+    .ttl-character-ui .ttl-char-head,
+    .ttl-character-ui .ttl-create-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    .ttl-character-ui .ttl-char-grid,
+    .ttl-character-ui .ttl-field-grid.ttl-layout-columns-2,
+    .ttl-character-ui .ttl-field-grid.ttl-layout-columns-3,
+    .ttl-character-ui .ttl-field-grid.ttl-layout-columns-4,
+    .ttl-character-ui .ttl-derived-grid,
+    .ttl-character-ui .ttl-picker-controls {
+        grid-template-columns: 1fr;
+    }
+    .ttl-character-ui .ttl-actions {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+
+/* v0.4.19.1 dense-sheet cleanup */
+.ttl-character-ui .ttl-char-head {
+    align-items: center;
+    min-height: 33px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.ttl-character-ui .ttl-character-summary {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-width: 0;
+}
+
+.ttl-character-ui .ttl-character-summary h1 {
+    flex: 0 0 auto;
+    font-size: 18px;
+}
+
+.ttl-character-ui .ttl-character-summary-meta {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 5px;
+    color: #314650;
+    font-size: 10.5px;
+    font-weight: 700;
+}
+
+.ttl-character-ui .ttl-character-summary-system {
+    color: #68767d;
+    font-weight: 600;
+}
+
+/* Section title is now a compact colored tab at the left. The remainder of
+   the row is immediately available to the section's fields. */
+.ttl-character-ui .ttl-sheet-section {
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: stretch;
+}
+
+.ttl-character-ui .ttl-sheet-section-heading {
+    min-width: 88px;
+    max-width: 150px;
+    min-height: 0;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    padding: 5px 7px;
+}
+
+.ttl-character-ui .ttl-sheet-section-heading h3 {
+    white-space: nowrap;
+}
+
+.ttl-character-ui .ttl-sheet-section-heading p {
+    margin-top: 3px;
+    color: rgba(255,255,255,.88);
+    line-height: 1.15;
+}
+
+.ttl-character-ui .ttl-sheet-section > .ttl-field-grid {
+    align-self: stretch;
+}
+
+/* Creation step heading must not inherit the generic dark card H2 bar. */
+.ttl-character-ui .ttl-step-head h2 {
+    margin: 1px 0 0;
+    padding: 0;
+    background: transparent;
+    color: #162d38;
+    font-size: 14px;
+    line-height: 1.05;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.ttl-character-ui .ttl-inline-advancement {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    margin: -1px 0 1px;
+}
+
+.ttl-character-ui .ttl-inline-advancement form {
+    margin: 0;
+}
+
+/* Skills read like a character-sheet table, not a collection of pills. */
+.ttl-character-ui .ttl-picker-selected:has(.ttl-skill-table) {
+    display: block;
+}
+
+.ttl-character-ui .ttl-skill-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    color: #17272f;
+    table-layout: fixed;
+    font-size: 10.5px;
+}
+
+.ttl-character-ui .ttl-skill-table th,
+.ttl-character-ui .ttl-skill-table td {
+    border: 1px solid #8a989f;
+    padding: 2px 4px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.ttl-character-ui .ttl-skill-table th {
+    background: #d9e1e5;
+    color: #1c303a;
+    font-size: 9px;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: .045em;
+}
+
+.ttl-character-ui .ttl-skill-table tbody tr:nth-child(even) {
+    background: #eef3f5;
+}
+
+.ttl-character-ui .ttl-skill-table tr.is-ineligible {
+    background: #f5dddd;
+}
+
+.ttl-character-ui .ttl-skill-name {
+    width: 22%;
+    font-weight: 800;
+}
+
+.ttl-character-ui .ttl-skill-description {
+    color: #40535d;
+}
+
+.ttl-character-ui .ttl-skill-action {
+    width: 25px;
+    padding: 1px !important;
+    text-align: center !important;
+}
+
+.ttl-character-ui .ttl-skill-action .ttl-picker-chip-remove {
+    width: 20px;
+    min-width: 20px;
+    min-height: 19px;
+    border: 0;
+    background: transparent;
+    color: #6f1f1f;
+    font-size: 14px;
+}
+
+@media (max-width: 720px) {
+    .ttl-character-ui .ttl-sheet-section {
+        grid-template-columns: 1fr;
+    }
+    .ttl-character-ui .ttl-sheet-section-heading {
+        max-width: none;
+        width: max-content;
+    }
+    .ttl-character-ui .ttl-character-summary {
+        gap: 5px 8px;
+    }
+}
+
+
+/* v0.4.19.2: compact top-left section title tabs.
+   Section accent color is retained, but only the label consumes header space. */
+.ttl-character-ui .ttl-sheet-section {
+    position: relative;
+    display: block;
+    padding-top: 22px;
+}
+
+.ttl-character-ui .ttl-sheet-section-heading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    display: inline-flex;
+    width: max-content;
+    min-width: 0;
+    max-width: calc(100% - 6px);
+    min-height: 22px;
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: row;
+    gap: 0;
+    margin: 0;
+    padding: 3px 8px;
+}
+
+.ttl-character-ui .ttl-sheet-section-heading h3 {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.ttl-character-ui .ttl-sheet-section-heading p {
+    display: none;
+}
+
+.ttl-character-ui .ttl-sheet-section > .ttl-field-grid {
+    width: 100%;
+    align-self: auto;
+}
+
+
+/* v0.4.19.3: compact square remove column for skill tables */
+.ttl-character-ui .ttl-skill-table-removable th:last-child,
+.ttl-character-ui .ttl-skill-table-removable td:last-child {
+    width: 26px;
+    min-width: 26px;
+    max-width: 26px;
+    padding: 0;
+    text-align: center;
+}
+
+.ttl-character-ui .ttl-skill-table-removable td:last-child {
+    height: 26px;
+}
+
+.ttl-character-ui .ttl-skill-remove,
+.ttl-character-ui .ttl-skill-table-removable td:last-child button {
+    display: inline-grid;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+    place-items: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #8e1d1d;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+
+
+/* v0.4.20 advanced sheet framework + play semantics */
+.ttl-character-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ttl-mode-switch {
+    display: inline-block;
+    padding: 2px 7px;
+    border: 1px solid #315873;
+    background: #e8f2f8;
+    color: #173d55;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: .72rem;
+}
+
+.ttl-mode-switch.is-active {
+    background: #243844;
+    color: #fff;
+}
+
+.ttl-section-color-teal .ttl-sheet-section-heading { background: #19766f !important; }
+.ttl-section-color-amber .ttl-sheet-section-heading { background: #946515 !important; }
+.ttl-section-color-blue .ttl-sheet-section-heading { background: #24658c !important; }
+.ttl-section-color-red .ttl-sheet-section-heading { background: #8b3535 !important; }
+.ttl-section-color-green .ttl-sheet-section-heading { background: #3e742e !important; }
+.ttl-section-color-plum .ttl-sheet-section-heading { background: #68457c !important; }
+
+.ttl-resource-field {
+    min-width: 150px;
+}
+
+.ttl-resource-editor {
+    display: grid;
+    grid-template-columns: minmax(42px, 70px) auto minmax(42px, 70px);
+    align-items: center;
+    justify-content: start;
+    gap: 4px;
+}
+
+.ttl-resource-editor input {
+    width: 70px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.ttl-resource-readonly {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    min-height: 24px;
+    padding: 2px 6px;
+    border: 1px solid #81909a;
+    background: #f5f8fa;
+}
+
+.ttl-resource-readonly strong {
+    font-size: 1rem;
+}
+
+.ttl-resource-track {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin-top: 3px;
+}
+
+.ttl-resource-track span {
+    width: 10px;
+    height: 10px;
+    border: 1px solid #4a5962;
+    background: #fff;
+}
+
+.ttl-resource-track span.is-filled {
+    background: #25728f;
+}
+
+.ttl-play-table td,
+.ttl-play-table th {
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.ttl-collection-add-row {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.ttl-character-ui .ttl-sheet-tab-panel {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.ttl-character-ui .ttl-sheet-section {
+    grid-column: span var(--ttl-section-span, 12);
+    min-width: 0;
+}
+
+@media (max-width: 900px) {
+    .ttl-character-ui .ttl-sheet-section {
+        grid-column: 1 / -1;
+    }
+}
+
+
+/* v0.4.21 temporary effects and effective values */
+.ttl-effective-metric {
+    display: inline-flex;
+    align-items: center;
+    min-width: 42px;
+    min-height: 24px;
+    padding: 2px 6px;
+    border: 1px solid #81909a;
+    background: #f4f7f8;
+    color: #17232b;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ttl-effective-metric:hover {
+    border-color: #2a617f;
+    background: #eef6fa;
+}
+
+.ttl-effective-metric.is-temporarily-modified {
+    border-color: #a12626;
+    background: #fff1f1;
+    color: #b01818;
+}
+
+.ttl-effective-metric.is-temporarily-modified span {
+    color: #b01818;
+    font-weight: 800;
+}
+
+.ttl-temp-dialog {
+    width: min(560px, calc(100vw - 28px));
+    padding: 0;
+    border: 2px solid #314d5e;
+    background: #f4f6f7;
+    color: #14212a;
+}
+
+.ttl-temp-dialog::backdrop {
+    background: rgba(0,0,0,.55);
+}
+
+.ttl-temp-dialog-card {
+    display: grid;
+    gap: 8px;
+    padding: 10px;
+}
+
+.ttl-temp-dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 2px solid #314d5e;
+    padding-bottom: 5px;
+}
+
+.ttl-temp-summary {
+    display: flex;
+    gap: 18px;
+    padding: 5px 7px;
+    background: #dce8ee;
+    border: 1px solid #718894;
+}
+
+.ttl-temp-existing {
+    display: grid;
+    gap: 3px;
+}
+
+.ttl-temp-empty {
+    color: #64727a;
+    padding: 4px;
+    font-size: .78rem;
+}
+
+.ttl-temp-row {
+    display: grid;
+    grid-template-columns: 1fr 26px;
+    border: 1px solid #9aa6ad;
+    background: #fff;
+}
+
+.ttl-temp-row-details {
+    display: grid;
+    grid-template-columns: minmax(120px,1fr) 70px minmax(100px,1fr);
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    font-size: .78rem;
+}
+
+.ttl-temp-row-details small {
+    color: #65727a;
+}
+
+.ttl-temp-row form {
+    margin: 0;
+}
+
+.ttl-temp-remove {
+    width: 26px;
+    height: 100%;
+    min-height: 26px;
+    border: 0;
+    border-left: 1px solid #9aa6ad;
+    background: #f7e4e4;
+    color: #9b1717;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.ttl-temp-add-form {
+    display: grid;
+    grid-template-columns: 1.4fr 110px 90px 1.3fr auto;
+    align-items: end;
+    gap: 5px;
+    border-top: 2px solid #314d5e;
+    padding-top: 8px;
+}
+
+.ttl-temp-add-form label {
+    display: grid;
+    gap: 2px;
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+@media (max-width: 700px) {
+    .ttl-temp-add-form {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .ttl-temp-row-details {
+        grid-template-columns: 1fr auto;
+    }
+
+    .ttl-temp-row-details small {
+        grid-column: 1 / -1;
+    }
+}
+
+
+/* v0.4.21.1: temporary modifier dialog sizing/layout fix */
+.ttl-temp-dialog {
+    width: min(760px, calc(100vw - 36px));
+    max-width: 760px;
+    max-height: min(820px, calc(100vh - 36px));
+    overflow: auto;
+}
+
+.ttl-temp-dialog-card {
+    min-width: 0;
+}
+
+.ttl-temp-summary {
+    flex-wrap: wrap;
+}
+
+.ttl-temp-add-form {
+    grid-template-columns: minmax(150px, 1.5fr) 120px 100px minmax(170px, 1.6fr) auto;
+}
+
+.ttl-temp-add-form input,
+.ttl-temp-add-form select,
+.ttl-temp-add-form button {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.ttl-temp-add-form button {
+    width: auto;
+    white-space: nowrap;
+}
+
+@media (max-width: 820px) {
+    .ttl-temp-dialog {
+        width: calc(100vw - 24px);
+        max-width: none;
+    }
+
+    .ttl-temp-add-form {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .ttl-temp-add-form button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 520px) {
+    .ttl-temp-add-form {
+        grid-template-columns: 1fr;
+    }
+
+    .ttl-temp-row-details {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* v0.4.21.2 propagated temporary-effect warning */
+.ttl-temp-influences {
+    padding: 5px 7px;
+    border: 1px solid #b66b6b;
+    background: #fff0f0;
+    color: #8d1818;
+    font-size: .76rem;
+    font-weight: 700;
+}
+
+
+/* v0.4.21.3 play-mode autosave */
+.ttl-autosave-status {
+    font-size: .68rem;
+    color: #4d5c65;
+    white-space: nowrap;
+}
+
+.ttl-autosave-status[data-state="dirty"] {
+    color: #8a5b12;
+}
+
+.ttl-autosave-status[data-state="saving"] {
+    color: #245f83;
+}
+
+.ttl-autosave-status[data-state="error"] {
+    color: #a12626;
+    font-weight: 700;
+}
+
+
+/* v0.4.21.4 manual autosave trigger */
+.ttl-autosave-status {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font: inherit;
+}
+
+.ttl-autosave-status:disabled {
+    cursor: default;
+    opacity: 1;
+}
+
+.ttl-autosave-status[data-state="dirty"] {
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.ttl-autosave-status[data-state="dirty"]:hover {
+    color: #65410d;
+}

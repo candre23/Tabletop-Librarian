@@ -23,6 +23,16 @@ class LayoutSection:
     fields: list[str]
     columns: int = 1
     description: str | None = None
+    color: str | None = None
+    span: int = 12
+    field_options: dict[str, dict[str, Any]] = field(default_factory=dict)
+
+    def display_for(self, field_id: str) -> str:
+        return str(self.field_options.get(field_id, {}).get("display") or "default")
+
+    def span_for(self, field_id: str) -> int:
+        value = self.field_options.get(field_id, {}).get("span", 1)
+        return value if isinstance(value, int) and value > 0 else 1
 
 
 @dataclass(slots=True)
@@ -67,21 +77,51 @@ def _parse_section(
         title = section_id
 
     raw_fields = raw.get("fields")
+    field_options: dict[str, dict[str, Any]] = {}
     if not isinstance(raw_fields, list) or not raw_fields:
         issues.append(LayoutIssue("error", "Section fields must be a non-empty list.", f"{location}.fields"))
         fields: list[str] = []
     else:
         fields = []
         for item in raw_fields:
-            if not isinstance(item, str) or not item:
-                issues.append(LayoutIssue("error", "Section field ids must be non-empty strings.", f"{location}.fields"))
+            if isinstance(item, str) and item:
+                fields.append(item)
                 continue
-            fields.append(item)
+            if isinstance(item, dict):
+                item_id = item.get("id")
+                if not isinstance(item_id, str) or not item_id:
+                    issues.append(LayoutIssue("error", "Field layout objects require a non-empty id.", f"{location}.fields"))
+                    continue
+                display = item.get("display", "default")
+                if display not in {"default", "inline", "stat", "value", "resource", "table", "block"}:
+                    issues.append(LayoutIssue("error", f"Unsupported field display mode {display!r}.", f"{location}.fields"))
+                    display = "default"
+                item_span = item.get("span", 1)
+                if not isinstance(item_span, int) or item_span < 1 or item_span > 4:
+                    issues.append(LayoutIssue("error", "Field span must be an integer from 1 to 4.", f"{location}.fields"))
+                    item_span = 1
+                fields.append(item_id)
+                field_options[item_id] = {"display": display, "span": item_span}
+                continue
+            issues.append(LayoutIssue("error", "Section fields must be ids or field layout objects.", f"{location}.fields"))
 
     columns = raw.get("columns", 1)
     if not isinstance(columns, int) or not 1 <= columns <= 4:
         issues.append(LayoutIssue("error", "columns must be an integer from 1 to 4.", f"{location}.columns"))
         columns = 1
+
+    color = raw.get("color")
+    if color is not None and (
+        not isinstance(color, str)
+        or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", color)
+    ):
+        issues.append(LayoutIssue("error", "color must be a semantic color name.", f"{location}.color"))
+        color = None
+
+    span = raw.get("span", 12)
+    if not isinstance(span, int) or span < 1 or span > 12:
+        issues.append(LayoutIssue("error", "span must be an integer from 1 to 12.", f"{location}.span"))
+        span = 12
 
     description = raw.get("description")
     if description is not None and not isinstance(description, str):
@@ -94,6 +134,9 @@ def _parse_section(
         fields=fields,
         columns=columns,
         description=description.strip() if isinstance(description, str) else None,
+        color=color,
+        span=span,
+        field_options=field_options,
     )
 
 

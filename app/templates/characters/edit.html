@@ -5,34 +5,36 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Character - Tabletop Librarian</title>
   <link rel="stylesheet" href="/static/css/main.css">
-  <style>
-    .ttl-char-wrap { max-width: 950px; margin:0 auto; padding:28px 22px 60px; }
-    .ttl-char-head { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:24px; }
-    .ttl-char-head h1 { margin:0 0 4px; }
-    .ttl-card { border:1px solid rgba(127,127,127,.28); border-radius:12px; padding:20px; background:rgba(127,127,127,.06); }
-    .ttl-field-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
-    .ttl-field { display:grid; gap:6px; }
-    .ttl-field-wide { grid-column:1/-1; }
-    .ttl-field input:not([type=checkbox]), .ttl-field select, .ttl-field textarea { width:100%; box-sizing:border-box; padding:9px 10px; }
-    .ttl-field textarea { min-height:110px; resize:vertical; }
-    .ttl-muted { opacity:.72; font-size:.92rem; }
-    .ttl-readonly { padding:9px 10px; border:1px dashed rgba(127,127,127,.35); border-radius:7px; }
-    .ttl-actions { display:flex; justify-content:space-between; gap:16px; align-items:center; margin-top:22px; }
-    .ttl-actions-left { display:flex; gap:10px; }
-    .ttl-saved { margin-bottom:16px; padding:10px 12px; border-radius:8px; background:rgba(80,160,100,.14); }
-    .ttl-danger { border-color:rgba(180,70,70,.5); }
-    @media (max-width:680px) { .ttl-field-grid { grid-template-columns:1fr; } }
-  </style>
 </head>
-<body>
+<body class="ttl-character-ui">
   {% include "_global_nav.html" %}
   <main class="ttl-char-wrap">
     <div class="ttl-char-head">
-      <div>
+      <div class="ttl-character-summary">
         <h1>{{ record.data.get("name") or record.data.get("character_name") or record.character_id }}</h1>
-        <div class="ttl-muted">{{ pack.manifest.name }} · pack {{ record.system_version }} · schema {{ record.character_schema }}</div>
+        <div class="ttl-character-summary-meta">
+          {% if record.data.get("level") is not none %}<span>Level {{ record.data.get("level") }}</span>{% endif %}
+          {% set race_value = record.data.get("race") or record.data.get("ancestry") or record.data.get("species") %}
+          {% if race_value %}<span>{{ race_value }}</span>{% endif %}
+          {% set class_value = record.data.get("class") or record.data.get("archetype") or record.data.get("occupation") or record.data.get("career") %}
+          {% if class_value %}<span>{{ class_value }}</span>{% endif %}
+          <span class="ttl-character-summary-system">- {{ pack.manifest.name }} {{ record.system_version }}</span>
+        </div>
       </div>
-      <a href="/characters">All Characters</a>
+      <div class="ttl-character-head-actions">
+        {% if mode == "play" %}
+          <button
+            type="button"
+            class="ttl-autosave-status"
+            id="ttl-autosave-status"
+            data-state="saved"
+            disabled
+          >Saved</button>
+          <a class="ttl-mode-switch" href="/characters/{{ record.character_id }}?mode=configure">Configure</a>
+        {% else %}
+          <a class="ttl-mode-switch is-active" href="/characters/{{ record.character_id }}">Play View</a>
+        {% endif %}
+      </div>
     </div>
 
     {% if request.query_params.get("created") %}
@@ -41,20 +43,6 @@
       <div class="ttl-saved">Advancement applied.</div>
     {% elif request.query_params.get("saved") %}
       <div class="ttl-saved">Character saved.</div>
-    {% endif %}
-
-    {% if advancement_actions %}
-      <section class="ttl-card ttl-advancement-actions" style="margin-bottom:16px;">
-        <strong>Advancement</strong>
-        <div class="ttl-advancement-buttons">
-          {% for action in advancement_actions %}
-            <form method="post" action="/characters/{{ record.character_id }}/advance/{{ action.id }}/start">
-              <button type="submit" {% if not action.available %}disabled{% endif %}>{{ action.title }}</button>
-              {% if action.description %}<div class="ttl-muted">{{ action.description }}</div>{% endif %}
-            </form>
-          {% endfor %}
-        </div>
-      </section>
     {% endif %}
 
     {% if error %}
@@ -68,7 +56,13 @@
     </section>
 
     <section class="ttl-card">
-      <form method="post" action="/characters/{{ record.character_id }}/save">
+      <form
+        method="post"
+        action="/characters/{{ record.character_id }}/save"
+        id="ttl-character-form"
+        data-character-mode="{{ mode }}"
+      >
+        <input type="hidden" name="mode" value="{{ mode }}">
         {% if unlocked_field %}<input type="hidden" name="unlocked_field" value="{{ unlocked_field }}">{% endif %}
 
         <div class="ttl-sheet-layout" data-sheet-layout>
@@ -113,31 +107,99 @@
                   {% endfor %}
 
                   {% if section_ns.show %}
-                    <section class="ttl-sheet-section">
+                    <section class="ttl-sheet-section ttl-section-color-{{ section.color or 'auto' }}" style="--ttl-section-span: {{ section.span }}">
                       <div class="ttl-sheet-section-heading">
                         <h3>{{ section.title }}</h3>
                         {% if section.description %}<p>{{ section.description }}</p>{% endif %}
                       </div>
                       <div class="ttl-field-grid ttl-layout-columns-{{ section.columns }}">
+                        {% if advancement_actions and mode == "configure" %}
+                          {% set advancement_ns = namespace(show=false) %}
+                          {% for action in advancement_actions %}
+                            {% for changed_field in action.changed_fields %}
+                              {% if changed_field in section.fields %}{% set advancement_ns.show = true %}{% endif %}
+                            {% endfor %}
+                          {% endfor %}
+                          {% if advancement_ns.show %}
+                            <div class="ttl-inline-advancement ttl-field-wide">
+                              {% for action in advancement_actions %}
+                                {% set action_ns = namespace(show=false) %}
+                                {% for changed_field in action.changed_fields %}
+                                  {% if changed_field in section.fields %}{% set action_ns.show = true %}{% endif %}
+                                {% endfor %}
+                                {% if action_ns.show %}
+                                  <button
+                                    type="submit"
+                                    form="ttl-advancement-form-{{ action.id }}"
+                                    {% if not action.available %}disabled{% endif %}
+                                  >{{ action.title }}</button>
+                                {% endif %}
+                              {% endfor %}
+                            </div>
+                          {% endif %}
+                        {% endif %}
                         {% for field_id in section.fields %}
                           {% if field_id in schema.fields %}
                             {% set field = schema.fields[field_id] %}
 
             {% set value = record.data.get(field_id) %}
-            {% set field_locked = field_id in core_fields and field_id != unlocked_field %}
+            {% set play_locked = mode == "play" and not field.play_editable %}
+            {% set core_locked = mode == "configure" and field_id in core_fields and field_id != unlocked_field %}
+            {% set field_locked = play_locked or core_locked %}
+            {% set field_display = section.display_for(field_id) %}
             {% if field_locked %}
-              <div class="ttl-field {% if field.type in ["notes", "multi_reference"] %}ttl-field-wide{% endif %}">
+              <div class="ttl-field {% if field.type in ["notes", "multi_reference", "collection"] %}ttl-field-wide{% endif %}">
                 <div class="ttl-lockable-label">
                   <label>{{ field.label }}</label>
-                  <a
-                    class="ttl-lock-icon"
-                    href="/characters/{{ record.character_id }}?unlock_field={{ field_id }}"
-                    title="Unlock {{ field.label }}"
-                    aria-label="Unlock {{ field.label }}"
-                    onclick="return confirm('Unlock {{ field.label|e }} for editing? It will lock again after saving or leaving this page.');"
-                  >&#128274;</a>
+                  {% if core_locked %}
+                    <a
+                      class="ttl-lock-icon"
+                      href="/characters/{{ record.character_id }}?mode=configure&unlock_field={{ field_id }}"
+                      title="Unlock {{ field.label }}"
+                      aria-label="Unlock {{ field.label }}"
+                      onclick="return confirm('Unlock {{ field.label|e }} for editing? It will lock again after saving or leaving this page.');"
+                    >&#128274;</a>
+                  {% endif %}
                 </div>
-                <div class="ttl-readonly ttl-core-readonly">{{ display_field_value(field, value, reference_options) }}</div>
+                {% if field.type == "multi_reference" and field.entity == "skill" %}
+                  <table class="ttl-skill-table ttl-play-table">
+                    <thead><tr><th>Skill</th><th>Description</th></tr></thead>
+                    <tbody>
+                      {% for selected_id in (value or []) %}
+                        {% for entity in reference_options.get(field_id, []) %}
+                          {% if entity.id == selected_id %}
+                            <tr>
+                              <td>{{ entity.name }}</td>
+                              <td>{{ entity.data.get("description") or entity.data.get("summary") or "" }}</td>
+                            </tr>
+                          {% endif %}
+                        {% endfor %}
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                {% elif field.type in ["integer", "decimal", "calculated"] and field_id in temporary_modifiable_fields %}
+                  {% set temp_rows = temporary_effects.get(field_id, []) %}
+                  {% set temp_effective = temporary_effective_values.get(field_id, value) %}
+                  <button
+                    type="button"
+                    class="ttl-effective-metric{% if field_id in temporary_modified_fields %} is-temporarily-modified{% endif %}"
+                    data-temp-modifier-open
+                    data-field-id="{{ field_id }}"
+                    data-field-label="{{ field.label|e }}"
+                    data-base-value="{{ value }}"
+                    data-effective-value-server="{{ temp_effective }}"
+                  >
+                    <span data-effective-value="{{ field_id }}">{{ temp_effective }}</span>
+                  </button>
+                {% elif field.type == "resource" %}
+                  <div class="ttl-resource-readonly">
+                    <strong>{{ value.get("current", 0) if value is mapping else 0 }}</strong>
+                    <span>/</span>
+                    <span>{{ value.get("max", 0) if value is mapping else 0 }}</span>
+                  </div>
+                {% else %}
+                  <div class="ttl-readonly ttl-core-readonly">{{ display_field_value(field, value, reference_options) }}</div>
+                {% endif %}
               </div>
             {% elif field.type == "notes" %}
               <div class="ttl-field ttl-field-wide">
@@ -231,7 +293,7 @@
                 </div>
 
 
-                <div class="ttl-compendium-picker" data-compendium-picker data-picker-mode="multi" data-picker-label="{{ field.label }}">
+                <div class="ttl-compendium-picker" data-compendium-picker data-picker-mode="multi" data-picker-label="{{ field.label }}" data-picker-entity="{{ field.entity or '' }}">
 
 
                   <select id="field__{{ field_id }}" name="field__{{ field_id }}" multiple class="ttl-picker-native ttl-multi-reference-native" aria-hidden="true" tabindex="-1">
@@ -434,7 +496,12 @@
                     </div>
                   </template>
 
-                  <button type="button" class="secondary-button ttl-collection-add" data-collection-add>Add {{ field.label }} entry</button>
+                  <div class="ttl-collection-add-row">
+                    <button type="button" class="secondary-button ttl-collection-add" data-collection-add>Add {{ field.label }} entry</button>
+                    {% if field.raw.get("allow_custom") %}
+                      <button type="button" class="secondary-button ttl-collection-add" data-collection-add-custom>Add Custom</button>
+                    {% endif %}
+                  </div>
                 </div>
               </div>
             {% elif field.type == "text" or field.type == "reference" %}
@@ -487,13 +554,60 @@
                   {% endfor %}
                 </select>
               </div>
+            {% elif field.type == "resource" %}
+              <div class="ttl-field ttl-resource-field">
+                <label>{{ field.label }}</label>
+                <div class="ttl-resource-editor">
+                  <input
+                    type="number"
+                    name="field__{{ field_id }}__current"
+                    value="{{ value.get('current', 0) if value is mapping else 0 }}"
+                    aria-label="{{ field.label }} current"
+                  >
+                  <span>/</span>
+                  {% if mode == "play" %}
+                    <strong>{{ value.get('max', 0) if value is mapping else 0 }}</strong>
+                    <input type="hidden" name="field__{{ field_id }}__max" value="{{ value.get('max', 0) if value is mapping else 0 }}">
+                  {% else %}
+                    <input
+                      type="number"
+                      name="field__{{ field_id }}__max"
+                      value="{{ value.get('max', 0) if value is mapping else 0 }}"
+                      aria-label="{{ field.label }} maximum"
+                    >
+                  {% endif %}
+                </div>
+                <div class="ttl-resource-track" aria-hidden="true">
+                  {% set current = value.get('current', 0) if value is mapping else 0 %}
+                  {% set maximum = value.get('max', 0) if value is mapping else 0 %}
+                  {% for n in range(maximum|int if maximum and maximum <= 20 else 0) %}
+                    <span class="{% if n < current %}is-filled{% endif %}"></span>
+                  {% endfor %}
+                </div>
+              </div>
             {% elif field.type == "calculated" %}
               <div class="ttl-field">
                 <div class="ttl-calculated-label">
                   <label>{{ field.label }}</label>
                   <button type="button" class="ttl-info-button" data-explain-field="{{ field_id }}" data-explain-label="{{ field.label }}" aria-label="Explain {{ field.label }}" title="Show calculation">i</button>
                 </div>
-                <div class="ttl-readonly" data-calculated-field="{{ field_id }}">{{ value if value is not none else "" }}</div>
+                {% set temp_rows = temporary_effects.get(field_id, []) %}
+                {% set temp_effective = temporary_effective_values.get(field_id, value) %}
+                {% if mode == "play" %}
+                  <button
+                    type="button"
+                    class="ttl-effective-metric{% if field_id in temporary_modified_fields %} is-temporarily-modified{% endif %}"
+                    data-temp-modifier-open
+                    data-field-id="{{ field_id }}"
+                    data-field-label="{{ field.label|e }}"
+                    data-base-value="{{ value }}"
+                    data-effective-value-server="{{ temp_effective }}"
+                  >
+                    <span data-calculated-field="{{ field_id }}" data-effective-value="{{ field_id }}">{{ temp_effective if temp_effective is not none else "" }}</span>
+                  </button>
+                {% else %}
+                  <div class="ttl-readonly" data-calculated-field="{{ field_id }}">{{ value if value is not none else "" }}</div>
+                {% endif %}
                 <div class="ttl-muted">calculated</div>
               </div>
             {% else %}
@@ -518,22 +632,94 @@
         </div>
 
 
-        <div class="ttl-actions">
-          <div class="ttl-actions-left">
-            <button type="submit">Save Character</button>
-            <a href="/characters">Cancel</a>
+        {% if mode == "configure" %}
+          <div class="ttl-actions">
+            <div class="ttl-actions-left">
+              <button type="submit">Save Configuration</button>
+              <a href="/characters/{{ record.character_id }}?mode=configure">Cancel</a>
+            </div>
           </div>
-        </div>
+        {% endif %}
       </form>
+
+      {% if mode == "configure" %}
+        {% for action in advancement_actions %}
+          <form
+            id="ttl-advancement-form-{{ action.id }}"
+            method="post"
+            action="/characters/{{ record.character_id }}/advance/{{ action.id }}/start"
+          ></form>
+        {% endfor %}
+      {% endif %}
     </section>
 
+    {% if mode == "configure" %}
     <section class="ttl-card ttl-danger" style="margin-top:22px;">
       <h2>Delete Character</h2>
       <form method="post" action="/characters/{{ record.character_id }}/delete" onsubmit="return confirm('Delete this character? This cannot be undone.');">
         <button type="submit">Delete Character</button>
       </form>
     </section>
+    {% endif %}
   </main>
+
+  <dialog id="ttl-temporary-modifier-dialog" class="ttl-temp-dialog">
+    <div class="ttl-temp-dialog-card">
+      <div class="ttl-temp-dialog-head">
+        <strong id="ttl-temp-title">Temporary Modifier</strong>
+        <button type="button" class="secondary-button" id="ttl-temp-close">Close</button>
+      </div>
+
+      <div class="ttl-temp-summary">
+        <span>Base <strong id="ttl-temp-base">0</strong></span>
+        <span>Effective <strong id="ttl-temp-effective">0</strong></span>
+      </div>
+
+      <div id="ttl-temp-influences" class="ttl-temp-influences" hidden></div>
+      <div id="ttl-temp-existing" class="ttl-temp-existing"></div>
+
+      <form
+        method="post"
+        action="/characters/{{ record.character_id }}/temporary-effects"
+        class="ttl-temp-add-form"
+      >
+        <input type="hidden" name="field_id" id="ttl-temp-field-id">
+        <input type="hidden" name="action" value="add">
+
+        <label>
+          Effect
+          <input name="label" placeholder="Haste, Bless, Injury..." required>
+        </label>
+
+        <label>
+          Operation
+          <select name="operation">
+            <option value="add">Add</option>
+            <option value="subtract">Subtract</option>
+            <option value="multiply">Multiply</option>
+            <option value="override">Override</option>
+          </select>
+        </label>
+
+        <label>
+          Value
+          <input name="value" type="number" step="any" required>
+        </label>
+
+        <label>
+          Duration / reminder
+          <input name="duration" placeholder="3 turns, until rest, scene...">
+        </label>
+
+        <button type="submit">Add Modifier</button>
+      </form>
+    </div>
+  </dialog>
+
+  <script id="ttl-temporary-effects-data" type="application/json">{{ temporary_effects|tojson }}</script>
+  <script id="ttl-temporary-effective-data" type="application/json">{{ temporary_effective_values|tojson }}</script>
+  <script id="ttl-temporary-influence-data" type="application/json">{{ temporary_influences|tojson }}</script>
+  <script id="ttl-temporary-label-data" type="application/json">{{ temporary_field_labels|tojson }}</script>
 
   <dialog id="ttl-calculation-dialog" class="ttl-calculation-dialog">
     <div class="ttl-calculation-dialog-header">
@@ -561,7 +747,260 @@
 
       let calculationExplanations = {};
 
-      const calculationDialog = document.getElementById("ttl-calculation-dialog");
+      const temporaryEffects = JSON.parse(
+      document.getElementById("ttl-temporary-effects-data")?.textContent || "{}"
+    );
+    const temporaryEffectiveValues = JSON.parse(
+      document.getElementById("ttl-temporary-effective-data")?.textContent || "{}"
+    );
+    const temporaryInfluences = JSON.parse(
+      document.getElementById("ttl-temporary-influence-data")?.textContent || "{}"
+    );
+    const temporaryFieldLabels = JSON.parse(
+      document.getElementById("ttl-temporary-label-data")?.textContent || "{}"
+    );
+    const tempDialog = document.getElementById("ttl-temporary-modifier-dialog");
+    const tempTitle = document.getElementById("ttl-temp-title");
+    const tempBase = document.getElementById("ttl-temp-base");
+    const tempEffective = document.getElementById("ttl-temp-effective");
+    const tempExisting = document.getElementById("ttl-temp-existing");
+    const tempInfluences = document.getElementById("ttl-temp-influences");
+    const tempFieldId = document.getElementById("ttl-temp-field-id");
+
+    function ttlEffectiveValue(base, rows) {
+      let result = Number(base);
+      (rows || []).forEach((row) => {
+        const amount = Number(row.value);
+        if (row.operation === "add") result += amount;
+        else if (row.operation === "subtract") result -= amount;
+        else if (row.operation === "multiply") result *= amount;
+        else if (row.operation === "override") result = amount;
+      });
+      return result;
+    }
+
+    function ttlOperationText(row) {
+      if (row.operation === "add") return `+${row.value}`;
+      if (row.operation === "subtract") return `-${row.value}`;
+      if (row.operation === "multiply") return `×${row.value}`;
+      if (row.operation === "override") return `=${row.value}`;
+      return String(row.value);
+    }
+
+    function renderTemporaryModifierDialog(fieldId, baseValue) {
+      const rows = temporaryEffects[fieldId] || [];
+      const serverEffective = Object.prototype.hasOwnProperty.call(
+        temporaryEffectiveValues,
+        fieldId
+      )
+        ? temporaryEffectiveValues[fieldId]
+        : ttlEffectiveValue(baseValue, rows);
+
+      tempBase.textContent = String(baseValue);
+      tempEffective.textContent = String(serverEffective);
+      tempFieldId.value = fieldId;
+      tempExisting.innerHTML = "";
+
+      const influenceIds = (temporaryInfluences[fieldId] || []).filter(
+        (sourceId) => sourceId !== fieldId
+      );
+      if (influenceIds.length) {
+        tempInfluences.hidden = false;
+        tempInfluences.textContent =
+          "Affected by temporary changes to: " +
+          influenceIds.map(
+            (sourceId) => temporaryFieldLabels[sourceId] || sourceId
+          ).join(", ");
+      } else {
+        tempInfluences.hidden = true;
+        tempInfluences.textContent = "";
+      }
+
+      if (!rows.length) {
+        const empty = document.createElement("div");
+        empty.className = "ttl-temp-empty";
+        empty.textContent = "No temporary modifiers.";
+        tempExisting.appendChild(empty);
+        return;
+      }
+
+      rows.forEach((row, index) => {
+        const container = document.createElement("div");
+        container.className = "ttl-temp-row";
+
+        const details = document.createElement("div");
+        details.className = "ttl-temp-row-details";
+
+        const label = document.createElement("strong");
+        label.textContent = row.label || "Temporary effect";
+        details.appendChild(label);
+
+        const operation = document.createElement("span");
+        operation.textContent = ttlOperationText(row);
+        details.appendChild(operation);
+
+        const duration = document.createElement("small");
+        duration.textContent = row.duration || "";
+        details.appendChild(duration);
+
+        const remove = document.createElement("form");
+        remove.method = "post";
+        remove.action = "/characters/{{ record.character_id }}/temporary-effects";
+
+        const fieldInput = document.createElement("input");
+        fieldInput.type = "hidden";
+        fieldInput.name = "field_id";
+        fieldInput.value = fieldId;
+        remove.appendChild(fieldInput);
+
+        const actionInput = document.createElement("input");
+        actionInput.type = "hidden";
+        actionInput.name = "action";
+        actionInput.value = "remove";
+        remove.appendChild(actionInput);
+
+        const indexInput = document.createElement("input");
+        indexInput.type = "hidden";
+        indexInput.name = "index";
+        indexInput.value = String(index);
+        remove.appendChild(indexInput);
+
+        const button = document.createElement("button");
+        button.type = "submit";
+        button.className = "ttl-temp-remove";
+        button.textContent = "×";
+        button.title = "Remove temporary modifier";
+        remove.appendChild(button);
+
+        container.appendChild(details);
+        container.appendChild(remove);
+        tempExisting.appendChild(container);
+      });
+    }
+
+    document.querySelectorAll("[data-temp-modifier-open]").forEach((button) => {
+      const fieldId = button.dataset.fieldId;
+      const baseValue = Number(button.dataset.baseValue);
+      const rows = temporaryEffects[fieldId] || [];
+      const effective = Object.prototype.hasOwnProperty.call(
+        temporaryEffectiveValues,
+        fieldId
+      )
+        ? temporaryEffectiveValues[fieldId]
+        : ttlEffectiveValue(baseValue, rows);
+      const valueTarget = button.querySelector("[data-effective-value]");
+      if (valueTarget) valueTarget.textContent = String(effective);
+
+      button.addEventListener("click", () => {
+        tempTitle.textContent = button.dataset.fieldLabel || fieldId;
+        renderTemporaryModifierDialog(fieldId, baseValue);
+        tempDialog?.showModal();
+      });
+    });
+
+    document.getElementById("ttl-temp-close")?.addEventListener(
+      "click",
+      () => tempDialog?.close()
+    );
+
+    tempDialog?.addEventListener("click", (event) => {
+      if (event.target === tempDialog) tempDialog.close();
+    });
+
+    const characterForm = document.getElementById("ttl-character-form");
+    const autosaveStatus = document.getElementById("ttl-autosave-status");
+
+    function initPlayAutosave() {
+      if (!characterForm || characterForm.dataset.characterMode !== "play") {
+        return;
+      }
+
+      let dirty = false;
+      let saving = false;
+      let lastSavedSnapshot = new URLSearchParams(
+        new FormData(characterForm)
+      ).toString();
+
+      function currentSnapshot() {
+        return new URLSearchParams(new FormData(characterForm)).toString();
+      }
+
+      function setAutosaveStatus(text, state) {
+        if (!autosaveStatus) return;
+        autosaveStatus.textContent = text;
+        autosaveStatus.dataset.state = state;
+        autosaveStatus.disabled = state !== "dirty";
+      }
+
+      function markDirty() {
+        dirty = currentSnapshot() !== lastSavedSnapshot;
+        setAutosaveStatus(
+          dirty ? "Unsaved changes - click to save manually" : "Saved",
+          dirty ? "dirty" : "saved"
+        );
+      }
+
+      characterForm.addEventListener("input", markDirty);
+      characterForm.addEventListener("change", markDirty);
+
+      async function autosave() {
+        if (!dirty || saving) return;
+
+        const snapshot = currentSnapshot();
+        if (snapshot === lastSavedSnapshot) {
+          dirty = false;
+          setAutosaveStatus("Saved", "saved");
+          return;
+        }
+
+        saving = true;
+        setAutosaveStatus("Saving...", "saving");
+
+        try {
+          const response = await fetch(characterForm.action, {
+            method: "POST",
+            body: new FormData(characterForm),
+            headers: {
+              "X-TTL-Autosave": "1",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          lastSavedSnapshot = snapshot;
+          dirty = currentSnapshot() !== lastSavedSnapshot;
+          setAutosaveStatus(
+            dirty ? "Unsaved changes - click to save manually" : "Saved",
+            dirty ? "dirty" : "saved"
+          );
+        } catch (error) {
+          console.error("TTL play autosave failed:", error);
+          setAutosaveStatus("Autosave failed", "error");
+        } finally {
+          saving = false;
+        }
+      }
+
+      autosaveStatus?.addEventListener("click", () => {
+        if (dirty && !saving) {
+          autosave();
+        }
+      });
+
+      window.setInterval(autosave, 120000);
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") {
+          autosave();
+        }
+      });
+    }
+
+    initPlayAutosave();
+
+    const calculationDialog = document.getElementById("ttl-calculation-dialog");
       const calculationTitle = document.getElementById("ttl-calculation-title");
       const calculationBody = document.getElementById("ttl-calculation-body");
 
@@ -804,21 +1243,62 @@
               return;
             }
 
+            const entityType = picker.dataset.pickerEntity || "";
+            if (mode === "multi" && entityType === "skill") {
+              const table = document.createElement("table");
+              table.className = "ttl-skill-table ttl-skill-table-removable";
+              table.innerHTML = "<thead><tr><th>Skill</th><th>Description</th><th></th></tr></thead>";
+              const body = document.createElement("tbody");
+
+              selected.forEach((option) => {
+                const row = document.createElement("tr");
+                if (option.dataset.eligible === "false") {
+                  row.classList.add("is-ineligible");
+                  row.title = option.dataset.eligibilityMessage || "Requirements are not met.";
+                }
+
+                const nameCell = document.createElement("td");
+                nameCell.className = "ttl-skill-name";
+                nameCell.textContent = option.dataset.pickerName || option.dataset.baseLabel || option.textContent;
+
+                const descriptionCell = document.createElement("td");
+                descriptionCell.className = "ttl-skill-description";
+                descriptionCell.textContent = option.dataset.pickerDescription || "";
+
+                const actionCell = document.createElement("td");
+                actionCell.className = "ttl-skill-action";
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.className = "ttl-picker-chip-remove";
+                remove.textContent = "×";
+                remove.title = `Remove ${nameCell.textContent}`;
+                remove.addEventListener("click", () => {
+                  option.selected = false;
+                  emitChange();
+                  renderSelected();
+                  renderResults();
+                });
+                actionCell.appendChild(remove);
+                row.append(nameCell, descriptionCell, actionCell);
+                body.appendChild(row);
+              });
+
+              table.appendChild(body);
+              selectedBox.appendChild(table);
+              return;
+            }
+
             selected.forEach((option) => {
               const chip = document.createElement("span");
               chip.className = "ttl-picker-chip";
 
               if (option.dataset.eligible === "false") {
                 chip.classList.add("ttl-picker-chip-ineligible");
-                chip.title =
-                  option.dataset.eligibilityMessage || "Requirements are not met.";
+                chip.title = option.dataset.eligibilityMessage || "Requirements are not met.";
               }
 
               const name = document.createElement("span");
-              name.textContent =
-                option.dataset.pickerName ||
-                option.dataset.baseLabel ||
-                option.textContent;
+              name.textContent = option.dataset.pickerName || option.dataset.baseLabel || option.textContent;
               chip.appendChild(name);
 
               const remove = document.createElement("button");
@@ -1117,16 +1597,28 @@
 
           rowsBox.querySelectorAll("[data-collection-row]").forEach(wireRow);
 
-          addButton.addEventListener("click", () => {
+          function addRow({ custom = false } = {}) {
             const fragment = template.content.cloneNode(true);
             const row = fragment.querySelector("[data-collection-row]");
             rowsBox.appendChild(fragment);
             if (row) {
               wireRow(row);
-              row.querySelector("[data-collection-subfield]")?.focus();
+              if (custom) {
+                const reference = row.querySelector('[data-subfield-type="reference"]');
+                if (reference) reference.value = "";
+                const customName = row.querySelector('[data-collection-subfield="custom_name"]');
+                customName?.focus();
+              } else {
+                row.querySelector("[data-collection-subfield]")?.focus();
+              }
             }
             sync();
-          });
+          }
+
+          addButton.addEventListener("click", () => addRow());
+
+          const addCustom = widget.querySelector("[data-collection-add-custom]");
+          addCustom?.addEventListener("click", () => addRow({ custom: true }));
 
           sync({ emit: false });
         });

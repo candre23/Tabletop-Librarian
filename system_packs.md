@@ -404,7 +404,7 @@ before atomically activating the pack.
 
 ## Current implementation status
 
-Implemented through TTL v0.4.18:
+Implemented through TTL v0.4.21.5:
 
 - manifest discovery and validation
 - safe declared paths
@@ -535,3 +535,128 @@ actions:
       - id: choices
         fields: [skills, spells]
 ```
+
+
+## Dense character-sheet presentation
+
+TTL v0.4.21.5 establishes the default visual language for character-facing
+pages. This is presentation-only; System Pack data and rule semantics are
+unchanged.
+
+The default sheet is desktop-first and optimized for high information density:
+
+- nearly full browser width
+- compact typography and form controls
+- minimal section gaps and padding
+- high-contrast dark text on light surfaces
+- alternating colored section bands and border accents
+- compact calculated/read-only values
+- reduced-radius controls and action buttons
+- compact creation/advancement progress and navigation
+
+Section colors in v0.4.21.5 are automatically alternated by the generic sheet
+renderer. Explicit semantic colors, table renderers, resource tracks, field
+display modes, and page/grid regions belong to the advanced layout layer.
+
+
+### Dense sheet cleanup
+
+v0.4.21.5 condenses the character header, places advancement actions inside
+the section containing their changed fields, suppresses premature required-field
+errors during live creation evaluation, uses compact side title tabs instead of
+full-width section bars, and renders skill multi-references as dense rows with
+short compendium descriptions.
+
+
+## Play mode and advanced sheet presentation
+
+Finished character sheets default to Play mode. Character schema fields are
+read-only in Play mode unless they explicitly declare:
+
+```yaml
+play_editable: true
+```
+
+Configuration mode remains available for deliberate character maintenance.
+Creation and advancement retain their existing controlled workflows.
+
+`resource` fields use `{current, max}` values. In Play mode, `current` may be
+edited when the resource is play-editable while `max` remains fixed. This
+supports HP, magic points, sanity, stress, ammunition pools, and similar
+session resources.
+
+Structured collections may declare:
+
+```yaml
+allow_custom: true
+custom_name_field: custom_name
+play_editable: true
+```
+
+This allows players to add campaign-specific items alongside structured
+compendium references without granting arbitrary mechanical effects to those
+custom entries.
+
+Character layouts now accept semantic section colors, 12-column section spans,
+and per-field display hints (`default`, `inline`, `stat`, `value`, `resource`,
+`table`, `block`). These presentation hints do not alter stored character
+data or rule semantics.
+
+
+## Temporary effects and effective values
+
+Temporary effects are stored separately from permanent character data. They
+may alter numeric play metrics without rewriting the authoritative base value.
+
+Supported temporary modifier operations are `add`, `subtract`, `multiply`,
+and `override`. Each modifier may also carry a label and free-text duration or
+reminder. TTL does not track turns, rounds, scenes, or game time; the player
+removes the effect when appropriate.
+
+In Play mode, supported metrics can be clicked to view the base value,
+effective value, and active temporary modifiers. Any metric with at least one
+temporary modifier is displayed in red so the altered state remains visible.
+
+
+Temporary effects participate in the effective calculation pass. Temporary
+modifiers on base inputs are applied before normal calculated-field rules are
+evaluated, and temporary modifiers on calculated fields are applied in
+calculation dependency order. Dependent calculated values therefore reflect
+temporary changes automatically while permanent character data remains
+unchanged.
+
+Compendium conditional effects are resolved against temporary-adjusted base
+inputs during Play mode, so a temporary change such as reduced level can also
+change level-gated permanent effects in the effective play calculation.
+
+
+### Play-mode autosave
+
+Finished characters in Play mode save play-editable state automatically.
+The browser tracks whether the sheet differs from its last successful save
+and checks every 120 seconds. No write occurs when nothing has changed.
+
+Configure mode retains explicit Save and Cancel controls. Temporary effects
+remain separate play-state actions and are persisted when they are added or
+removed.
+
+
+### Manual Play-mode save and renaming
+
+When Play mode has unsaved changes, the autosave indicator reads
+`Unsaved changes - click to save manually` and becomes clickable. Clicking it
+runs the same dirty-state save used by the normal 120-second autosave.
+
+Configure-mode changes to the schema `name` field are persisted directly to
+the authoritative character data used by both Play mode and the Characters
+list, allowing names, titles, and honorifics to change during a campaign.
+
+
+### Character editor form integrity
+
+The finished-character editor uses one main character form. Advancement
+actions are associated with separate standalone forms rather than nesting
+forms inside the character editor. This is required because nested HTML forms
+are invalid and can cause browsers to terminate the character form early,
+leaving Configure-mode Save controls detached from the data they are meant to
+submit.

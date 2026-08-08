@@ -5,39 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>{{ workflow.title }} - Tabletop Librarian</title>
   <link rel="stylesheet" href="/static/css/main.css">
-  <style>
-    .ttl-create-wrap { max-width: 980px; margin:0 auto; padding:28px 22px 60px; }
-    .ttl-create-head { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:20px; }
-    .ttl-create-head h1 { margin:0 0 4px; }
-    .ttl-card { border:1px solid rgba(127,127,127,.28); border-radius:12px; padding:20px; background:rgba(127,127,127,.06); }
-    .ttl-muted { opacity:.72; font-size:.92rem; }
-    .ttl-progress { display:grid; grid-template-columns:repeat({{ step_count }},minmax(0,1fr)); gap:7px; margin:18px 0 24px; }
-    .ttl-progress-step { border:1px solid rgba(127,127,127,.25); border-radius:8px; padding:9px 8px; text-align:center; font-size:.88rem; opacity:.62; }
-    .ttl-progress-step.is-current { opacity:1; font-weight:700; border-color:rgba(127,127,127,.7); background:rgba(127,127,127,.12); }
-    .ttl-progress-step.is-done { opacity:.86; }
-    .ttl-step-head { margin-bottom:18px; }
-    .ttl-step-head h2 { margin:0 0 6px; }
-    .ttl-field-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
-    .ttl-field { display:grid; gap:6px; }
-    .ttl-field-wide { grid-column:1/-1; }
-    .ttl-field input:not([type=checkbox]), .ttl-field select, .ttl-field textarea { width:100%; box-sizing:border-box; padding:9px 10px; }
-    .ttl-field textarea { min-height:110px; resize:vertical; }
-    .ttl-actions { display:flex; justify-content:space-between; gap:16px; align-items:center; margin-top:24px; }
-    .ttl-actions-left,.ttl-actions-right { display:flex; gap:10px; align-items:center; }
-    .ttl-error { margin-bottom:16px; padding:11px 13px; border-radius:8px; background:rgba(180,70,70,.14); border:1px solid rgba(180,70,70,.35); }
-    .ttl-derived { margin-top:20px; }
-    .ttl-derived-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:12px; }
-    .ttl-derived-item { border:1px dashed rgba(127,127,127,.35); border-radius:8px; padding:10px 12px; }
-    .ttl-derived-value { font-size:1.15rem; font-weight:700; margin-top:3px; }
-    #ttl-rule-panel { display:none; margin-bottom:16px; }
-    @media (max-width:700px) {
-      .ttl-field-grid,.ttl-derived-grid { grid-template-columns:1fr; }
-      .ttl-progress { grid-template-columns:1fr; }
-      .ttl-actions { align-items:flex-start; flex-direction:column; }
-    }
-  </style>
 </head>
-<body>
+<body class="ttl-character-ui">
   {% include "_global_nav.html" %}
   <main class="ttl-create-wrap">
     <div class="ttl-create-head">
@@ -238,7 +207,7 @@
                 </div>
 
 
-                <div class="ttl-compendium-picker" data-compendium-picker data-picker-mode="multi" data-picker-label="{{ field.label }}">
+                <div class="ttl-compendium-picker" data-compendium-picker data-picker-mode="multi" data-picker-label="{{ field.label }}" data-picker-entity="{{ field.entity or '' }}">
 
 
                   <select id="field__{{ field_id }}" name="field__{{ field_id }}" multiple class="ttl-picker-native ttl-multi-reference-native" aria-hidden="true" tabindex="-1">
@@ -825,21 +794,62 @@
               return;
             }
 
+            const entityType = picker.dataset.pickerEntity || "";
+            if (mode === "multi" && entityType === "skill") {
+              const table = document.createElement("table");
+              table.className = "ttl-skill-table";
+              table.innerHTML = "<thead><tr><th>Skill</th><th>Description</th><th></th></tr></thead>";
+              const body = document.createElement("tbody");
+
+              selected.forEach((option) => {
+                const row = document.createElement("tr");
+                if (option.dataset.eligible === "false") {
+                  row.classList.add("is-ineligible");
+                  row.title = option.dataset.eligibilityMessage || "Requirements are not met.";
+                }
+
+                const nameCell = document.createElement("td");
+                nameCell.className = "ttl-skill-name";
+                nameCell.textContent = option.dataset.pickerName || option.dataset.baseLabel || option.textContent;
+
+                const descriptionCell = document.createElement("td");
+                descriptionCell.className = "ttl-skill-description";
+                descriptionCell.textContent = option.dataset.pickerDescription || "";
+
+                const actionCell = document.createElement("td");
+                actionCell.className = "ttl-skill-action";
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.className = "ttl-picker-chip-remove";
+                remove.textContent = "×";
+                remove.title = `Remove ${nameCell.textContent}`;
+                remove.addEventListener("click", () => {
+                  option.selected = false;
+                  emitChange();
+                  renderSelected();
+                  renderResults();
+                });
+                actionCell.appendChild(remove);
+                row.append(nameCell, descriptionCell, actionCell);
+                body.appendChild(row);
+              });
+
+              table.appendChild(body);
+              selectedBox.appendChild(table);
+              return;
+            }
+
             selected.forEach((option) => {
               const chip = document.createElement("span");
               chip.className = "ttl-picker-chip";
 
               if (option.dataset.eligible === "false") {
                 chip.classList.add("ttl-picker-chip-ineligible");
-                chip.title =
-                  option.dataset.eligibilityMessage || "Requirements are not met.";
+                chip.title = option.dataset.eligibilityMessage || "Requirements are not met.";
               }
 
               const name = document.createElement("span");
-              name.textContent =
-                option.dataset.pickerName ||
-                option.dataset.baseLabel ||
-                option.textContent;
+              name.textContent = option.dataset.pickerName || option.dataset.baseLabel || option.textContent;
               chip.appendChild(name);
 
               const remove = document.createElement("button");

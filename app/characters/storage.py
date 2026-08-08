@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -11,6 +11,7 @@ import tempfile
 import uuid
 
 from app.characters.schema import CharacterSchema, load_character_schema, validate_character_data
+from app.characters.temporary_effects import normalize_temporary_effects
 from app.compendium import load_compendium
 from app.rules import (
     load_rule_engine,
@@ -42,6 +43,7 @@ class CharacterRecord:
     created_at: str
     updated_at: str
     path: Path
+    temporary_effects: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
 
 
 def _utc_now() -> str:
@@ -265,6 +267,7 @@ def create_character(
         "created_at": now,
         "updated_at": now,
         "data": data,
+        "temporary_effects": {},
     }
     _atomic_write_json(path, payload)
 
@@ -345,6 +348,7 @@ def load_character(
         payload["created_at"],
         payload["updated_at"],
         path,
+        normalize_temporary_effects(payload.get("temporary_effects")),
     )
 
 
@@ -389,6 +393,9 @@ def save_character(
             "created_at": record.created_at,
             "updated_at": record.updated_at,
             "data": record.data,
+            "temporary_effects": normalize_temporary_effects(
+                record.temporary_effects
+            ),
         },
     )
 

@@ -40,6 +40,7 @@ def main() -> int:
     assert inventory.type == "collection"
     assert set(inventory.item_schema) == {
         "item",
+        "custom_name",
         "quantity",
         "equipped",
         "notes",
@@ -50,6 +51,7 @@ def main() -> int:
         "quantity": 1,
         "equipped": False,
         "notes": "",
+        "custom_name": "",
     }
 
     valid_data = schema.default_data()

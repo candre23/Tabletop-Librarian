@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 import ast
 import math
 import operator
@@ -342,12 +342,21 @@ class RuleEngine:
         self,
         data: dict[str, Any],
         modifiers: dict[str, Any] | None = None,
+        value_transform: Callable[[str, Any], Any] | None = None,
     ) -> dict[str, Any]:
         values = dict(data)
+
+        if value_transform is not None:
+            for field_id, value in list(values.items()):
+                values[field_id] = value_transform(field_id, value)
+
         values.update(self._modifier_context(modifiers))
 
         for rule_id in self.order:
-            values[rule_id] = _evaluate(self._calc_trees[rule_id], values)
+            value = _evaluate(self._calc_trees[rule_id], values)
+            if value_transform is not None:
+                value = value_transform(rule_id, value)
+            values[rule_id] = value
 
         return values
 
@@ -393,9 +402,14 @@ class RuleEngine:
         data: dict[str, Any],
         *,
         modifiers: dict[str, Any] | None = None,
+        value_transform: Callable[[str, Any], Any] | None = None,
     ) -> dict[str, Any]:
         return self._character_values(
-            self._calculate_context(data, modifiers)
+            self._calculate_context(
+                data,
+                modifiers,
+                value_transform=value_transform,
+            )
         )
 
     def validate(

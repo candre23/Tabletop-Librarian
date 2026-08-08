@@ -47,6 +47,7 @@ class CharacterField:
     item_schema: dict[str, "CharacterField"] | None = None
     minimum: float | int | None = None
     maximum: float | int | None = None
+    play_editable: bool = False
     raw: dict[str, Any] = field(default_factory=dict)
 
 
@@ -230,6 +231,30 @@ def _parse_field(
         )
 
     default = copy.deepcopy(definition.get("default"))
+    if field_type == "resource" and "default" in definition:
+        if not isinstance(default, dict):
+            issues.append(
+                CharacterSchemaIssue(
+                    "error",
+                    "resource default must be an object with current/max values.",
+                    field_path,
+                )
+            )
+        else:
+            for resource_key in ("current", "max"):
+                resource_value = default.get(resource_key)
+                if resource_value is not None and (
+                    not isinstance(resource_value, (int, float))
+                    or isinstance(resource_value, bool)
+                ):
+                    issues.append(
+                        CharacterSchemaIssue(
+                            "error",
+                            f"resource {resource_key} must be numeric.",
+                            field_path,
+                        )
+                    )
+
     if "default" in definition:
         if not _type_matches(field_type, default):
             issues.append(
@@ -251,6 +276,17 @@ def _parse_field(
                     field_path,
                 )
             )
+
+    play_editable = definition.get("play_editable", False)
+    if not isinstance(play_editable, bool):
+        issues.append(
+            CharacterSchemaIssue(
+                "error",
+                "play_editable must be true or false.",
+                f"{field_path}.play_editable",
+            )
+        )
+        play_editable = False
 
     item_schema: dict[str, CharacterField] | None = None
     if field_type == "collection":
@@ -287,6 +323,7 @@ def _parse_field(
         item_schema=item_schema,
         minimum=minimum,
         maximum=maximum,
+        play_editable=play_editable,
         raw=copy.deepcopy(definition),
     )
 
@@ -553,5 +590,30 @@ def validate_character_data(
                         item_path,
                     )
                 )
+
+            if definition.raw.get("allow_custom"):
+                reference_fields = [
+                    item_id
+                    for item_id, item_definition in item_schema.items()
+                    if item_definition.type == "reference"
+                ]
+                custom_name_field = str(
+                    definition.raw.get("custom_name_field") or "custom_name"
+                )
+                selected_reference = any(
+                    row.get(item_id) not in (None, "")
+                    for item_id in reference_fields
+                )
+                custom_name = row.get(custom_name_field)
+                if not selected_reference and not (
+                    isinstance(custom_name, str) and custom_name.strip()
+                ):
+                    issues.append(
+                        CharacterSchemaIssue(
+                            "error",
+                            "Collection row requires a compendium selection or custom name.",
+                            row_path,
+                        )
+                    )
 
     return issues
