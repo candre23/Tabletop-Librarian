@@ -4,7 +4,6 @@ import time
 import uuid
 
 import logging
-import threading
 from pathlib import Path
 from urllib.parse import quote
 
@@ -97,98 +96,6 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 templates.env.globals["knowledgebase_status"] = knowledgebase_status
-
-
-_source_scan_jobs: dict[str, dict] = {}
-_source_scan_lock = threading.Lock()
-
-
-def _source_scan_job_snapshot(job_id: str) -> dict | None:
-    with _source_scan_lock:
-        job = _source_scan_jobs.get(job_id)
-        if job is None:
-            return None
-        return {
-            key: value
-            for key, value in job.items()
-            if key != "scan_result"
-        }
-
-
-def _set_source_scan_job(job_id: str, **updates) -> None:
-    with _source_scan_lock:
-        job = _source_scan_jobs.setdefault(job_id, {})
-        job.update(updates)
-
-
-def _run_source_scan_job(
-    job_id: str,
-    folder_name: str,
-    source_path: str,
-) -> None:
-    try:
-        _set_source_scan_job(
-            job_id,
-            state="adding",
-            message="Discovering source folders...",
-            current="",
-            documents_seen=0,
-        )
-
-        result = add_source(folder_name, source_path)
-        added_count = int(result.get("added_count") or 1)
-
-        _set_source_scan_job(
-            job_id,
-            sources_added=added_count,
-            state="scanning",
-            message="Scanning documents...",
-        )
-
-        folder = get_folder(folder_name)
-        if folder is None:
-            raise ValueError("Virtual folder not found after source assignment.")
-
-        def progress(kind, path, count):
-            _set_source_scan_job(
-                job_id,
-                state="scanning",
-                current=path.name,
-                documents_seen=count,
-                message=f"Scanning document {count}: {path.name}",
-            )
-
-        scan_result = scan_folder(
-            folder,
-            generate_covers=True,
-            progress_callback=progress,
-        )
-
-        documents = len(scan_result.get("documents", []))
-        with _source_scan_lock:
-            job = _source_scan_jobs[job_id]
-            job.update(
-                {
-                    "state": "done",
-                    "message": (
-                        f"Complete. {added_count} source folder"
-                        f"{'s' if added_count != 1 else ''} added; "
-                        f"{documents} documents found."
-                    ),
-                    "documents_seen": documents,
-                    "scan_result": scan_result,
-                }
-            )
-
-    except Exception as exc:
-        logger.exception("Physical source scan job failed: %s", source_path)
-        _set_source_scan_job(
-            job_id,
-            state="error",
-            error=str(exc),
-            message=f"Source scan failed: {exc}",
-        )
-
 
 
 def current_user(request: Request) -> dict[str, str] | None:
@@ -1301,30 +1208,12 @@ async def admin_library(request: Request):
         return RedirectResponse("/", status_code=303)
 
     folder_data = []
-    source_job_id = request.query_params.get("source_job")
-    completed_job = None
-
-    if source_job_id:
-        with _source_scan_lock:
-            candidate = _source_scan_jobs.get(source_job_id)
-            if candidate and candidate.get("state") == "done":
-                completed_job = candidate
 
     for folder in list_folders():
-        if (
-            completed_job
-            and str(folder.get("name", "")).casefold()
-            == str(completed_job.get("folder_name", "")).casefold()
-            and completed_job.get("scan_result") is not None
-        ):
-            scan = completed_job["scan_result"]
-        else:
-            scan = scan_folder(folder)
-
         folder_data.append(
             {
                 **folder,
-                "scan": scan,
+                "scan": scan_folder(folder),
             }
         )
 
@@ -1407,42 +1296,10 @@ async def admin_library_source_add(
 ):
     user = current_user(request)
     if not user:
-        if request.headers.get("X-TTL-Source-Scan") == "1":
-            return JSONResponse({"error": "Unauthorized"}, status_code=401)
         return RedirectResponse("/login", status_code=303)
-
     if user["role"] != "gm":
-        if request.headers.get("X-TTL-Source-Scan") == "1":
-            return JSONResponse({"error": "Unauthorized"}, status_code=403)
         return RedirectResponse("/", status_code=303)
 
-    # AJAX path: return immediately and do the expensive scan in a worker.
-    if request.headers.get("X-TTL-Source-Scan") == "1":
-        job_id = uuid.uuid4().hex
-        _set_source_scan_job(
-            job_id,
-            state="queued",
-            folder_name=name,
-            source_path=path,
-            message="Preparing scan...",
-            current="",
-            documents_seen=0,
-            sources_added=0,
-            error=None,
-        )
-
-        asyncio.create_task(
-            asyncio.to_thread(
-                _run_source_scan_job,
-                job_id,
-                name,
-                path,
-            )
-        )
-
-        return JSONResponse({"job_id": job_id})
-
-    # Non-JavaScript fallback keeps the old synchronous behavior.
     try:
         result = add_source(name, path)
     except ValueError as exc:
@@ -1464,23 +1321,6 @@ async def admin_library_source_add(
         f"/admin/library?message={quote(message)}",
         status_code=303,
     )
-
-
-@app.get("/admin/library/source/status/{job_id}")
-async def admin_library_source_status(
-    request: Request,
-    job_id: str,
-):
-    user = current_user(request)
-
-    if not user or user["role"] != "gm":
-        return JSONResponse({"error": "Unauthorized"}, status_code=403)
-
-    job = _source_scan_job_snapshot(job_id)
-    if job is None:
-        return JSONResponse({"error": "Scan job not found."}, status_code=404)
-
-    return JSONResponse(job)
 
 
 @app.post("/admin/library/source/remove")

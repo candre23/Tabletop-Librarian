@@ -9,7 +9,6 @@ from typing import Any
 import fitz
 
 from app.config import CACHE_DIR
-from app.knowledgebase import invalidate_text, mark_text_current
 from app.library.manager import list_folders, scan_folder
 
 logger = logging.getLogger(__name__)
@@ -205,22 +204,6 @@ def build_text_cache(force: bool = False) -> dict[str, Any]:
             summary["pages"] += result.get("pages", 0)
             summary["characters"] += result.get("characters", 0)
 
-    # Remove orphaned extracted-text entries for documents that are no longer
-    # present in any virtual folder. Without this, cache counts can include
-    # books removed from the library and make downstream corpus counts confusing.
-    if TEXT_CACHE_DIR.exists():
-        for cache in TEXT_CACHE_DIR.glob("*.json"):
-            try:
-                cached_data = json.loads(cache.read_text(encoding="utf-8"))
-                cached_path = str(cached_data.get("path") or "")
-            except Exception:
-                cached_path = ""
-            if not cached_path or cached_path not in seen_paths:
-                cache.unlink(missing_ok=True)
-
-    if summary["errors"] == 0:
-        mark_text_current()
-
     return summary
 
 
@@ -249,7 +232,8 @@ def text_cache_status() -> dict[str, Any]:
 
 
 def clear_text_cache() -> None:
-    if TEXT_CACHE_DIR.exists():
-        for item in TEXT_CACHE_DIR.glob("*.json"):
-            item.unlink(missing_ok=True)
-    invalidate_text()
+    if not TEXT_CACHE_DIR.exists():
+        return
+
+    for item in TEXT_CACHE_DIR.glob("*.json"):
+        item.unlink(missing_ok=True)

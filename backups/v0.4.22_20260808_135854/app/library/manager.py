@@ -3,9 +3,8 @@ from __future__ import annotations
 import hashlib
 import logging
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
-from app.knowledgebase import mark_library_changed
 from app.config import LIBRARY_FILE, SUPPORTED_EXTENSIONS
 from app.library.covers import ensure_cover
 from app.library.pdf_status import detect_pdf_text_status
@@ -109,7 +108,6 @@ def add_folder(name: str, visibility: str = "players") -> dict[str, Any]:
     data = get_library()
     data.setdefault("folders", []).append(folder)
     save_library(data)
-    mark_library_changed(f"Virtual folder added: {name}")
 
     logger.info("Virtual library folder added: %s", name)
     return folder
@@ -131,7 +129,6 @@ def remove_folder(name: str) -> bool:
 
     data["folders"] = new_folders
     save_library(data)
-    mark_library_changed(f"Virtual folder removed: {name}")
     logger.info("Virtual library folder removed: %s", name)
     return True
 
@@ -151,49 +148,7 @@ def set_folder_visibility(name: str, visibility: str) -> bool:
     return False
 
 
-def _directory_sources(root: Path) -> list[Path]:
-    """Return root plus all descendant directories as independent sources."""
-    directories = [root]
-
-    try:
-        descendants = [
-            path
-            for path in root.rglob("*")
-            if path.is_dir()
-        ]
-    except OSError as exc:
-        raise ValueError(f"Unable to scan subfolders under {root}: {exc}") from exc
-
-    directories.extend(
-        sorted(
-            descendants,
-            key=lambda path: (
-                len(path.relative_to(root).parts),
-                str(path).casefold(),
-            ),
-        )
-    )
-
-    resolved: list[Path] = []
-    seen: set[str] = set()
-
-    for path in directories:
-        try:
-            candidate = path.resolve(strict=True)
-        except OSError:
-            continue
-
-        key = str(candidate)
-        if key in seen:
-            continue
-
-        seen.add(key)
-        resolved.append(candidate)
-
-    return resolved
-
-
-def add_source(folder_name: str, path_text: str) -> dict[str, Any]:
+def add_source(folder_name: str, path_text: str) -> dict[str, str]:
     path = Path(path_text.strip()).expanduser()
 
     if not path.exists():
@@ -216,67 +171,20 @@ def add_source(folder_name: str, path_text: str) -> dict[str, Any]:
         if str(folder.get("name", "")).casefold() != normalized:
             continue
 
-        sources = folder.setdefault("sources", [])
-        existing = {
-            (str(source.get("type")), str(source.get("path")))
-            for source in sources
-        }
+        source = {"type": source_type, "path": str(resolved)}
 
-        if source_type == "file":
-            candidates = [
-                {"type": "file", "path": str(resolved)}
-            ]
-        else:
-            candidates = [
-                {"type": "directory", "path": str(directory)}
-                for directory in _directory_sources(resolved)
-            ]
+        if source in folder.setdefault("sources", []):
+            raise ValueError("That physical source is already assigned to this folder.")
 
-        added: list[dict[str, str]] = []
-
-        for source in candidates:
-            key = (source["type"], source["path"])
-            if key in existing:
-                continue
-
-            sources.append(source)
-            existing.add(key)
-            added.append(source)
-
-        if not added:
-            raise ValueError(
-                "That physical source and all discovered subfolders are already "
-                "assigned to this folder."
-            )
-
+        folder["sources"].append(source)
         save_library(data)
-
-        if source_type == "directory":
-            mark_library_changed(
-                f"Library source tree added to {folder_name}: "
-                f"{resolved.name} ({len(added)} source folder"
-                f"{'s' if len(added) != 1 else ''})"
-            )
-        else:
-            mark_library_changed(
-                f"Library source added to {folder_name}: {resolved.name}"
-            )
-
         logger.info(
-            "Physical source added to %s: %s (%s); %d source entr%s added",
+            "Physical source added to %s: %s (%s)",
             folder_name,
             resolved,
             source_type,
-            len(added),
-            "ies" if len(added) != 1 else "y",
         )
-
-        return {
-            "type": source_type,
-            "path": str(resolved),
-            "added_count": len(added),
-            "added_sources": added,
-        }
+        return source
 
     raise ValueError("Virtual folder not found.")
 
@@ -304,7 +212,6 @@ def remove_source(folder_name: str, source_type: str, source_path: str) -> bool:
 
         folder["sources"] = new_sources
         save_library(data)
-        mark_library_changed(f"Library source removed from {folder_name}: {Path(source_path).name}")
         logger.info("Physical source removed from %s: %s", folder_name, source_path)
         return True
 
@@ -395,11 +302,7 @@ def _document_record(
     }
 
 
-def scan_folder(
-    folder: dict[str, Any],
-    generate_covers: bool = True,
-    progress_callback: Callable[[str, Path, int], None] | None = None,
-) -> dict[str, Any]:
+def scan_folder(folder: dict[str, Any], generate_covers: bool = True) -> dict[str, Any]:
     result = {
         "available": True,
         "documents": [],
@@ -408,7 +311,6 @@ def scan_folder(
     }
 
     documents_by_path: dict[str, dict[str, Any]] = {}
-    scanned_count = 0
 
     for source in folder.get("sources", []):
         source_path = Path(source.get("path", ""))
@@ -423,12 +325,6 @@ def scan_folder(
                 for item in source_path.iterdir():
                     if not item.is_file():
                         continue
-                    if item.suffix.casefold() not in SUPPORTED_EXTENSIONS:
-                        continue
-
-                    scanned_count += 1
-                    if progress_callback is not None:
-                        progress_callback("document", item, scanned_count)
 
                     record = _document_record(
                         item,
@@ -441,10 +337,6 @@ def scan_folder(
                         documents_by_path[record["path"]] = record
 
             elif source_type == "file" and source_path.is_file():
-                scanned_count += 1
-                if progress_callback is not None:
-                    progress_callback("document", source_path, scanned_count)
-
                 record = _document_record(
                     source_path,
                     folder,

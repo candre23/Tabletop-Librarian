@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import logging
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from app.knowledgebase import mark_library_changed
 from app.config import LIBRARY_FILE, SUPPORTED_EXTENSIONS
@@ -395,11 +395,7 @@ def _document_record(
     }
 
 
-def scan_folder(
-    folder: dict[str, Any],
-    generate_covers: bool = True,
-    progress_callback: Callable[[str, Path, int], None] | None = None,
-) -> dict[str, Any]:
+def scan_folder(folder: dict[str, Any], generate_covers: bool = True) -> dict[str, Any]:
     result = {
         "available": True,
         "documents": [],
@@ -408,7 +404,6 @@ def scan_folder(
     }
 
     documents_by_path: dict[str, dict[str, Any]] = {}
-    scanned_count = 0
 
     for source in folder.get("sources", []):
         source_path = Path(source.get("path", ""))
@@ -423,12 +418,6 @@ def scan_folder(
                 for item in source_path.iterdir():
                     if not item.is_file():
                         continue
-                    if item.suffix.casefold() not in SUPPORTED_EXTENSIONS:
-                        continue
-
-                    scanned_count += 1
-                    if progress_callback is not None:
-                        progress_callback("document", item, scanned_count)
 
                     record = _document_record(
                         item,
@@ -441,10 +430,6 @@ def scan_folder(
                         documents_by_path[record["path"]] = record
 
             elif source_type == "file" and source_path.is_file():
-                scanned_count += 1
-                if progress_callback is not None:
-                    progress_callback("document", source_path, scanned_count)
-
                 record = _document_record(
                     source_path,
                     folder,

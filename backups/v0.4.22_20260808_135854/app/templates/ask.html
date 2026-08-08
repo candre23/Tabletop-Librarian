@@ -16,7 +16,7 @@
 
     {% if error %}<div class="error">{{ error }}</div>{% endif %}
     {% if not provider_configured %}
-    <div class="error">The AI provider has not been configured.{% if user.role == "gm" %} Configure it from Knowledgebase Tools.{% endif %}</div>
+    <div class="error">The AI provider has not been configured.{% if user.role == "gm" %} Configure it from the RAG Corpus page.{% endif %}</div>
     {% endif %}
 
     <form method="post" action="/ask" class="ask-form" id="ask-form">

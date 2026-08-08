@@ -9,7 +9,6 @@ from time import time
 from typing import Any
 
 from app.config import CACHE_DIR
-from app.knowledgebase import invalidate_chunks, mark_chunks_current
 from app.library.manager import list_folders, scan_folder
 from app.search.extract import load_cached_text
 
@@ -261,7 +260,6 @@ def build_chunk_cache() -> dict[str, int]:
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    mark_chunks_current()
 
     return {
         "documents": documents,
@@ -373,4 +371,3 @@ def clear_chunk_cache() -> None:
     if chunk_build_status()["running"]:
         raise RuntimeError("Cannot clear context chunks while a build is running.")
     CHUNK_CACHE_FILE.unlink(missing_ok=True)
-    invalidate_chunks()

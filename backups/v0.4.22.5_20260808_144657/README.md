@@ -60,10 +60,3 @@ polls live scan status. The progress overlay reports the actual filename being
 inspected and the running number of supported documents processed. The final
 scan result is reused when the Library Manager reloads so the newly imported
 folder does not immediately undergo the same expensive scan a second time.
-
-
-### Knowledgebase polling
-
-The Knowledgebase Tools page uses lightweight embedding-status polling during
-and after builds. Completion no longer schedules repeated full-page reloads,
-so page controls remain responsive after a knowledgebase update finishes.

@@ -8,6 +8,15 @@
 </head>
 <body>
     {% include "_global_nav.html" %}
+    {% set base_role = (request.session.get("role") or "player")|lower if request else "player" %}
+    {% if base_role == "gm" %}
+      {% set kb_state = knowledgebase_status() %}
+      {% if kb_state.library_changed %}
+      <div class="knowledgebase-global-warning">
+        <a href="/admin/knowledgebase"><strong>Library contents have changed - knowledgebase will need to be updated.</strong></a>
+      </div>
+      {% endif %}
+    {% endif %}
     <main class="shell">
         {% block content %}{% endblock %}
     </main>

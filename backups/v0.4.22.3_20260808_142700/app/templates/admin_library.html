@@ -1,6 +1,56 @@
 {% extends "base.html" %}
 
 {% block title %}Manage Library - {{ app_name }}
+<div
+    class="source-scan-overlay"
+    id="source-scan-overlay"
+    role="status"
+    aria-live="polite"
+    aria-hidden="true"
+>
+    <div class="source-scan-dialog">
+        <h2>Adding Physical Source</h2>
+        <p id="source-scan-message">
+            Scanning folder tree and documents. Large libraries may take a few minutes.
+        </p>
+        <div class="source-scan-progress" aria-label="Scanning in progress">
+            <div class="source-scan-progress-bar"></div>
+        </div>
+        <small>Please leave this page open until the scan completes.</small>
+    </div>
+</div>
+
+<script>
+(() => {
+    const overlay = document.getElementById("source-scan-overlay");
+    const message = document.getElementById("source-scan-message");
+
+    document.querySelectorAll("[data-source-scan-form]").forEach((form) => {
+        form.addEventListener("submit", () => {
+            const pathInput = form.querySelector('input[name="path"]');
+            const sourcePath = pathInput?.value?.trim();
+
+            if (sourcePath && message) {
+                message.textContent =
+                    `Scanning ${sourcePath} and its subfolders. ` +
+                    "Large libraries may take a few minutes.";
+            }
+
+            if (overlay) {
+                overlay.classList.add("is-visible");
+                overlay.setAttribute("aria-hidden", "false");
+            }
+
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = "Scanning...";
+            }
+        });
+    });
+})();
+</script>
+
 {% endblock %}
 
 {% block content %}
@@ -202,130 +252,4 @@
         {% endfor %}
     </div>
 </section>
-
-<div
-    class="source-scan-overlay"
-    id="source-scan-overlay"
-    role="status"
-    aria-live="polite"
-    aria-hidden="true"
->
-    <div class="source-scan-dialog">
-        <h2>Adding Physical Source</h2>
-        <p id="source-scan-message">
-            Scanning folder tree and documents. Large libraries may take a few minutes.
-        </p>
-        <div class="source-scan-progress" aria-label="Scanning in progress">
-            <div class="source-scan-progress-bar"></div>
-        </div>
-        <small>Please leave this page open until the scan completes.</small>
-    </div>
-</div>
-
-<script>
-(() => {
-    const overlay = document.getElementById("source-scan-overlay");
-    const message = document.getElementById("source-scan-message");
-
-    function showOverlay(text) {
-        if (message && text) message.textContent = text;
-        if (overlay) {
-            overlay.classList.add("is-visible");
-            overlay.setAttribute("aria-hidden", "false");
-        }
-    }
-
-    function delay(milliseconds) {
-        return new Promise((resolve) => setTimeout(resolve, milliseconds));
-    }
-
-    async function pollSourceScan(jobId) {
-        while (true) {
-            await delay(750);
-
-            const response = await fetch(
-                `/admin/library/source/status/${encodeURIComponent(jobId)}`,
-                {cache: "no-store"}
-            );
-
-            if (!response.ok) {
-                throw new Error(`Status request failed with HTTP ${response.status}`);
-            }
-
-            const status = await response.json();
-
-            if (message && status.message) {
-                message.textContent = status.message;
-            }
-
-            if (status.state === "done") {
-                const finalMessage = encodeURIComponent(
-                    status.message || "Physical source added."
-                );
-                window.location.href =
-                    `/admin/library?source_job=${encodeURIComponent(jobId)}` +
-                    `&message=${finalMessage}`;
-                return;
-            }
-
-            if (status.state === "error") {
-                throw new Error(status.error || status.message || "Source scan failed.");
-            }
-        }
-    }
-
-    document.querySelectorAll("[data-source-scan-form]").forEach((form) => {
-        form.addEventListener("submit", async (event) => {
-            event.preventDefault();
-
-            const pathInput = form.querySelector('input[name="path"]');
-            const sourcePath = pathInput?.value?.trim();
-            const submitButton = form.querySelector('button[type="submit"]');
-
-            showOverlay(
-                sourcePath
-                    ? `Preparing to scan ${sourcePath}...`
-                    : "Preparing source scan..."
-            );
-
-            if (submitButton) {
-                submitButton.disabled = true;
-                submitButton.textContent = "Scanning...";
-            }
-
-            try {
-                const response = await fetch(form.action, {
-                    method: "POST",
-                    body: new FormData(form),
-                    headers: {
-                        "X-TTL-Source-Scan": "1",
-                    },
-                });
-
-                const payload = await response.json();
-
-                if (!response.ok || !payload.job_id) {
-                    throw new Error(
-                        payload.error || `Source scan failed with HTTP ${response.status}`
-                    );
-                }
-
-                await pollSourceScan(payload.job_id);
-
-            } catch (error) {
-                if (message) {
-                    message.textContent =
-                        `Source scan failed: ${error.message || error}`;
-                }
-
-                if (submitButton) {
-                    submitButton.disabled = false;
-                    submitButton.textContent = "Add Physical Source";
-                }
-            }
-        });
-    });
-})();
-</script>
-
 {% endblock %}

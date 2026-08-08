@@ -4,7 +4,6 @@ import time
 import uuid
 
 import logging
-import threading
 from pathlib import Path
 from urllib.parse import quote
 
@@ -27,7 +26,6 @@ from app.auth import (
     set_user_enabled,
 )
 from app.config import APP_NAME, APP_VERSION, STATIC_DIR, TEMPLATE_DIR
-from app.knowledgebase import knowledgebase_status
 from app.library.covers import (
     cached_cover_path,
     get_cover_path,
@@ -96,99 +94,6 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
-templates.env.globals["knowledgebase_status"] = knowledgebase_status
-
-
-_source_scan_jobs: dict[str, dict] = {}
-_source_scan_lock = threading.Lock()
-
-
-def _source_scan_job_snapshot(job_id: str) -> dict | None:
-    with _source_scan_lock:
-        job = _source_scan_jobs.get(job_id)
-        if job is None:
-            return None
-        return {
-            key: value
-            for key, value in job.items()
-            if key != "scan_result"
-        }
-
-
-def _set_source_scan_job(job_id: str, **updates) -> None:
-    with _source_scan_lock:
-        job = _source_scan_jobs.setdefault(job_id, {})
-        job.update(updates)
-
-
-def _run_source_scan_job(
-    job_id: str,
-    folder_name: str,
-    source_path: str,
-) -> None:
-    try:
-        _set_source_scan_job(
-            job_id,
-            state="adding",
-            message="Discovering source folders...",
-            current="",
-            documents_seen=0,
-        )
-
-        result = add_source(folder_name, source_path)
-        added_count = int(result.get("added_count") or 1)
-
-        _set_source_scan_job(
-            job_id,
-            sources_added=added_count,
-            state="scanning",
-            message="Scanning documents...",
-        )
-
-        folder = get_folder(folder_name)
-        if folder is None:
-            raise ValueError("Virtual folder not found after source assignment.")
-
-        def progress(kind, path, count):
-            _set_source_scan_job(
-                job_id,
-                state="scanning",
-                current=path.name,
-                documents_seen=count,
-                message=f"Scanning document {count}: {path.name}",
-            )
-
-        scan_result = scan_folder(
-            folder,
-            generate_covers=True,
-            progress_callback=progress,
-        )
-
-        documents = len(scan_result.get("documents", []))
-        with _source_scan_lock:
-            job = _source_scan_jobs[job_id]
-            job.update(
-                {
-                    "state": "done",
-                    "message": (
-                        f"Complete. {added_count} source folder"
-                        f"{'s' if added_count != 1 else ''} added; "
-                        f"{documents} documents found."
-                    ),
-                    "documents_seen": documents,
-                    "scan_result": scan_result,
-                }
-            )
-
-    except Exception as exc:
-        logger.exception("Physical source scan job failed: %s", source_path)
-        _set_source_scan_job(
-            job_id,
-            state="error",
-            error=str(exc),
-            message=f"Source scan failed: {exc}",
-        )
-
 
 
 def current_user(request: Request) -> dict[str, str] | None:
@@ -657,11 +562,25 @@ async def admin_manual_cover_remove(
 @app.get("/admin/search", response_class=HTMLResponse)
 async def admin_search(request: Request):
     user = current_user(request)
+
     if not user:
         return RedirectResponse("/login", status_code=303)
+
     if user["role"] != "gm":
         return RedirectResponse("/", status_code=303)
-    return RedirectResponse("/admin/knowledgebase", status_code=303)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_search.html",
+        context={
+            "app_name": APP_NAME,
+            "app_version": APP_VERSION,
+            "user": user,
+            "status": text_cache_status(),
+            "error": request.query_params.get("error"),
+            "message": request.query_params.get("message"),
+        },
+    )
 
 
 @app.post("/admin/search/build")
@@ -688,7 +607,7 @@ async def admin_search_build(
     )
 
     return RedirectResponse(
-        f"/admin/knowledgebase?message={quote(message)}",
+        f"/admin/search?message={quote(message)}",
         status_code=303,
     )
 
@@ -706,78 +625,36 @@ async def admin_search_clear(request: Request):
     clear_text_cache()
 
     return RedirectResponse(
-        f"/admin/knowledgebase?message={quote('Extracted-text cache cleared.')}",
+        f"/admin/search?message={quote('Extracted-text cache cleared.')}",
         status_code=303,
     )
 
 
 
-@app.get("/admin/knowledgebase", response_class=HTMLResponse)
-async def admin_knowledgebase(request: Request):
+@app.get("/admin/rag", response_class=HTMLResponse)
+async def admin_rag(request: Request):
     user = current_user(request)
+
     if not user:
         return RedirectResponse("/login", status_code=303)
+
     if user["role"] != "gm":
         return RedirectResponse("/", status_code=303)
 
     return templates.TemplateResponse(
         request=request,
-        name="admin_knowledgebase.html",
+        name="admin_rag.html",
         context={
             "app_name": APP_NAME,
             "app_version": APP_VERSION,
             "user": user,
-            "knowledgebase": knowledgebase_status(),
-            "text_status": text_cache_status(),
-            "chunk_status": chunk_cache_status(),
+            "status": chunk_cache_status(),
             "embedding_status": embedding_status(),
             "embedding_models": model_options(),
             "ai_settings": provider_settings_for_ui(),
             "message": request.query_params.get("message"),
             "error": request.query_params.get("error"),
         },
-    )
-
-
-@app.get("/admin/rag", response_class=HTMLResponse)
-async def admin_rag(request: Request):
-    user = current_user(request)
-    if not user:
-        return RedirectResponse("/login", status_code=303)
-    if user["role"] != "gm":
-        return RedirectResponse("/", status_code=303)
-    return RedirectResponse("/admin/knowledgebase", status_code=303)
-
-
-@app.post("/admin/knowledgebase/update")
-async def admin_knowledgebase_update(request: Request):
-    user = current_user(request)
-    if not user or user["role"] != "gm":
-        return RedirectResponse("/", status_code=303)
-
-    try:
-        text_summary = build_text_cache(force=False)
-        if text_summary["errors"]:
-            raise RuntimeError(
-                f"Text extraction completed with {text_summary['errors']} error(s); "
-                "fix those before rebuilding downstream knowledgebase stages."
-            )
-        chunk_summary = build_chunk_cache()
-        start_embedding_build()
-    except Exception as exc:
-        return RedirectResponse(
-            f"/admin/knowledgebase?error={quote(str(exc))}",
-            status_code=303,
-        )
-
-    message = (
-        f"Knowledgebase update started: {text_summary['documents_seen']} library documents scanned, "
-        f"{chunk_summary['documents']} context documents / {chunk_summary['chunks']} chunks built. "
-        "Semantic embeddings are building in the background."
-    )
-    return RedirectResponse(
-        f"/admin/knowledgebase?message={quote(message)}",
-        status_code=303,
     )
 
 
@@ -791,12 +668,12 @@ async def admin_rag_build(request: Request):
     summary = build_chunk_cache()
 
     message = (
-        f"Context chunks built: {summary['documents']} documents, "
+        f"RAG corpus built: {summary['documents']} documents, "
         f"{summary['pages']} pages, {summary['chunks']} chunks."
     )
 
     return RedirectResponse(
-        f"/admin/knowledgebase?message={quote(message)}",
+        f"/admin/rag?message={quote(message)}",
         status_code=303,
     )
 
@@ -815,7 +692,7 @@ async def admin_rag_embeddings_model(request: Request):
         selected = set_embedding_model(model_key)
     except Exception as exc:
         return RedirectResponse(
-            f"/admin/knowledgebase?error={quote(str(exc))}",
+            f"/admin/rag?error={quote(str(exc))}",
             status_code=303,
         )
 
@@ -825,7 +702,7 @@ async def admin_rag_embeddings_model(request: Request):
     )
 
     return RedirectResponse(
-        f"/admin/knowledgebase?message={quote(message)}",
+        f"/admin/rag?message={quote(message)}",
         status_code=303,
     )
 
@@ -841,12 +718,12 @@ async def admin_rag_embeddings_build(request: Request):
         start_embedding_build()
     except Exception as exc:
         return RedirectResponse(
-            f"/admin/knowledgebase?error={quote(str(exc))}",
+            f"/admin/rag?error={quote(str(exc))}",
             status_code=303,
         )
 
     return RedirectResponse(
-        "/admin/knowledgebase?message=Embedding+build+started",
+        "/admin/rag?message=Embedding+build+started",
         status_code=303,
     )
 
@@ -874,7 +751,7 @@ async def admin_rag_embeddings_clear(request: Request):
     clear_embeddings()
 
     return RedirectResponse(
-        f"/admin/knowledgebase?message={quote('Embedding cache cleared.')}",
+        f"/admin/rag?message={quote('Embedding cache cleared.')}",
         status_code=303,
     )
 
@@ -888,7 +765,7 @@ async def admin_rag_clear(request: Request):
     clear_chunk_cache()
 
     return RedirectResponse(
-        f"/admin/knowledgebase?message={quote('Context chunk cache cleared.')}",
+        f"/admin/rag?message={quote('RAG chunk cache cleared.')}",
         status_code=303,
     )
 
@@ -910,9 +787,9 @@ async def admin_ai_save(request: Request):
             max_tokens=str(form.get("max_tokens", "1200")),
         )
     except Exception as exc:
-        return RedirectResponse(f"/admin/knowledgebase?error={quote(str(exc))}", status_code=303)
+        return RedirectResponse(f"/admin/rag?error={quote(str(exc))}", status_code=303)
 
-    return RedirectResponse(f"/admin/knowledgebase?message={quote('AI provider settings saved.')}", status_code=303)
+    return RedirectResponse(f"/admin/rag?message={quote('AI provider settings saved.')}", status_code=303)
 
 
 @app.post("/admin/ai/test")
@@ -933,14 +810,14 @@ async def admin_ai_test(request: Request):
         )
         result = await asyncio.to_thread(test_provider_connection)
     except Exception as exc:
-        return RedirectResponse(f"/admin/knowledgebase?error={quote(str(exc))}", status_code=303)
+        return RedirectResponse(f"/admin/rag?error={quote(str(exc))}", status_code=303)
 
     models = result.get("models", [])
     message = "AI provider connected successfully."
     if models:
         message = "AI provider connected. Available model: " + ", ".join(models[:5])
 
-    return RedirectResponse(f"/admin/knowledgebase?message={quote(message)}", status_code=303)
+    return RedirectResponse(f"/admin/rag?message={quote(message)}", status_code=303)
 
 
 @app.get("/ask", response_class=HTMLResponse)
@@ -1301,30 +1178,12 @@ async def admin_library(request: Request):
         return RedirectResponse("/", status_code=303)
 
     folder_data = []
-    source_job_id = request.query_params.get("source_job")
-    completed_job = None
-
-    if source_job_id:
-        with _source_scan_lock:
-            candidate = _source_scan_jobs.get(source_job_id)
-            if candidate and candidate.get("state") == "done":
-                completed_job = candidate
 
     for folder in list_folders():
-        if (
-            completed_job
-            and str(folder.get("name", "")).casefold()
-            == str(completed_job.get("folder_name", "")).casefold()
-            and completed_job.get("scan_result") is not None
-        ):
-            scan = completed_job["scan_result"]
-        else:
-            scan = scan_folder(folder)
-
         folder_data.append(
             {
                 **folder,
-                "scan": scan,
+                "scan": scan_folder(folder),
             }
         )
 
@@ -1407,80 +1266,19 @@ async def admin_library_source_add(
 ):
     user = current_user(request)
     if not user:
-        if request.headers.get("X-TTL-Source-Scan") == "1":
-            return JSONResponse({"error": "Unauthorized"}, status_code=401)
         return RedirectResponse("/login", status_code=303)
-
     if user["role"] != "gm":
-        if request.headers.get("X-TTL-Source-Scan") == "1":
-            return JSONResponse({"error": "Unauthorized"}, status_code=403)
         return RedirectResponse("/", status_code=303)
 
-    # AJAX path: return immediately and do the expensive scan in a worker.
-    if request.headers.get("X-TTL-Source-Scan") == "1":
-        job_id = uuid.uuid4().hex
-        _set_source_scan_job(
-            job_id,
-            state="queued",
-            folder_name=name,
-            source_path=path,
-            message="Preparing scan...",
-            current="",
-            documents_seen=0,
-            sources_added=0,
-            error=None,
-        )
-
-        asyncio.create_task(
-            asyncio.to_thread(
-                _run_source_scan_job,
-                job_id,
-                name,
-                path,
-            )
-        )
-
-        return JSONResponse({"job_id": job_id})
-
-    # Non-JavaScript fallback keeps the old synchronous behavior.
     try:
-        result = add_source(name, path)
+        add_source(name, path)
     except ValueError as exc:
         return RedirectResponse(
             f"/admin/library?error={quote(str(exc))}",
             status_code=303,
         )
 
-    added_count = int(result.get("added_count") or 1)
-    if result.get("type") == "directory":
-        message = (
-            f"Added {added_count} physical source folder"
-            f"{'s' if added_count != 1 else ''}."
-        )
-    else:
-        message = "Physical source added."
-
-    return RedirectResponse(
-        f"/admin/library?message={quote(message)}",
-        status_code=303,
-    )
-
-
-@app.get("/admin/library/source/status/{job_id}")
-async def admin_library_source_status(
-    request: Request,
-    job_id: str,
-):
-    user = current_user(request)
-
-    if not user or user["role"] != "gm":
-        return JSONResponse({"error": "Unauthorized"}, status_code=403)
-
-    job = _source_scan_job_snapshot(job_id)
-    if job is None:
-        return JSONResponse({"error": "Scan job not found."}, status_code=404)
-
-    return JSONResponse(job)
+    return RedirectResponse("/admin/library", status_code=303)
 
 
 @app.post("/admin/library/source/remove")

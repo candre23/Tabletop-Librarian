@@ -10,7 +10,6 @@ from typing import Any
 import numpy as np
 
 from app.config import CACHE_DIR, DATA_DIR
-from app.knowledgebase import invalidate_embeddings, mark_embeddings_current
 from app.rag.chunks import load_chunks
 
 logger = logging.getLogger(__name__)
@@ -194,7 +193,6 @@ def clear_embeddings() -> None:
         raise RuntimeError("Cannot clear embeddings while a build is running.")
     EMBEDDINGS_FILE.unlink(missing_ok=True)
     EMBEDDING_META_FILE.unlink(missing_ok=True)
-    invalidate_embeddings()
 
 
 def build_embeddings() -> dict[str, Any]:
@@ -250,7 +248,6 @@ def build_embeddings() -> dict[str, Any]:
         "chunk_ids": chunk_ids,
     }
     EMBEDDING_META_FILE.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
-    mark_embeddings_current()
     return {
         "model": model_id,
         "model_label": model_info["label"],

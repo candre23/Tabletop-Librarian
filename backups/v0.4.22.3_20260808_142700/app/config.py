@@ -20,7 +20,7 @@ LOG_FILE = LOG_DIR / "server.log"
 APP_HOST = "0.0.0.0"
 APP_PORT = 8080
 APP_NAME = "Tabletop Librarian"
-APP_VERSION = "0.4.22.5"
+APP_VERSION = "0.4.22.2"
 
 SUPPORTED_EXTENSIONS = {
     ".pdf": "PDF",
