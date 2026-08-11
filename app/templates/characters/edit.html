@@ -19,9 +19,11 @@
           {% set class_value = record.data.get("class") or record.data.get("archetype") or record.data.get("occupation") or record.data.get("career") %}
           {% if class_value %}<span>{{ class_value }}</span>{% endif %}
           <span class="ttl-character-summary-system">- {{ pack.manifest.name }} {{ record.system_version }}</span>
+          {% if is_foreign_character %}<span class="ttl-character-owner">Owner: {{ character_owner }}</span>{% endif %}
         </div>
       </div>
       <div class="ttl-character-head-actions">
+        <a class="ttl-mode-switch" href="/characters/{{ record.character_id }}/export{{ character_owner_query }}">Export</a>
         {% if mode == "play" %}
           <button
             type="button"
@@ -30,9 +32,9 @@
             data-state="saved"
             disabled
           >Saved</button>
-          <a class="ttl-mode-switch" href="/characters/{{ record.character_id }}?mode=configure">Configure</a>
+          <a class="ttl-mode-switch" href="{{ character_url }}{% if "?" in character_url %}&{% else %}?{% endif %}mode=configure">Configure</a>
         {% else %}
-          <a class="ttl-mode-switch is-active" href="/characters/{{ record.character_id }}">Play View</a>
+          <a class="ttl-mode-switch is-active" href="{{ character_url }}">Play View</a>
         {% endif %}
       </div>
     </div>
@@ -58,7 +60,7 @@
     <section class="ttl-card">
       <form
         method="post"
-        action="/characters/{{ record.character_id }}/save"
+        action="/characters/{{ record.character_id }}/save{{ character_owner_query }}"
         id="ttl-character-form"
         data-character-mode="{{ mode }}"
       >
@@ -107,7 +109,10 @@
                   {% endfor %}
 
                   {% if section_ns.show %}
-                    <section class="ttl-sheet-section ttl-section-color-{{ section.color or 'auto' }}" style="--ttl-section-span: {{ section.span }}">
+                    <section
+                      class="ttl-sheet-section ttl-section-color-{{ section.color or 'auto' }}{% if section.body_color %} ttl-section-body-color-{{ section.body_color }}{% endif %}"
+                      style="--ttl-section-span: {{ section.span }}"
+                    >
                       <div class="ttl-sheet-section-heading">
                         <h3>{{ section.title }}</h3>
                         {% if section.description %}<p>{{ section.description }}</p>{% endif %}
@@ -154,7 +159,7 @@
                   {% if core_locked %}
                     <a
                       class="ttl-lock-icon"
-                      href="/characters/{{ record.character_id }}?mode=configure&unlock_field={{ field_id }}"
+                      href="{{ character_url }}{% if "?" in character_url %}&{% else %}?{% endif %}mode=configure&unlock_field={{ field_id }}"
                       title="Unlock {{ field.label }}"
                       aria-label="Unlock {{ field.label }}"
                       onclick="return confirm('Unlock {{ field.label|e }} for editing? It will lock again after saving or leaving this page.');"
@@ -177,6 +182,28 @@
                       {% endfor %}
                     </tbody>
                   </table>
+                {% elif field.type == "collection" and field.item_schema %}
+                  {% set collection_rows = value if value is iterable and value is not string else [] %}
+                  {% if collection_rows %}
+                    <div class="ttl-play-collection" data-play-collection="{{ field_id }}">
+                      {% for row in collection_rows %}
+                        <div class="ttl-play-collection-row">
+                          {% for item_id, item_field in field.item_schema.items() %}
+                            {% set item_value = row.get(item_id) if row is mapping else none %}
+                            {% set rendered_value = display_collection_item_value(field_id, item_id, item_field, item_value, collection_reference_options) %}
+                            {% if rendered_value != "" %}
+                              <div class="ttl-play-collection-cell">
+                                <span class="ttl-play-collection-label">{{ item_field.label }}</span>
+                                <span class="ttl-play-collection-value">{{ rendered_value }}</span>
+                              </div>
+                            {% endif %}
+                          {% endfor %}
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <div class="ttl-readonly ttl-core-readonly ttl-play-collection-empty">None</div>
+                  {% endif %}
                 {% elif field.type in ["integer", "decimal", "calculated"] and field_id in temporary_modifiable_fields %}
                   {% set temp_rows = temporary_effects.get(field_id, []) %}
                   {% set temp_effective = temporary_effective_values.get(field_id, value) %}
@@ -206,7 +233,7 @@
                 <div class="ttl-lockable-label">
                   <label for="field__{{ field_id }}">{{ field.label }}</label>
                   {% if field_id in core_fields and field_id == unlocked_field %}
-                    <a class="ttl-lock-icon is-unlocked" href="/characters/{{ record.character_id }}" title="Relock {{ field.label }}" aria-label="Relock {{ field.label }}">&#128275;</a>
+                    <a class="ttl-lock-icon is-unlocked" href="{{ character_url }}" title="Relock {{ field.label }}" aria-label="Relock {{ field.label }}">&#128275;</a>
                   {% endif %}
                 </div>
                 <textarea id="field__{{ field_id }}" name="field__{{ field_id }}">{{ value or "" }}</textarea>
@@ -509,7 +536,7 @@
                 <div class="ttl-lockable-label">
                   <label for="field__{{ field_id }}">{{ field.label }}</label>
                   {% if field_id in core_fields and field_id == unlocked_field %}
-                    <a class="ttl-lock-icon is-unlocked" href="/characters/{{ record.character_id }}" title="Relock {{ field.label }}" aria-label="Relock {{ field.label }}">&#128275;</a>
+                    <a class="ttl-lock-icon is-unlocked" href="{{ character_url }}" title="Relock {{ field.label }}" aria-label="Relock {{ field.label }}">&#128275;</a>
                   {% endif %}
                 </div>
                 <input id="field__{{ field_id }}" name="field__{{ field_id }}" value="{{ value or "" }}" {% if field.required %}required{% endif %}>
@@ -519,7 +546,7 @@
                 <div class="ttl-lockable-label">
                   <label for="field__{{ field_id }}">{{ field.label }}</label>
                   {% if field_id in core_fields and field_id == unlocked_field %}
-                    <a class="ttl-lock-icon is-unlocked" href="/characters/{{ record.character_id }}" title="Relock {{ field.label }}" aria-label="Relock {{ field.label }}">&#128275;</a>
+                    <a class="ttl-lock-icon is-unlocked" href="{{ character_url }}" title="Relock {{ field.label }}" aria-label="Relock {{ field.label }}">&#128275;</a>
                   {% endif %}
                 </div>
                 <input
@@ -545,7 +572,7 @@
                 <div class="ttl-lockable-label">
                   <label for="field__{{ field_id }}">{{ field.label }}</label>
                   {% if field_id in core_fields and field_id == unlocked_field %}
-                    <a class="ttl-lock-icon is-unlocked" href="/characters/{{ record.character_id }}" title="Relock {{ field.label }}" aria-label="Relock {{ field.label }}">&#128275;</a>
+                    <a class="ttl-lock-icon is-unlocked" href="{{ character_url }}" title="Relock {{ field.label }}" aria-label="Relock {{ field.label }}">&#128275;</a>
                   {% endif %}
                 </div>
                 <select id="field__{{ field_id }}" name="field__{{ field_id }}">
@@ -636,7 +663,7 @@
           <div class="ttl-actions">
             <div class="ttl-actions-left">
               <button type="submit">Save Configuration</button>
-              <a href="/characters/{{ record.character_id }}?mode=configure">Cancel</a>
+              <a href="{{ character_url }}{% if "?" in character_url %}&{% else %}?{% endif %}mode=configure">Cancel</a>
             </div>
           </div>
         {% endif %}
@@ -647,7 +674,7 @@
           <form
             id="ttl-advancement-form-{{ action.id }}"
             method="post"
-            action="/characters/{{ record.character_id }}/advance/{{ action.id }}/start"
+            action="/characters/{{ record.character_id }}/advance/{{ action.id }}/start{{ character_owner_query }}"
           ></form>
         {% endfor %}
       {% endif %}
@@ -656,7 +683,7 @@
     {% if mode == "configure" %}
     <section class="ttl-card ttl-danger" style="margin-top:22px;">
       <h2>Delete Character</h2>
-      <form method="post" action="/characters/{{ record.character_id }}/delete" onsubmit="return confirm('Delete this character? This cannot be undone.');">
+      <form method="post" action="/characters/{{ record.character_id }}/delete{{ character_owner_query }}" onsubmit="return confirm('Delete this character? This cannot be undone.');">
         <button type="submit">Delete Character</button>
       </form>
     </section>
@@ -680,7 +707,7 @@
 
       <form
         method="post"
-        action="/characters/{{ record.character_id }}/temporary-effects"
+        action="/characters/{{ record.character_id }}/temporary-effects{{ character_owner_query }}"
         class="ttl-temp-add-form"
       >
         <input type="hidden" name="field_id" id="ttl-temp-field-id">
@@ -734,10 +761,10 @@
 
   <script>
     (() => {
-      const form = document.querySelector('form[action="/characters/{{ record.character_id }}/save"]');
+      const form = document.querySelector('form[action="/characters/{{ record.character_id }}/save{{ character_owner_query }}"]');
       if (!form) return;
 
-      const endpoint = "/characters/{{ record.character_id }}/evaluate";
+      const endpoint = "/characters/{{ record.character_id }}/evaluate{{ character_owner_query }}";
       const rulePanel = document.getElementById("ttl-rule-panel");
       const ruleList = document.getElementById("ttl-rule-list");
       let timer = null;
@@ -845,7 +872,7 @@
 
         const remove = document.createElement("form");
         remove.method = "post";
-        remove.action = "/characters/{{ record.character_id }}/temporary-effects";
+        remove.action = "/characters/{{ record.character_id }}/temporary-effects{{ character_owner_query }}";
 
         const fieldInput = document.createElement("input");
         fieldInput.type = "hidden";

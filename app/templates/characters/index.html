@@ -17,28 +17,38 @@
       <a href="/">Back to Library</a>
     </div>
 
+    {% if error %}<div class="ttl-error" role="alert">{{ error }}</div>{% endif %}
+    {% if message %}<div class="ttl-saved">{{ message }}</div>{% endif %}
+
     <div class="ttl-char-grid">
       <div>
-        <section class="ttl-card">
-          <h2>Your Characters</h2>
-          {% if characters %}
-            <div class="ttl-character-list">
-              {% for character in characters %}
-                <div class="ttl-character-row">
-                  <div>
-                    <a href="/characters/{{ character.character_id }}">{{ character.display_name }}</a>
-                    <div class="ttl-muted">
-                      {{ character.system_id }} · updated {{ character.updated_at or "unknown" }}
+        {% for group in character_groups %}
+          <section class="ttl-card{% if not loop.first %} ttl-section-gap{% endif %}">
+            <h2>
+              {% if group.is_self %}My Characters{% else %}{{ group.owner }}{% endif %}
+            </h2>
+            {% if group.characters %}
+              <div class="ttl-character-list">
+                {% for character in group.characters %}
+                  <div class="ttl-character-row">
+                    <div>
+                      <a href="{{ character.url }}">{{ character.display_name }}</a>
+                      <div class="ttl-muted">
+                        {{ character.system_id }} · updated {{ character.updated_at or "unknown" }}
+                      </div>
+                    </div>
+                    <div class="ttl-character-row-actions">
+                      <a href="{{ character.url }}">Open</a>
+                      <a href="/characters/{{ character.character_id }}/export{% if role == 'gm' and not group.is_self %}?owner={{ group.owner|urlencode }}{% endif %}">Export</a>
                     </div>
                   </div>
-                  <a href="/characters/{{ character.character_id }}">Edit</a>
-                </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <p class="ttl-muted">No completed characters yet.</p>
-          {% endif %}
-        </section>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="ttl-muted">No completed characters yet.</p>
+            {% endif %}
+          </section>
+        {% endfor %}
 
         {% if drafts %}
           <section class="ttl-card ttl-section-gap">
@@ -100,6 +110,37 @@
         {% else %}
           <p class="ttl-muted">No valid System Packs are installed.</p>
         {% endif %}
+
+        <section class="ttl-character-import">
+          <h2>Import Character</h2>
+          <form method="post" action="/characters/import" enctype="multipart/form-data">
+            <div class="ttl-form-row">
+              <label for="character_file">Character package</label>
+              <input id="character_file" type="file" name="character_file" accept=".ttlchar" required>
+            </div>
+            {% if role == "gm" %}
+            <div class="ttl-form-row">
+              <label for="target_owner">Import for</label>
+              <select id="target_owner" name="target_owner">
+                {% for owner in import_users %}
+                  <option value="{{ owner }}" {% if owner == username %}selected{% endif %}>{{ owner }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            {% endif %}
+            <div class="ttl-form-row">
+              <label for="collision">If this character ID already exists</label>
+              <select id="collision" name="collision">
+                <option value="copy">Import as a new copy</option>
+                <option value="replace">Replace existing character</option>
+              </select>
+            </div>
+            <button type="submit" class="ttl-button">Import Character</button>
+          </form>
+          <div class="ttl-muted ttl-import-note">
+            .ttlchar packages contain character data and ordinary assets only.
+          </div>
+        </section>
       </aside>
     </div>
   </main>

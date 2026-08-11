@@ -660,3 +660,31 @@ forms inside the character editor. This is required because nested HTML forms
 are invalid and can cause browsers to terminate the character form early,
 leaving Configure-mode Save controls detached from the data they are meant to
 submit.
+
+## Shadowrun: Anarchy Phase 1 reference pack
+
+The first production-oriented framework test pack is `shadowrun_anarchy`.
+Phase 1 establishes the complete broad character-sheet data model and a dense,
+single-tab sheet layout derived from the published Shadowrun: Anarchy sheet.
+It intentionally does not yet implement creation budgets, compendium content,
+metatype effects, advancement, or source provenance.
+
+Character layouts are now container-responsive. `.ttl-char-wrap` and
+`.ttl-create-wrap` establish inline-size containers, and the generic field-grid
+and section-span layouts collapse based on the character container width. This
+allows the same System Pack layout to remain usable when character sheets are
+later embedded in the narrower tri-pane player workspace.
+
+
+## Calculated usage limits
+
+A limit may define `usage:` to measure a numeric expression instead of counting selected entries. Safe helper functions are available for common structured data:
+
+- `count(value)`
+- `rowsum(collection, "field")`
+- `rowsum_where(collection, "value_field", "match_field", value)`
+- `rowcount(collection, "field", value)`
+- `nonempty_count(collection, "field")`
+- `resource_max(resource)`
+
+This supports generic point-buy budgets while preserving the existing limit badge and validation UI.

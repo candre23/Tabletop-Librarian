@@ -44,6 +44,8 @@ class LimitDefinition:
     where: dict[str, Any] | None
     warn_at_remaining: int | None
     warning_message: str | None
+    usage: str | None
+    require_full: bool
     dependencies: set[str]
 
 
@@ -63,6 +65,113 @@ class ValidationRule:
     dependencies: set[str]
 
 
+def _safe_count(value: Any) -> int:
+    if isinstance(value, (list, tuple, dict, str)):
+        return len(value)
+    return 0
+
+
+def _safe_rowsum(rows: Any, field_name: Any) -> float:
+    if not isinstance(rows, list) or not isinstance(field_name, str):
+        return 0
+    total = 0.0
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        value = row.get(field_name, 0)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            total += float(value)
+    return total
+
+
+
+def _safe_rowsum_where(
+    rows: Any,
+    value_field: Any,
+    match_field: Any,
+    expected: Any,
+) -> float:
+    if (
+        not isinstance(rows, list)
+        or not isinstance(value_field, str)
+        or not isinstance(match_field, str)
+    ):
+        return 0
+    total = 0.0
+    for row in rows:
+        if not isinstance(row, dict) or row.get(match_field) != expected:
+            continue
+        value = row.get(value_field, 0)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            total += float(value)
+    return total
+
+def _safe_rowcount(rows: Any, field_name: Any, expected: Any) -> int:
+    if not isinstance(rows, list) or not isinstance(field_name, str):
+        return 0
+    return sum(
+        1 for row in rows
+        if isinstance(row, dict) and row.get(field_name) == expected
+    )
+
+
+def _safe_nonempty_count(rows: Any, field_name: Any) -> int:
+    if not isinstance(rows, list) or not isinstance(field_name, str):
+        return 0
+    return sum(
+        1 for row in rows
+        if isinstance(row, dict) and bool(str(row.get(field_name, '')).strip())
+    )
+
+
+def _safe_nonempty_count_where(
+    rows: Any,
+    value_field: Any,
+    match_field: Any,
+    expected: Any,
+) -> int:
+    if (
+        not isinstance(rows, list)
+        or not isinstance(value_field, str)
+        or not isinstance(match_field, str)
+    ):
+        return 0
+    return sum(
+        1
+        for row in rows
+        if (
+            isinstance(row, dict)
+            and row.get(match_field) == expected
+            and bool(str(row.get(value_field, "")).strip())
+        )
+    )
+
+
+def _safe_resource(current: Any, maximum: Any) -> dict[str, float | int]:
+    if (
+        isinstance(current, bool)
+        or not isinstance(current, (int, float))
+        or isinstance(maximum, bool)
+        or not isinstance(maximum, (int, float))
+    ):
+        raise RuleEngineError("resource() requires numeric current and maximum values.")
+
+    def clean(value: int | float) -> int | float:
+        numeric = float(value)
+        return int(numeric) if numeric.is_integer() else numeric
+
+    return {"current": clean(current), "max": clean(maximum)}
+
+
+def _safe_resource_max(value: Any) -> float:
+    if not isinstance(value, dict):
+        return 0
+    maximum = value.get('max', 0)
+    if isinstance(maximum, (int, float)) and not isinstance(maximum, bool):
+        return float(maximum)
+    return 0
+
+
 SAFE_FUNCTIONS = {
     "abs": abs,
     "min": min,
@@ -70,6 +179,14 @@ SAFE_FUNCTIONS = {
     "round": round,
     "floor": math.floor,
     "ceil": math.ceil,
+    "count": _safe_count,
+    "rowsum": _safe_rowsum,
+    "rowsum_where": _safe_rowsum_where,
+    "rowcount": _safe_rowcount,
+    "nonempty_count": _safe_nonempty_count,
+    "nonempty_count_where": _safe_nonempty_count_where,
+    "resource": _safe_resource,
+    "resource_max": _safe_resource_max,
 }
 
 BINOPS = {
@@ -685,6 +802,8 @@ def load_rule_engine(
         where = definition.get("where")
         warn_at_remaining = definition.get("warn_at_remaining")
         warning_message = definition.get("warning_message")
+        usage = definition.get("usage")
+        require_full = definition.get("require_full", False)
 
         if not isinstance(field_id, str) or not field_id:
             issues.append(RuleIssue("error", "Limit requires a field.", limit_id))
@@ -724,12 +843,23 @@ def load_rule_engine(
                     )
                 )
                 continue
+        if not isinstance(require_full, bool):
+            issues.append(
+                RuleIssue("error", "require_full must be true or false.", limit_id)
+            )
+            continue
         if warning_message is not None and (
             not isinstance(warning_message, str) or not warning_message.strip()
         ):
             issues.append(
                 RuleIssue("error", "warning_message must be non-empty.", limit_id)
             )
+            continue
+        if usage is not None and (not isinstance(usage, str) or not usage.strip()):
+            issues.append(RuleIssue("error", "usage must be a non-empty expression.", limit_id))
+            continue
+        if usage is not None and where is not None:
+            issues.append(RuleIssue("error", "usage limits cannot also define where.", limit_id))
             continue
 
         try:
@@ -739,6 +869,13 @@ def load_rule_engine(
             continue
 
         deps = _dependencies(tree)
+        if usage is not None:
+            try:
+                usage_tree = _parse(usage)
+            except RuleEngineError as exc:
+                issues.append(RuleIssue("error", str(exc), limit_id))
+                continue
+            deps |= _dependencies(usage_tree)
         unknown = sorted(deps - known)
         if unknown:
             issues.append(
@@ -759,6 +896,8 @@ def load_rule_engine(
             where,
             warn_at_remaining,
             warning_message.strip() if isinstance(warning_message, str) else None,
+            usage.strip() if isinstance(usage, str) else None,
+            require_full,
             deps,
         )
 

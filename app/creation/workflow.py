@@ -42,6 +42,7 @@ class CreationWorkflow:
     version: int
     title: str
     steps: list[CreationStep]
+    final_changes: dict[str, str]
     raw: dict[str, Any]
 
     def field_ids(self) -> list[str]:
@@ -96,6 +97,38 @@ def load_creation_workflow(
     if not isinstance(title, str) or not title.strip():
         issues.append(CreationIssue("error", "title must be a non-empty string.", "title"))
         title = "Create Character"
+
+    raw_final_changes = raw.get("final_changes", {})
+    final_changes: dict[str, str] = {}
+    if raw_final_changes is None:
+        raw_final_changes = {}
+    if not isinstance(raw_final_changes, dict):
+        issues.append(
+            CreationIssue(
+                "error",
+                "final_changes must be a mapping of character fields to rule expressions.",
+                "final_changes",
+            )
+        )
+        raw_final_changes = {}
+    for field_id, expression in raw_final_changes.items():
+        location = f"final_changes.{field_id}"
+        if not isinstance(field_id, str) or field_id not in schema.fields:
+            issues.append(
+                CreationIssue("error", f"Unknown character field {field_id!r}.", location)
+            )
+            continue
+        if schema.fields[field_id].type == "calculated":
+            issues.append(
+                CreationIssue("error", "Calculated fields cannot be final-change targets.", location)
+            )
+            continue
+        if not isinstance(expression, str) or not expression.strip():
+            issues.append(
+                CreationIssue("error", "Final change must be a non-empty rule expression.", location)
+            )
+            continue
+        final_changes[field_id] = expression.strip()
 
     raw_steps = raw.get("steps")
     if not isinstance(raw_steps, list) or not raw_steps:
@@ -184,4 +217,11 @@ def load_creation_workflow(
     if any(issue.severity == "error" for issue in issues):
         return None, issues
 
-    return CreationWorkflow(path=path, version=version, title=title.strip(), steps=steps, raw=raw), issues
+    return CreationWorkflow(
+        path=path,
+        version=version,
+        title=title.strip(),
+        steps=steps,
+        final_changes=final_changes,
+        raw=raw,
+    ), issues

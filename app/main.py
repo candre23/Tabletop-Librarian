@@ -9,9 +9,11 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.auth import (
@@ -53,7 +55,7 @@ from app.readers.comic import comic_page, comic_pages
 from app.readers.image import serve_image
 from app.readers.pdf import stream_pdf
 from app.readers.text import read_plain_text, render_markdown
-from app.uploads import list_uploads, supported_upload, unique_upload_path
+from app.uploads import delete_upload, list_uploads, supported_upload, unique_upload_path
 from app.search.extract import build_text_cache, clear_text_cache, text_cache_status
 from app.search.query import search_library
 from app.rag.chunks import build_chunk_cache, chunk_cache_status, clear_chunk_cache
@@ -97,6 +99,124 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 templates.env.globals["knowledgebase_status"] = knowledgebase_status
+
+_ERROR_TITLES = {
+    400: "Request could not be completed",
+    401: "Sign in required",
+    403: "Access denied",
+    404: "Page not found",
+    405: "Action not allowed",
+    409: "Conflict",
+    413: "Upload too large",
+    422: "Invalid request",
+    500: "Something went wrong",
+}
+
+
+def _browser_wants_html(request: Request) -> bool:
+    """Use HTML for browser navigation/forms while preserving JSON APIs."""
+    return "text/html" in request.headers.get("accept", "").lower()
+
+
+def _error_message(status_code: int, detail) -> str:
+    if status_code >= 500:
+        return (
+            "Tabletop Librarian encountered an unexpected error while processing "
+            "this request. The error has been logged."
+        )
+    if status_code == 401:
+        text = str(detail or "").strip()
+        if not text or text.casefold() == "login required.":
+            return "Your session is not signed in. Sign in to continue."
+        return text
+    if status_code == 403:
+        return str(detail or "You do not have permission to use this page.")
+    if status_code == 404:
+        return str(detail or "The requested page or item could not be found.")
+    if status_code == 422:
+        return "The submitted request was incomplete or contained invalid values."
+    return str(detail or "The request could not be completed.")
+
+
+def _html_error_response(
+    request: Request,
+    *,
+    status_code: int,
+    detail=None,
+    request_id: str | None = None,
+):
+    title = _ERROR_TITLES.get(
+        status_code,
+        "Request error" if status_code < 500 else "Something went wrong",
+    )
+    return templates.TemplateResponse(
+        request=request,
+        name="error.html",
+        context={
+            "app_name": APP_NAME,
+            "app_version": APP_VERSION,
+            "status_code": status_code,
+            "error_title": title,
+            "error_message": _error_message(status_code, detail),
+            "request_id": request_id,
+            "error_page": True,
+            "show_login": status_code == 401,
+            "show_back": status_code != 401,
+            "show_home": status_code != 401,
+        },
+        status_code=status_code,
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def ttl_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if _browser_wants_html(request):
+        return _html_error_response(
+            request,
+            status_code=exc.status_code,
+            detail=exc.detail,
+        )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=exc.headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def ttl_validation_exception_handler(
+    request: Request,
+    exc: RequestValidationError,
+):
+    if _browser_wants_html(request):
+        return _html_error_response(
+            request,
+            status_code=422,
+            detail="The submitted request was incomplete or invalid.",
+        )
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
+
+@app.exception_handler(Exception)
+async def ttl_unexpected_exception_handler(request: Request, exc: Exception):
+    request_id = uuid.uuid4().hex[:10]
+    logger.exception(
+        "Unhandled request error [%s] %s %s",
+        request_id,
+        request.method,
+        request.url.path,
+    )
+    if _browser_wants_html(request):
+        return _html_error_response(
+            request,
+            status_code=500,
+            request_id=request_id,
+        )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error.", "request_id": request_id},
+    )
+
 
 
 _source_scan_jobs: dict[str, dict] = {}
@@ -584,6 +704,72 @@ async def assign_upload(
 
     return RedirectResponse(
         f"/uploads?message={quote('Upload added to virtual folder.')}",
+        status_code=303,
+    )
+
+
+@app.post("/uploads/delete")
+async def delete_staged_upload(
+    request: Request,
+    upload_path: str = Form(...),
+):
+    user = current_user(request)
+    if not user or user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    allowed = {
+        str(Path(item["path"]).resolve())
+        for item in list_uploads()
+    }
+
+    try:
+        resolved = str(Path(upload_path).resolve(strict=True))
+    except OSError:
+        resolved = ""
+
+    if not resolved or resolved not in allowed:
+        return RedirectResponse(
+            f"/uploads?error={quote('Upload not found.')}",
+            status_code=303,
+        )
+
+    # Assigned uploads are authoritative library sources. Do not allow the
+    # staging UI to silently break a virtual-folder source reference.
+    assigned_folders = []
+    for folder in list_folders():
+        for source in folder.get("sources", []):
+            if source.get("type") != "file":
+                continue
+            try:
+                source_path = str(Path(str(source.get("path", ""))).resolve())
+            except OSError:
+                continue
+            if source_path == resolved:
+                assigned_folders.append(str(folder.get("name") or "Unnamed folder"))
+                break
+
+    if assigned_folders:
+        folder_list = ", ".join(assigned_folders)
+        return RedirectResponse(
+            "/uploads?error="
+            + quote(
+                "This upload is currently used as a library source by "
+                f"{folder_list}. Remove that source from Library management "
+                "before deleting the staged file."
+            ),
+            status_code=303,
+        )
+
+    if not delete_upload(resolved):
+        return RedirectResponse(
+            f"/uploads?error={quote('Could not delete the upload.')}",
+            status_code=303,
+        )
+
+    logger.info("Staged upload deleted by %s: %s", user["username"], resolved)
+
+    return RedirectResponse(
+        f"/uploads?message={quote('Upload deleted.')}",
         status_code=303,
     )
 

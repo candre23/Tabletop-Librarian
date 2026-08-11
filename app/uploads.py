@@ -71,3 +71,37 @@ def list_uploads() -> list[dict]:
             )
 
     return uploads
+
+
+
+def delete_upload(upload_path: str) -> bool:
+    """Delete one exact file currently present in the upload staging area."""
+    allowed = {
+        str(Path(item["path"]).resolve())
+        for item in list_uploads()
+    }
+
+    try:
+        candidate = str(Path(upload_path).resolve(strict=True))
+    except OSError:
+        return False
+
+    if candidate not in allowed:
+        return False
+
+    path = Path(candidate)
+    try:
+        path.unlink()
+    except OSError:
+        return False
+
+    # Remove an empty per-user staging directory as housekeeping.
+    try:
+        parent = path.parent
+        if parent != UPLOAD_DIR and parent.parent == UPLOAD_DIR:
+            if not any(parent.iterdir()):
+                parent.rmdir()
+    except OSError:
+        pass
+
+    return True

@@ -104,11 +104,11 @@ def validate_limit_schema(schema, engine: RuleEngine) -> list[RuleIssue]:
             )
             continue
 
-        if field.type not in {"multi_reference", "collection"}:
+        if definition.usage is None and field.type not in {"multi_reference", "collection"}:
             issues.append(
                 RuleIssue(
                     "error",
-                    "Limits currently require a multi_reference or collection field.",
+                    "Count limits require a multi_reference or collection field; use usage for calculated limits.",
                     limit_id,
                 )
             )
@@ -195,12 +195,32 @@ def evaluate_limits(
         if field is None:
             continue
 
-        count = _count_selected(
-            field,
-            data.get(definition.field),
-            compendium,
-            definition.where,
-        )
+        if definition.usage is None:
+            count = _count_selected(
+                field,
+                data.get(definition.field),
+                compendium,
+                definition.where,
+            )
+        else:
+            try:
+                raw_usage = engine.evaluate_expression(
+                    definition.usage,
+                    data,
+                    modifiers=modifiers,
+                )
+            except Exception as exc:
+                issues.append(RuleIssue("error", f"Could not evaluate usage: {exc}", limit_id))
+                raw_usage = 0
+
+            if isinstance(raw_usage, bool) or not isinstance(raw_usage, (int, float)):
+                issues.append(RuleIssue("error", "Usage expression must evaluate to a number.", limit_id))
+                count = 0
+            elif float(raw_usage).is_integer() and raw_usage >= 0:
+                count = int(raw_usage)
+            else:
+                issues.append(RuleIssue("error", "Usage expression must evaluate to a non-negative whole number.", limit_id))
+                count = 0
 
         try:
             raw_maximum = engine.evaluate_expression(
@@ -316,9 +336,15 @@ def evaluate_limits(
             )
             issues.append(RuleIssue("error", message, limit_id))
         elif (
-            definition.warn_at_remaining is not None
-            and remaining is not None
-            and remaining <= definition.warn_at_remaining
+            remaining is not None
+            and remaining > 0
+            and (
+                definition.require_full
+                or (
+                    definition.warn_at_remaining is not None
+                    and remaining <= definition.warn_at_remaining
+                )
+            )
         ):
             warning_message = definition.warning_message or (
                 "{label}: {count} of {maximum} selected; "

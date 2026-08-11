@@ -43,7 +43,7 @@
         {% if step.description %}<div class="ttl-muted">{{ step.description }}</div>{% endif %}
       </div>
 
-      <form id="ttl-create-form" method="post" action="/characters/advance/{{ draft.draft_id }}/step">
+      <form id="ttl-create-form" method="post" action="/characters/advance/{{ draft.draft_id }}/step{% if draft.owner != username %}?owner={{ draft.owner|urlencode }}{% endif %}">
         {% if unlocked_field %}<input type="hidden" name="unlocked_field" value="{{ unlocked_field }}">{% endif %}
 
         <div class="ttl-sheet-layout" data-sheet-layout>
@@ -519,7 +519,7 @@
 
     <section class="ttl-card" style="margin-top:20px;">
       <strong>Discard Advancement</strong>
-      <form method="post" action="/characters/advance/{{ draft.draft_id }}/delete" style="margin-top:10px;" onsubmit="return confirm('Discard this advancement draft?');">
+      <form method="post" action="/characters/advance/{{ draft.draft_id }}/delete{% if draft.owner != username %}?owner={{ draft.owner|urlencode }}{% endif %}" style="margin-top:10px;" onsubmit="return confirm('Discard this advancement draft?');">
         <button type="submit">Discard Advancement</button>
       </form>
     </section>
@@ -541,7 +541,7 @@
       const form = document.getElementById("ttl-create-form");
       if (!form) return;
 
-      const endpoint = "/characters/advance/{{ draft.draft_id }}/evaluate";
+      const endpoint = "/characters/advance/{{ draft.draft_id }}/evaluate{% if draft.owner != username %}?owner={{ draft.owner|urlencode }}{% endif %}";
       const rulePanel = document.getElementById("ttl-rule-panel");
       const ruleList = document.getElementById("ttl-rule-list");
       let timer = null;

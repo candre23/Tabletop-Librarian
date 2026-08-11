@@ -284,13 +284,14 @@ def create_character(
     )
 
 
-def load_character(
+
+def load_character_raw(
     owner: str,
     character_id: str,
     *,
     character_root: Path | str = DEFAULT_CHARACTER_ROOT,
-    pack_root: Path | str = DEFAULT_PACK_ROOT,
 ) -> CharacterRecord:
+    """Load the character envelope without System Pack rule/schema evaluation."""
     root = Path(character_root)
     path = _character_path(owner, character_id, root)
 
@@ -318,6 +319,48 @@ def load_character(
     if payload["owner"] != owner:
         raise CharacterStorageError("Character owner mismatch.")
 
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        raise CharacterStorageError("Character data must be an object.")
+
+    return CharacterRecord(
+        payload["character_id"],
+        payload["owner"],
+        payload["system_id"],
+        payload["system_version"],
+        payload["character_schema"],
+        data,
+        payload["created_at"],
+        payload["updated_at"],
+        path,
+        normalize_temporary_effects(payload.get("temporary_effects")),
+    )
+
+
+def load_character(
+    owner: str,
+    character_id: str,
+    *,
+    character_root: Path | str = DEFAULT_CHARACTER_ROOT,
+    pack_root: Path | str = DEFAULT_PACK_ROOT,
+) -> CharacterRecord:
+    raw = load_character_raw(
+        owner,
+        character_id,
+        character_root=character_root,
+    )
+    payload = {
+        "character_id": raw.character_id,
+        "owner": raw.owner,
+        "system_id": raw.system_id,
+        "system_version": raw.system_version,
+        "character_schema": raw.character_schema,
+        "created_at": raw.created_at,
+        "updated_at": raw.updated_at,
+        "data": raw.data,
+        "temporary_effects": raw.temporary_effects,
+    }
+
     pack, schema, engine, compendium = _load_system(
         payload["system_id"],
         Path(pack_root),
@@ -329,12 +372,17 @@ def load_character(
             "A migration will be required."
         )
 
+    # Additive System Pack evolution should not break older characters merely
+    # because the pack introduced new fields with valid defaults.
+    data = schema.default_data()
+    data.update(payload["data"])
+
     data, rule_issues = _apply_rules(
         pack,
         schema,
         engine,
         compendium,
-        payload["data"],
+        data,
     )
     _validate_all(schema, data, rule_issues, compendium, engine)
 
@@ -347,7 +395,7 @@ def load_character(
         data,
         payload["created_at"],
         payload["updated_at"],
-        path,
+        raw.path,
         normalize_temporary_effects(payload.get("temporary_effects")),
     )
 

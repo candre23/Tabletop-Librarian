@@ -24,6 +24,7 @@ class LayoutSection:
     columns: int = 1
     description: str | None = None
     color: str | None = None
+    body_color: str | None = None
     span: int = 12
     field_options: dict[str, dict[str, Any]] = field(default_factory=dict)
 
@@ -118,6 +119,20 @@ def _parse_section(
         issues.append(LayoutIssue("error", "color must be a semantic color name.", f"{location}.color"))
         color = None
 
+    body_color = raw.get("body_color")
+    if body_color is not None and (
+        not isinstance(body_color, str)
+        or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", body_color)
+    ):
+        issues.append(
+            LayoutIssue(
+                "error",
+                "body_color must be a semantic color name.",
+                f"{location}.body_color",
+            )
+        )
+        body_color = None
+
     span = raw.get("span", 12)
     if not isinstance(span, int) or span < 1 or span > 12:
         issues.append(LayoutIssue("error", "span must be an integer from 1 to 12.", f"{location}.span"))
@@ -135,6 +150,7 @@ def _parse_section(
         columns=columns,
         description=description.strip() if isinstance(description, str) else None,
         color=color,
+        body_color=body_color,
         span=span,
         field_options=field_options,
     )

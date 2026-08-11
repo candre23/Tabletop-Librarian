@@ -20,9 +20,25 @@
     <div class="ttl-progress" aria-label="Creation progress">
       {% for workflow_step in workflow.steps %}
         {% set position = loop.index0 %}
-        <div class="ttl-progress-step {% if position == step_index %}is-current{% elif position < step_index %}is-done{% endif %}">
-          {{ loop.index }}. {{ workflow_step.title }}
-        </div>
+        {% if position == step_index %}
+          <div class="ttl-progress-step is-current" aria-current="step">
+            {{ loop.index }}. {{ workflow_step.title }}
+          </div>
+        {% elif position <= max_step_reached %}
+          <button
+            type="submit"
+            form="ttl-create-form"
+            name="action"
+            value="jump:{{ position }}"
+            class="ttl-progress-step is-done is-clickable"
+            formnovalidate
+            title="Return to {{ loop.index }}. {{ workflow_step.title }}"
+          >{{ loop.index }}. {{ workflow_step.title }}</button>
+        {% else %}
+          <div class="ttl-progress-step">
+            {{ loop.index }}. {{ workflow_step.title }}
+          </div>
+        {% endif %}
       {% endfor %}
     </div>
 
@@ -39,7 +55,7 @@
     <section class="ttl-card">
       <div class="ttl-step-head">
         <div class="ttl-muted">Step {{ step_number }} of {{ step_count }}</div>
-        <h2>{{ step.title }}</h2>
+        <h2>{{ step_number }}. {{ step.title }}</h2>
         {% if step.description %}<div class="ttl-muted">{{ step.description }}</div>{% endif %}
       </div>
 

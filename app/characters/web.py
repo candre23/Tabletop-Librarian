@@ -5,8 +5,9 @@ from typing import Any
 import json
 import re
 
-from fastapi import APIRouter, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
 from app.characters.schema import default_collection_item, load_character_schema, validate_character_data
@@ -18,6 +19,12 @@ from app.characters.temporary_effects import (
     temporary_influence_map,
 )
 from app.compendium import load_compendium
+from app.auth import get_user, list_users
+from app.characters.portability import (
+    CharacterPackageError,
+    export_character_package,
+    import_character_package,
+)
 from app.creation import (
     DraftStorageError,
     create_draft,
@@ -38,6 +45,7 @@ from app.characters.storage import (
     delete_character,
     list_characters,
     load_character,
+    load_character_raw,
     save_character,
 )
 from app.system_packs import discover_system_packs, load_system_pack
@@ -95,6 +103,52 @@ def _identity_from_request(request: Request) -> tuple[str, str]:
         raise HTTPException(status_code=401, detail="Login required.")
 
     return username, role.lower()
+
+
+def _known_username(username: str) -> str | None:
+    user = get_user(username)
+    if not user:
+        return None
+    return str(user.get("username") or "").strip() or None
+
+
+def _target_owner(request: Request, username: str, role: str) -> str:
+    requested = str(request.query_params.get("owner") or "").strip()
+    if not requested or requested.casefold() == username.casefold():
+        return username
+    if role != "gm":
+        raise HTTPException(status_code=403, detail="GM access is required.")
+    canonical = _known_username(requested)
+    if not canonical:
+        raise HTTPException(status_code=404, detail="Character owner not found.")
+    return canonical
+
+
+def _owner_query(viewer: str, role: str, owner: str) -> str:
+    if role == "gm" and owner.casefold() != viewer.casefold():
+        from urllib.parse import quote
+        return "?owner=" + quote(owner)
+    return ""
+
+
+def _character_url(
+    character_id: str,
+    *,
+    viewer: str,
+    role: str,
+    owner: str,
+    extra: str = "",
+) -> str:
+    from urllib.parse import quote
+    params = []
+    if role == "gm" and owner.casefold() != viewer.casefold():
+        params.append("owner=" + quote(owner))
+    if extra:
+        params.append(extra.lstrip("?&"))
+    suffix = "?" + "&".join(params) if params else ""
+    return f"/characters/{character_id}{suffix}"
+
+
 
 
 def _character_name(data: dict[str, Any], fallback: str) -> str:
@@ -171,6 +225,69 @@ def _available_advancement_actions(pack, schema, data):
         })
     return rows
 
+
+def _normalize_collection_rows(field, value: Any) -> list[Any]:
+    if not isinstance(value, list):
+        return value
+
+    if not field.raw.get("allow_custom"):
+        return value
+
+    item_schema = field.item_schema or {}
+    reference_fields = [
+        item_id
+        for item_id, definition in item_schema.items()
+        if definition.type == "reference"
+    ]
+    custom_name_field = str(
+        field.raw.get("custom_name_field") or "custom_name"
+    )
+
+    normalized = []
+
+    for row in value:
+        if not isinstance(row, dict):
+            normalized.append(row)
+            continue
+
+        has_identity = any(
+            row.get(item_id) not in (None, "")
+            for item_id in reference_fields
+        )
+        custom_name = row.get(custom_name_field)
+        if isinstance(custom_name, str) and custom_name.strip():
+            has_identity = True
+
+        if has_identity:
+            normalized.append(row)
+            continue
+
+        # The collection editor creates a new row using item defaults. If the
+        # user never selects a compendium entry or supplies a custom name, that
+        # untouched default row is UI scaffolding, not character data.
+        untouched = True
+        for item_id, definition in item_schema.items():
+            if item_id in reference_fields or item_id == custom_name_field:
+                continue
+
+            actual = row.get(item_id)
+            if "default" in definition.raw:
+                expected = definition.default
+            elif definition.type == "boolean":
+                expected = False
+            else:
+                expected = None
+
+            if actual not in (expected, None, ""):
+                untouched = False
+                break
+
+        if not untouched:
+            normalized.append(row)
+
+    return normalized
+
+
 def _coerce_form_value(field, form: dict[str, Any]) -> Any:
     key = f"field__{field.id}"
 
@@ -208,7 +325,7 @@ def _coerce_form_value(field, form: dict[str, Any]) -> Any:
             raise ValueError("Invalid collection JSON.") from exc
         if not isinstance(value, list):
             raise ValueError("Collection value must be a list.")
-        return value
+        return _normalize_collection_rows(field, value)
 
     raw = form.get(key)
 
@@ -272,12 +389,12 @@ def _coerce_json_value(field, raw: Any) -> Any:
         if raw in (None, ""):
             return []
         if isinstance(raw, list):
-            return raw
+            return _normalize_collection_rows(field, raw)
         if isinstance(raw, str):
             value = json.loads(raw)
             if not isinstance(value, list):
                 raise ValueError("Collection value must be a list.")
-            return value
+            return _normalize_collection_rows(field, value)
         raise ValueError("Collection value must be a list.")
     return raw
 
@@ -612,6 +729,69 @@ def _step_validation_issues(schema, compendium, data, field_ids):
     return issues, reference_messages
 
 
+def _creation_applicable_rule_issues(
+    pack,
+    schema,
+    workflow,
+    step_index: int,
+    rule_issues,
+):
+    """Hide creation-time rules until all of their workflow inputs are in scope.
+
+    The normal rules engine remains authoritative. This only controls when a
+    validation result is surfaced/blocking inside a multi-step creation wizard.
+    Final character validation still evaluates the complete ruleset.
+    """
+    if not rule_issues or not pack.manifest.rules:
+        return list(rule_issues)
+
+    engine, load_issues = load_rule_engine(
+        pack.root / pack.manifest.rules,
+        known_fields=set(schema.fields),
+    )
+    if engine is None:
+        detail = "; ".join(issue.format() for issue in load_issues)
+        raise CharacterStorageError(f"System rules are invalid. {detail}")
+
+    field_step: dict[str, int] = {}
+    for index, creation_step in enumerate(workflow.steps):
+        for field_id in creation_step.fields:
+            field_step.setdefault(field_id, index)
+
+    validation_by_id = {rule.id: rule for rule in engine.validation}
+
+    def creation_dependencies(field_id: str, active: set[str] | None = None) -> set[str]:
+        if field_id in field_step:
+            return {field_id}
+        calculated = engine.calculated.get(field_id)
+        if calculated is None:
+            return set()
+        active = set(active or ())
+        if field_id in active:
+            return set()
+        active.add(field_id)
+        result: set[str] = set()
+        for dependency in calculated.dependencies:
+            result.update(creation_dependencies(dependency, active))
+        return result
+
+    applicable = []
+    for issue in rule_issues:
+        rule = validation_by_id.get(issue.rule_id)
+        if rule is None:
+            applicable.append(issue)
+            continue
+
+        required_inputs: set[str] = set()
+        for dependency in rule.dependencies:
+            required_inputs.update(creation_dependencies(dependency))
+
+        if all(field_step[field_id] <= step_index for field_id in required_inputs):
+            applicable.append(issue)
+
+    return applicable
+
+
 def _draft_display_name(data: dict[str, Any], system_id: str) -> str:
     name = _character_name(data, "")
     return name or f"Untitled {system_id} character"
@@ -621,17 +801,47 @@ def _draft_display_name(data: dict[str, Any], system_id: str) -> str:
 async def characters_home(request: Request):
     username, role = _identity_from_request(request)
 
-    characters = []
-    for row in list_characters(username, character_root=CHARACTER_ROOT):
-        characters.append(
-            {
-                **row,
-                "display_name": _character_name(
-                    row.get("data") or {},
-                    row["character_id"],
-                ),
-            }
-        )
+    character_groups = []
+    owners = [username]
+    if role == "gm":
+        all_owners = [
+            str(user.get("username"))
+            for user in list_users()
+            if str(user.get("username") or "").strip()
+        ]
+        owners = [username] + [
+            owner
+            for owner in all_owners
+            if owner.casefold() != username.casefold()
+        ]
+
+    for owner in owners:
+        rows = []
+        for row in list_characters(owner, character_root=CHARACTER_ROOT):
+            rows.append(
+                {
+                    **row,
+                    "owner": owner,
+                    "display_name": _character_name(
+                        row.get("data") or {},
+                        row["character_id"],
+                    ),
+                    "url": _character_url(
+                        row["character_id"],
+                        viewer=username,
+                        role=role,
+                        owner=owner,
+                    ),
+                }
+            )
+        if rows or owner.casefold() == username.casefold():
+            character_groups.append(
+                {
+                    "owner": owner,
+                    "is_self": owner.casefold() == username.casefold(),
+                    "characters": rows,
+                }
+            )
 
     drafts = []
     for row in list_drafts(username, draft_root=DRAFT_ROOT):
@@ -647,7 +857,23 @@ async def characters_home(request: Request):
 
     advancement_drafts = []
     for row in list_advancement_drafts(username, draft_root=ADVANCEMENT_DRAFT_ROOT):
-        advancement_drafts.append({**row, "display_name": _draft_display_name(row.get("data") or {}, row.get("system_id") or "system")})
+        advancement_drafts.append(
+            {
+                **row,
+                "display_name": _draft_display_name(
+                    row.get("data") or {},
+                    row.get("system_id") or "system",
+                ),
+            }
+        )
+
+    import_users = []
+    if role == "gm":
+        import_users = [
+            str(user.get("username"))
+            for user in list_users()
+            if str(user.get("username") or "").strip()
+        ]
 
     return templates.TemplateResponse(
         request=request,
@@ -655,11 +881,92 @@ async def characters_home(request: Request):
         context={
             "username": username,
             "role": role,
-            "characters": characters,
+            "character_groups": character_groups,
             "drafts": drafts,
             "advancement_drafts": advancement_drafts,
             "packs": _pack_summaries(),
+            "import_users": import_users,
+            "error": request.query_params.get("error"),
+            "message": request.query_params.get("message"),
         },
+    )
+
+
+@router.get("/characters/{character_id}/export")
+async def character_export(request: Request, character_id: str):
+    username, role = _identity_from_request(request)
+    owner = _target_owner(request, username, role)
+    try:
+        record = load_character_raw(
+            owner,
+            character_id,
+            character_root=CHARACTER_ROOT,
+        )
+    except CharacterStorageError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    content, filename = export_character_package(record)
+    return Response(
+        content=content,
+        media_type="application/vnd.tabletop-librarian.character+zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@router.post("/characters/import")
+async def character_import(
+    request: Request,
+    character_file: UploadFile = File(...),
+    collision: str = Form("copy"),
+    target_owner: str = Form(""),
+):
+    username, role = _identity_from_request(request)
+    owner = username
+
+    if role == "gm" and target_owner.strip():
+        canonical = _known_username(target_owner)
+        if not canonical:
+            return RedirectResponse(
+                "/characters?error=Import+owner+not+found.",
+                status_code=303,
+            )
+        owner = canonical
+
+    if not character_file.filename or not character_file.filename.lower().endswith(".ttlchar"):
+        return RedirectResponse(
+            "/characters?error=Choose+a+.ttlchar+character+package.",
+            status_code=303,
+        )
+
+    content = await character_file.read()
+    await character_file.close()
+
+    try:
+        record = import_character_package(
+            content,
+            target_owner=owner,
+            collision=collision,
+            character_root=CHARACTER_ROOT,
+            pack_root=PACK_ROOT,
+        )
+    except CharacterPackageError as exc:
+        from urllib.parse import quote
+        return RedirectResponse(
+            "/characters?error=" + quote(str(exc)),
+            status_code=303,
+        )
+
+    from urllib.parse import quote
+    return RedirectResponse(
+        "/characters?message="
+        + quote(
+            f"Imported {_character_name(record.data, record.character_id)} "
+            f"for {owner}."
+        ),
+        status_code=303,
     )
 
 
@@ -756,6 +1063,29 @@ def _display_field_value(field, value, reference_options) -> str:
     return str(value)
 
 
+
+def _display_collection_item_value(
+    field_id: str,
+    item_id: str,
+    item_field,
+    value: Any,
+    collection_reference_options: dict[str, dict[str, list[Any]]],
+) -> str:
+    if item_field.type == "reference":
+        for entity in collection_reference_options.get(field_id, {}).get(item_id, []):
+            if entity.id == value:
+                return entity.name
+        return "" if value in (None, "") else str(value)
+    if item_field.type == "boolean":
+        return "Yes" if bool(value) else "No"
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip()
+    return str(value)
+
+
+
 def _render_character_edit_page(
     request: Request,
     *,
@@ -785,6 +1115,15 @@ def _render_character_edit_page(
             "username": username,
             "role": role,
             "record": record,
+            "character_owner": record.owner,
+            "is_foreign_character": record.owner.casefold() != username.casefold(),
+            "character_url": _character_url(
+                record.character_id,
+                viewer=username,
+                role=role,
+                owner=record.owner,
+            ),
+            "character_owner_query": _owner_query(username, role, record.owner),
             "pack": pack,
             "schema": schema,
             "editable_field": _editable_field,
@@ -795,6 +1134,7 @@ def _render_character_edit_page(
             "core_fields": core_fields,
             "unlocked_field": unlocked_field,
             "display_field_value": _display_field_value,
+            "display_collection_item_value": _display_collection_item_value,
             "error": error,
             "advancement_actions": _available_advancement_actions(pack, schema, record.data),
             "mode": mode if mode in {"play", "configure"} else "play",
@@ -863,6 +1203,10 @@ def _render_creation_page(
             "workflow": workflow,
             "step": step,
             "step_index": draft.current_step,
+            "max_step_reached": min(
+                max(draft.max_step_reached, draft.current_step),
+                len(workflow.steps) - 1,
+            ),
             "step_number": draft.current_step + 1,
             "step_count": len(workflow.steps),
             "is_first": draft.current_step == 0,
@@ -970,8 +1314,24 @@ async def character_creation_evaluate(request: Request, draft_id: str):
         pack,
         schema,
         values,
-        step.fields,
+        None if step_index == len(workflow.steps) - 1 else step.fields,
     )
+
+    rule_issues = _creation_applicable_rule_issues(
+        pack,
+        schema,
+        workflow,
+        step_index,
+        rule_issues,
+    )
+
+    # During ordinary creation steps, an incomplete target budget is guidance,
+    # not a warning. It disappears automatically once the target is met.
+    # On the final review step it becomes a warning if still unresolved.
+    if step_index < len(workflow.steps) - 1:
+        for issue in limit_issues:
+            if issue.severity == "warning":
+                issue.severity = "info"
 
     # Live evaluation should report rule/eligibility/limit problems, but an
     # untouched required field is normal while the user is still filling out
@@ -1080,9 +1440,14 @@ async def character_creation_step(request: Request, draft_id: str):
             unlocked_field=unlocked_field,
         )
 
-    if action in {"back", "exit"}:
+    jump_match = re.fullmatch(r"jump:(\d+)", action)
+    if action in {"back", "exit"} or jump_match:
         if action == "back":
             draft.current_step = max(0, step_index - 1)
+        elif jump_match:
+            target_step = int(jump_match.group(1))
+            if 0 <= target_step <= draft.max_step_reached:
+                draft.current_step = target_step
         save_draft(draft, draft_root=DRAFT_ROOT)
         return RedirectResponse(
             url=(
@@ -1110,7 +1475,14 @@ async def character_creation_step(request: Request, draft_id: str):
         pack,
         schema,
         draft.data,
-        step.fields,
+        None if step_index == len(workflow.steps) - 1 else step.fields,
+    )
+    rule_issues = _creation_applicable_rule_issues(
+        pack,
+        schema,
+        workflow,
+        step_index,
+        rule_issues,
     )
     blocking_rules = [
         issue for issue in rule_issues if issue.severity == "error"
@@ -1151,6 +1523,32 @@ async def character_creation_step(request: Request, draft_id: str):
 
     if action == "finish" or step_index == len(workflow.steps) - 1:
         try:
+            if workflow.final_changes:
+                engine, load_issues = load_rule_engine(
+                    pack.root / pack.manifest.rules if pack.manifest.rules else None,
+                    known_fields=set(schema.fields),
+                )
+                if engine is None:
+                    detail = "; ".join(issue.format() for issue in load_issues)
+                    raise CharacterStorageError(
+                        f"System rules are invalid. {detail}"
+                    )
+
+                finalized = dict(draft.data)
+                for field_id, expression in workflow.final_changes.items():
+                    finalized[field_id] = engine.evaluate_expression(
+                        expression,
+                        finalized,
+                    )
+
+                finalized, _final_rule_issues = _evaluate_character_values(
+                    pack,
+                    schema,
+                    finalized,
+                    {},
+                )
+                draft.data = finalized
+
             record = create_character(
                 username,
                 pack.manifest.id,
@@ -1178,6 +1576,7 @@ async def character_creation_step(request: Request, draft_id: str):
         )
 
     draft.current_step = step_index + 1
+    draft.max_step_reached = max(draft.max_step_reached, draft.current_step)
     save_draft(draft, draft_root=DRAFT_ROOT)
     return RedirectResponse(
         url=f"/characters/create/{draft.draft_id}",
@@ -1248,8 +1647,8 @@ def _render_advancement_page(request, *, username, role, draft, pack, schema, wo
 
 @router.post("/characters/{character_id}/advance/{action_id}/start")
 async def character_advancement_start(request:Request, character_id:str, action_id:str):
-    username,_=_identity_from_request(request)
-    try: record=load_character(username,character_id,character_root=CHARACTER_ROOT,pack_root=PACK_ROOT)
+    username,role=_identity_from_request(request); owner=_target_owner(request,username,role)
+    try: record=load_character(owner,character_id,character_root=CHARACTER_ROOT,pack_root=PACK_ROOT)
     except CharacterStorageError as exc: raise HTTPException(status_code=404,detail=str(exc)) from exc
     pack,schema,workflow=_load_advancement(record.system_id)
     if workflow is None: raise HTTPException(status_code=409,detail="This System Pack does not define advancement.")
@@ -1260,13 +1659,13 @@ async def character_advancement_start(request:Request, character_id:str, action_
     data=dict(record.data)
     for fid,expr in action.changes.items(): data[fid]=engine.evaluate_expression(expr,data)
     data,_=_evaluate_character_values(pack,schema,data,{})
-    draft=create_advancement_draft(username,character_id,record.system_id,action.id,record.character_schema,record.updated_at,data,draft_root=ADVANCEMENT_DRAFT_ROOT)
-    return RedirectResponse(url=f"/characters/advance/{draft.draft_id}",status_code=303)
+    draft=create_advancement_draft(owner,character_id,record.system_id,action.id,record.character_schema,record.updated_at,data,draft_root=ADVANCEMENT_DRAFT_ROOT)
+    return RedirectResponse(url=f"/characters/advance/{draft.draft_id}?owner={owner}",status_code=303)
 
 @router.get("/characters/advance/{draft_id}",response_class=HTMLResponse)
 async def character_advancement_page(request:Request,draft_id:str):
-    username,role=_identity_from_request(request)
-    try: draft=load_advancement_draft(username,draft_id,draft_root=ADVANCEMENT_DRAFT_ROOT)
+    username,role=_identity_from_request(request); owner=_target_owner(request,username,role)
+    try: draft=load_advancement_draft(owner,draft_id,draft_root=ADVANCEMENT_DRAFT_ROOT)
     except AdvancementDraftError as exc: raise HTTPException(status_code=404,detail=str(exc)) from exc
     pack,schema,workflow=_load_advancement(draft.system_id); action=workflow.action(draft.action_id) if workflow else None
     if action is None: raise HTTPException(status_code=409,detail="Advancement action is unavailable.")
@@ -1274,8 +1673,8 @@ async def character_advancement_page(request:Request,draft_id:str):
 
 @router.post("/characters/advance/{draft_id}/evaluate")
 async def character_advancement_evaluate(request:Request,draft_id:str):
-    username,_=_identity_from_request(request)
-    try: draft=load_advancement_draft(username,draft_id,draft_root=ADVANCEMENT_DRAFT_ROOT)
+    username,role=_identity_from_request(request); owner=_target_owner(request,username,role)
+    try: draft=load_advancement_draft(owner,draft_id,draft_root=ADVANCEMENT_DRAFT_ROOT)
     except AdvancementDraftError as exc: raise HTTPException(status_code=404,detail=str(exc)) from exc
     pack,schema,workflow=_load_advancement(draft.system_id); action=workflow.action(draft.action_id); step=action.steps[draft.current_step]
     payload=await request.json(); submitted=payload.get("values") if isinstance(payload,dict) else None
@@ -1288,8 +1687,8 @@ async def character_advancement_evaluate(request:Request,draft_id:str):
 
 @router.post("/characters/advance/{draft_id}/step")
 async def character_advancement_step(request:Request,draft_id:str):
-    username,role=_identity_from_request(request)
-    try: draft=load_advancement_draft(username,draft_id,draft_root=ADVANCEMENT_DRAFT_ROOT)
+    username,role=_identity_from_request(request); owner=_target_owner(request,username,role)
+    try: draft=load_advancement_draft(owner,draft_id,draft_root=ADVANCEMENT_DRAFT_ROOT)
     except AdvancementDraftError as exc: raise HTTPException(status_code=404,detail=str(exc)) from exc
     pack,schema,workflow=_load_advancement(draft.system_id); action=workflow.action(draft.action_id); step_index=max(0,min(draft.current_step,len(action.steps)-1)); step=action.steps[step_index]
     form=await request.form(); command=str(form.get("action") or "next")
@@ -1303,42 +1702,83 @@ async def character_advancement_step(request:Request,draft_id:str):
     if command in {"back","exit"}:
         if command=="back": draft.current_step=max(0,step_index-1)
         save_advancement_draft(draft,draft_root=ADVANCEMENT_DRAFT_ROOT)
-        return RedirectResponse(url="/characters" if command=="exit" else f"/characters/advance/{draft.draft_id}",status_code=303)
+        return RedirectResponse(url="/characters" if command=="exit" else f"/characters/advance/{draft.draft_id}?owner={owner}",status_code=303)
     compendium=_load_compendium_for_pack(pack); schema_issues,refs=_step_validation_issues(schema,compendium,draft.data,step.fields); _,elig=_eligibility_state(pack,schema,draft.data,step.fields); _,limits=_limit_state(pack,schema,draft.data,step.fields)
     blocking=[i for i in rule_issues if i.severity=="error"]+[i for i in limits if i.severity=="error"]
     if schema_issues or refs or elig or blocking:
         msgs=[i.format() for i in schema_issues]+refs+[i.format() for i in elig]+[i.format() for i in blocking]
         return _render_advancement_page(request,username=username,role=role,draft=draft,pack=pack,schema=schema,workflow=workflow,action=action,error=" ".join(msgs),status_code=400)
     if command=="finish" or step_index==len(action.steps)-1:
-        try: record=load_character(username,draft.character_id,character_root=CHARACTER_ROOT,pack_root=PACK_ROOT)
+        try: record=load_character(owner,draft.character_id,character_root=CHARACTER_ROOT,pack_root=PACK_ROOT)
         except CharacterStorageError as exc: raise HTTPException(status_code=404,detail=str(exc)) from exc
         if record.updated_at!=draft.base_updated_at:
             return _render_advancement_page(request,username=username,role=role,draft=draft,pack=pack,schema=schema,workflow=workflow,action=action,error="This character changed after the advancement was started. Discard this advancement draft and start again so newer edits are not overwritten.",status_code=409)
         record.data=dict(draft.data)
         try: save_character(record,character_root=CHARACTER_ROOT,pack_root=PACK_ROOT)
         except CharacterStorageError as exc: return _render_advancement_page(request,username=username,role=role,draft=draft,pack=pack,schema=schema,workflow=workflow,action=action,error=str(exc),status_code=400)
-        delete_advancement_draft(username,draft.draft_id,draft_root=ADVANCEMENT_DRAFT_ROOT)
-        return RedirectResponse(url=f"/characters/{record.character_id}?advanced=1",status_code=303)
+        delete_advancement_draft(owner,draft.draft_id,draft_root=ADVANCEMENT_DRAFT_ROOT)
+        return RedirectResponse(url=_character_url(record.character_id,viewer=username,role=role,owner=owner,extra="advanced=1"),status_code=303)
     draft.current_step=step_index+1; save_advancement_draft(draft,draft_root=ADVANCEMENT_DRAFT_ROOT)
-    return RedirectResponse(url=f"/characters/advance/{draft.draft_id}",status_code=303)
+    return RedirectResponse(url=f"/characters/advance/{draft.draft_id}?owner={owner}",status_code=303)
 
 @router.post("/characters/advance/{draft_id}/delete")
 async def character_advancement_delete(request:Request,draft_id:str):
-    username,_=_identity_from_request(request); delete_advancement_draft(username,draft_id,draft_root=ADVANCEMENT_DRAFT_ROOT); return RedirectResponse(url="/characters",status_code=303)
+    username,role=_identity_from_request(request); owner=_target_owner(request,username,role); delete_advancement_draft(owner,draft_id,draft_root=ADVANCEMENT_DRAFT_ROOT); return RedirectResponse(url="/characters",status_code=303)
+
+
+def _render_character_recovery_page(
+    request: Request,
+    *,
+    username: str,
+    role: str,
+    record,
+    error: str,
+    status_code: int = 409,
+):
+    return templates.TemplateResponse(
+        request=request,
+        name="characters/recovery.html",
+        context={
+            "username": username,
+            "role": role,
+            "record": record,
+            "character_owner": record.owner,
+            "character_owner_query": _owner_query(username, role, record.owner),
+            "error": error,
+        },
+        status_code=status_code,
+    )
+
 
 @router.get("/characters/{character_id}", response_class=HTMLResponse)
 async def character_edit(request: Request, character_id: str):
     username, role = _identity_from_request(request)
+    owner = _target_owner(request, username, role)
 
     try:
         record = load_character(
-            username,
+            owner,
             character_id,
             character_root=CHARACTER_ROOT,
             pack_root=PACK_ROOT,
         )
     except CharacterStorageError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        try:
+            raw_record = load_character_raw(
+                owner,
+                character_id,
+                character_root=CHARACTER_ROOT,
+            )
+        except CharacterStorageError:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+        return _render_character_recovery_page(
+            request,
+            username=username,
+            role=role,
+            record=raw_record,
+            error=str(exc),
+        )
 
     pack, schema = _load_pack_schema(record.system_id)
     return _render_character_edit_page(
@@ -1356,11 +1796,12 @@ async def character_edit(request: Request, character_id: str):
 
 @router.post("/characters/{character_id}/evaluate")
 async def character_evaluate(request: Request, character_id: str):
-    username, _ = _identity_from_request(request)
+    username, role = _identity_from_request(request)
+    owner = _target_owner(request, username, role)
 
     try:
         record = load_character(
-            username,
+            owner,
             character_id,
             character_root=CHARACTER_ROOT,
             pack_root=PACK_ROOT,
@@ -1450,11 +1891,12 @@ async def character_evaluate(request: Request, character_id: str):
 
 @router.post("/characters/{character_id}/temporary-effects")
 async def character_temporary_effects(request: Request, character_id: str):
-    username, _role = _identity_from_request(request)
+    username, role = _identity_from_request(request)
+    owner = _target_owner(request, username, role)
 
     try:
         record = load_character(
-            username,
+            owner,
             character_id,
             character_root=CHARACTER_ROOT,
             pack_root=PACK_ROOT,
@@ -1529,7 +1971,7 @@ async def character_temporary_effects(request: Request, character_id: str):
     )
 
     return RedirectResponse(
-        url=f"/characters/{character_id}",
+        url=_character_url(character_id, viewer=username, role=role, owner=owner),
         status_code=303,
     )
 
@@ -1537,10 +1979,11 @@ async def character_temporary_effects(request: Request, character_id: str):
 @router.post("/characters/{character_id}/save")
 async def character_save(request: Request, character_id: str):
     username, role = _identity_from_request(request)
+    owner = _target_owner(request, username, role)
 
     try:
         record = load_character(
-            username,
+            owner,
             character_id,
             character_root=CHARACTER_ROOT,
             pack_root=PACK_ROOT,
@@ -1594,28 +2037,29 @@ async def character_save(request: Request, character_id: str):
         return JSONResponse({"saved": True})
 
     return RedirectResponse(
-        url=f"/characters/{character_id}?saved=1&mode={mode}",
+        url=_character_url(character_id, viewer=username, role=role, owner=owner, extra=f"saved=1&mode={mode}"),
         status_code=303,
     )
 
 
 @router.post("/characters/{character_id}/delete")
 async def character_delete(request: Request, character_id: str):
-    username, _ = _identity_from_request(request)
+    username, role = _identity_from_request(request)
+    owner = _target_owner(request, username, role)
 
-    # Load first so ownership is verified before deletion.
+    # The owner-specific path itself provides ownership isolation. Use the
+    # raw envelope so stale/incompatible characters can still be deleted.
     try:
-        load_character(
-            username,
+        load_character_raw(
+            owner,
             character_id,
             character_root=CHARACTER_ROOT,
-            pack_root=PACK_ROOT,
         )
     except CharacterStorageError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     delete_character(
-        username,
+        owner,
         character_id,
         character_root=CHARACTER_ROOT,
     )

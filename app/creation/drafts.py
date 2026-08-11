@@ -28,6 +28,7 @@ class CharacterDraft:
     system_version: str
     character_schema: int
     current_step: int
+    max_step_reached: int
     locked_fields: list[str]
     data: dict[str, Any]
     created_at: str
@@ -102,6 +103,7 @@ def create_draft(
         system_version=system_version,
         character_schema=character_schema,
         current_step=0,
+        max_step_reached=0,
         locked_fields=[],
         data=dict(initial_data or {}),
         created_at=now,
@@ -153,6 +155,11 @@ def load_draft(
     if not isinstance(payload["current_step"], int) or payload["current_step"] < 0:
         raise DraftStorageError("Character draft current_step is invalid.")
 
+    max_step_reached = payload.get("max_step_reached", payload["current_step"])
+    if not isinstance(max_step_reached, int) or max_step_reached < 0:
+        raise DraftStorageError("Character draft max_step_reached is invalid.")
+    max_step_reached = max(max_step_reached, payload["current_step"])
+
     locked_fields = payload.get("locked_fields", [])
     if not isinstance(locked_fields, list) or not all(isinstance(item, str) for item in locked_fields):
         raise DraftStorageError("Character draft locked_fields is invalid.")
@@ -164,6 +171,7 @@ def load_draft(
         system_version=payload["system_version"],
         character_schema=payload["character_schema"],
         current_step=payload["current_step"],
+        max_step_reached=max_step_reached,
         locked_fields=list(dict.fromkeys(locked_fields)),
         data=payload["data"],
         created_at=payload["created_at"],
@@ -190,6 +198,7 @@ def save_draft(
             "system_version": draft.system_version,
             "character_schema": draft.character_schema,
             "current_step": draft.current_step,
+            "max_step_reached": max(draft.max_step_reached, draft.current_step),
             "locked_fields": list(dict.fromkeys(draft.locked_fields)),
             "created_at": draft.created_at,
             "updated_at": draft.updated_at,
@@ -224,6 +233,10 @@ def list_drafts(
                 "system_version": payload.get("system_version"),
                 "character_schema": payload.get("character_schema"),
                 "current_step": payload.get("current_step", 0),
+                "max_step_reached": payload.get(
+                    "max_step_reached",
+                    payload.get("current_step", 0),
+                ),
                 "locked_fields": payload.get("locked_fields", []),
                 "created_at": payload.get("created_at"),
                 "updated_at": payload.get("updated_at"),

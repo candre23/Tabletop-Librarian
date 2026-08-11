@@ -4072,3 +4072,1244 @@ body > .shell > .panel .top-actions button {
         animation: none;
     }
 }
+
+/* v0.4.22.6: character sheets respond to their own container width.
+   This preserves compact layouts when embedded in the future tri-pane
+   workspace even if the browser viewport itself remains wide. */
+.ttl-character-ui .ttl-char-wrap,
+.ttl-character-ui .ttl-create-wrap {
+    container-type: inline-size;
+}
+
+@container (max-width: 900px) {
+    .ttl-character-ui .ttl-sheet-section {
+        grid-column: 1 / -1;
+    }
+
+    .ttl-character-ui .ttl-field-grid.ttl-layout-columns-4,
+    .ttl-character-ui .ttl-field-grid.ttl-layout-columns-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@container (max-width: 700px) {
+    .ttl-character-ui .ttl-field-grid.ttl-layout-columns-2,
+    .ttl-character-ui .ttl-field-grid.ttl-layout-columns-3,
+    .ttl-character-ui .ttl-field-grid.ttl-layout-columns-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* v0.4.22.11: readable structured collections in Play mode */
+.ttl-character-ui .ttl-play-collection {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.ttl-character-ui .ttl-play-collection-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+    gap: 2px 6px;
+    min-width: 0;
+    padding: 3px 5px;
+    border: 1px solid #9ba7ad;
+    background: rgba(255, 255, 255, .72);
+}
+
+.ttl-character-ui .ttl-play-collection-row:nth-child(even) {
+    background: rgba(232, 239, 242, .82);
+}
+
+.ttl-character-ui .ttl-play-collection-cell {
+    min-width: 0;
+}
+
+.ttl-character-ui .ttl-play-collection-label {
+    display: block;
+    margin-bottom: 1px;
+    color: #4f6068;
+    font-size: 8px;
+    font-weight: 800;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: .035em;
+}
+
+.ttl-character-ui .ttl-play-collection-value {
+    display: block;
+    overflow-wrap: anywhere;
+    color: #17272f;
+    font-size: 10.5px;
+    line-height: 1.15;
+}
+
+.ttl-character-ui .ttl-play-collection-empty {
+    color: #66747b;
+    font-style: italic;
+}
+
+@container (max-width: 700px) {
+    .ttl-character-ui .ttl-play-collection-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@container (max-width: 430px) {
+    .ttl-character-ui .ttl-play-collection-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* v0.4.22.13: completed creation steps are direct navigation targets. */
+.ttl-character-ui button.ttl-progress-step {
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.ttl-character-ui .ttl-progress-step.is-clickable:hover,
+.ttl-character-ui .ttl-progress-step.is-clickable:focus-visible {
+    border-color: #245f57;
+    background: #c6e3dd;
+    color: #163e39;
+    outline: 1px solid #245f57;
+    outline-offset: 0;
+}
+
+
+/* ==========================================================================
+   v0.4.22.14 application visual normalization
+   ========================================================================== */
+:root {
+    --ttl-app-bg: #10171b;
+    --ttl-app-bg-deep: #0b1013;
+    --ttl-panel: #172127;
+    --ttl-panel-alt: #121a1f;
+    --ttl-panel-soft: #1d2930;
+    --ttl-line: #435660;
+    --ttl-line-soft: #314149;
+    --ttl-ink: #eef3f5;
+    --ttl-muted: #a8b5bc;
+    --ttl-faint: #7f9099;
+    --ttl-blue: #4e93b8;
+    --ttl-focus: #70b4d6;
+    --ttl-success: #5f8d67;
+    --ttl-warning: #9a7b38;
+    --ttl-danger: #9a4f4f;
+}
+
+body:not(.ttl-character-ui) {
+    background: linear-gradient(180deg, #142027 0, var(--ttl-app-bg) 190px, var(--ttl-app-bg-deep) 100%);
+    color: var(--ttl-ink);
+    font-size: 14px;
+    line-height: 1.35;
+}
+
+body:not(.ttl-character-ui) .shell {
+    width: min(1280px, calc(100% - 24px));
+    margin: 0 auto;
+    padding: 22px 0 32px;
+}
+
+body:not(.ttl-character-ui) h1 {
+    margin: 2px 0 10px;
+    font-size: clamp(1.55rem, 3vw, 2rem);
+    line-height: 1.08;
+    letter-spacing: .01em;
+}
+
+body:not(.ttl-character-ui) h2 {
+    margin: 20px 0 9px;
+    font-size: 1.08rem;
+    line-height: 1.15;
+}
+
+body:not(.ttl-character-ui) h3 {
+    margin: 16px 0 7px;
+    font-size: .94rem;
+}
+
+body:not(.ttl-character-ui) .eyebrow {
+    color: #9fc9e8;
+    font-size: .72rem;
+    letter-spacing: .09em;
+}
+
+body:not(.ttl-character-ui) .intro,
+body:not(.ttl-character-ui) .muted {
+    color: var(--ttl-muted);
+}
+
+body:not(.ttl-character-ui) a {
+    color: #b9dced;
+    text-underline-offset: 2px;
+}
+
+body:not(.ttl-character-ui) a:hover {
+    color: #e1f3fb;
+}
+
+body:not(.ttl-character-ui) .panel,
+body:not(.ttl-character-ui) .subpanel,
+body:not(.ttl-character-ui) .virtual-folder-card {
+    border: 1px solid var(--ttl-line);
+    border-radius: 3px;
+    background: rgba(23, 33, 39, .98);
+    box-shadow: none;
+}
+
+body:not(.ttl-character-ui) .panel { padding: 20px; }
+body:not(.ttl-character-ui) .subpanel { padding: 14px; }
+body:not(.ttl-character-ui) .virtual-folder-card { padding: 16px; }
+body:not(.ttl-character-ui) .topline { gap: 14px; }
+
+body:not(.ttl-character-ui) button,
+body:not(.ttl-character-ui) .button-link,
+body:not(.ttl-character-ui) .secondary-button,
+body:not(.ttl-character-ui) select,
+body:not(.ttl-character-ui) input,
+body:not(.ttl-character-ui) textarea {
+    border-radius: 2px;
+    font-family: inherit;
+}
+
+body:not(.ttl-character-ui) button,
+body:not(.ttl-character-ui) .button-link {
+    min-height: 30px;
+    padding: 6px 10px;
+    border: 1px solid #91a4ae;
+    background: #dbe4e8;
+    color: #122028;
+    font-size: .82rem;
+    line-height: 1.1;
+    font-weight: 800;
+}
+
+body:not(.ttl-character-ui) button:hover,
+body:not(.ttl-character-ui) .button-link:hover {
+    filter: none;
+    border-color: #c0d2da;
+    background: #eef4f6;
+}
+
+body:not(.ttl-character-ui) .secondary-button {
+    border: 1px solid #5a6d77;
+    background: #24343c;
+    color: #edf3f5;
+}
+
+body:not(.ttl-character-ui) .secondary-button:hover {
+    background: #30454f;
+}
+
+body:not(.ttl-character-ui) .danger-button {
+    border: 1px solid #a86161;
+    background: #5a2e2e;
+    color: #ffe7e7;
+}
+
+body:not(.ttl-character-ui) input:not([type="checkbox"]):not([type="radio"]),
+body:not(.ttl-character-ui) select,
+body:not(.ttl-character-ui) textarea {
+    min-height: 32px;
+    border: 1px solid #556871;
+    padding: 6px 8px;
+    background: #0f161a;
+    color: var(--ttl-ink);
+    outline: none;
+}
+
+body:not(.ttl-character-ui) textarea { resize: vertical; }
+
+body:not(.ttl-character-ui) input:focus,
+body:not(.ttl-character-ui) select:focus,
+body:not(.ttl-character-ui) textarea:focus {
+    border-color: var(--ttl-focus);
+    box-shadow: 0 0 0 1px var(--ttl-focus);
+}
+
+body:not(.ttl-character-ui) .source-row,
+body:not(.ttl-character-ui) .user-row,
+body:not(.ttl-character-ui) .setting-box,
+body:not(.ttl-character-ui) .document-permission-row,
+body:not(.ttl-character-ui) .empty-state,
+body:not(.ttl-character-ui) .ttl-multi-selected {
+    border-radius: 2px;
+    border-color: var(--ttl-line-soft);
+    background: var(--ttl-panel-alt);
+}
+
+body:not(.ttl-character-ui) .source-row,
+body:not(.ttl-character-ui) .user-row,
+body:not(.ttl-character-ui) .document-permission-row {
+    padding: 9px 10px;
+}
+
+body:not(.ttl-character-ui) .empty-state { padding: 14px; }
+
+body:not(.ttl-character-ui) .folder-grid,
+body:not(.ttl-character-ui) .book-grid {
+    gap: 16px;
+    margin-top: 16px;
+}
+
+body:not(.ttl-character-ui) .folder-art,
+body:not(.ttl-character-ui) .book-placeholder,
+body:not(.ttl-character-ui) .cover-image {
+    border-radius: 2px;
+    border-color: #52636c;
+    box-shadow: none;
+}
+
+body:not(.ttl-character-ui) .folder-name,
+body:not(.ttl-character-ui) .book-title {
+    margin-top: 7px;
+    font-size: .9rem;
+}
+
+body:not(.ttl-character-ui) .folder-meta,
+body:not(.ttl-character-ui) .book-type {
+    margin-top: 2px;
+    color: var(--ttl-faint);
+    font-size: .7rem;
+}
+
+body:not(.ttl-character-ui) .error,
+body:not(.ttl-character-ui) .success-message,
+body:not(.ttl-character-ui) .warning-list,
+body:not(.ttl-character-ui) .knowledgebase-global-warning {
+    border-radius: 2px;
+    box-shadow: none;
+}
+
+body:not(.ttl-character-ui) .error {
+    border: 1px solid #8e5454;
+    border-left: 4px solid var(--ttl-danger);
+    background: #372326;
+}
+
+body:not(.ttl-character-ui) .success-message {
+    border: 1px solid #4f7257;
+    border-left: 4px solid var(--ttl-success);
+    background: #1e3024;
+}
+
+body:not(.ttl-character-ui) .warning-list {
+    border: 1px solid #75643e;
+    border-left: 4px solid var(--ttl-warning);
+    background: #30291d;
+}
+
+body:not(.ttl-character-ui) .ttl-global-nav {
+    min-height: 34px;
+    border-bottom: 2px solid var(--ttl-blue);
+    background: #17242c;
+    box-shadow: none;
+}
+
+body:not(.ttl-character-ui) .ttl-global-nav-inner {
+    max-width: none;
+    min-height: 34px;
+    padding: 0 10px;
+    gap: 10px;
+}
+
+body:not(.ttl-character-ui) .ttl-global-nav-brand {
+    color: #d8edf7;
+    font-size: 14px;
+    letter-spacing: .08em;
+}
+
+body:not(.ttl-character-ui) .ttl-global-nav-links { gap: 2px; }
+
+body:not(.ttl-character-ui) .ttl-global-nav-links a,
+body:not(.ttl-character-ui) .ttl-global-nav-account button {
+    min-height: 26px;
+    border-radius: 2px;
+    padding: 4px 8px;
+    font-size: 11px;
+    line-height: 1;
+}
+
+body:not(.ttl-character-ui) .ttl-global-nav-links a { color: #edf4f7; }
+
+body:not(.ttl-character-ui) .ttl-global-nav-links a:hover,
+body:not(.ttl-character-ui) .ttl-global-nav-account button:hover {
+    border-color: #627985;
+    background: #263944;
+}
+
+body:not(.ttl-character-ui) .ttl-global-nav-account { gap: 7px; }
+body:not(.ttl-character-ui) .ttl-global-nav-user {
+    color: #d6e1e6;
+    font-size: 11px;
+}
+
+body:not(.ttl-character-ui) .ttl-global-nav-account button {
+    border: 1px solid #8397a2;
+    background: #263944;
+    color: #fff;
+}
+
+body:not(.ttl-character-ui) table:not(.markdown-document table) {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--ttl-panel-alt);
+    font-size: .82rem;
+}
+
+body:not(.ttl-character-ui) table:not(.markdown-document table) th,
+body:not(.ttl-character-ui) table:not(.markdown-document table) td {
+    border: 1px solid var(--ttl-line-soft);
+    padding: 5px 7px;
+    text-align: left;
+    vertical-align: top;
+}
+
+body:not(.ttl-character-ui) table:not(.markdown-document table) th {
+    background: #24343c;
+    color: #dce9ee;
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .035em;
+}
+
+body:not(.ttl-character-ui) .reader-toolbar {
+    min-height: 42px;
+    padding: 6px 0;
+}
+
+body:not(.ttl-character-ui) .pdf-frame-wrap,
+body:not(.ttl-character-ui) .image-reader,
+body:not(.ttl-character-ui) .comic-reader,
+body:not(.ttl-character-ui) .text-document {
+    border-radius: 2px;
+}
+
+body:not(.ttl-character-ui) .inline-admin-form {
+    border-radius: 2px;
+    background: #121b20;
+}
+
+@media (max-width: 760px) {
+    body:not(.ttl-character-ui) .shell {
+        width: calc(100% - 12px);
+        padding-top: 12px;
+    }
+
+    body:not(.ttl-character-ui) .panel { padding: 14px; }
+}
+
+/* Independent section body tint. */
+.ttl-character-ui .ttl-section-body-color-blue {
+    border-color: var(--sheet-blue) !important;
+    background: var(--sheet-blue-tint) !important;
+}
+.ttl-character-ui .ttl-section-body-color-teal {
+    border-color: var(--sheet-teal) !important;
+    background: var(--sheet-teal-tint) !important;
+}
+.ttl-character-ui .ttl-section-body-color-amber {
+    border-color: var(--sheet-amber) !important;
+    background: var(--sheet-amber-tint) !important;
+}
+.ttl-character-ui .ttl-section-body-color-plum {
+    border-color: var(--sheet-plum) !important;
+    background: var(--sheet-plum-tint) !important;
+}
+.ttl-character-ui .ttl-section-body-color-red {
+    border-color: var(--sheet-red) !important;
+    background: var(--sheet-red-tint) !important;
+}
+.ttl-character-ui .ttl-section-body-color-green {
+    border-color: var(--sheet-green) !important;
+    background: var(--sheet-green-tint) !important;
+}
+
+
+/* ==========================================================================
+   v0.4.22.15 unified light application theme
+   The character-sheet palette is the visual source of truth for all TTL pages.
+   ========================================================================== */
+
+:root {
+    --ttl-app-bg: #e8eef1;
+    --ttl-app-bg-deep: #dce5e9;
+    --ttl-panel: #f6f8f9;
+    --ttl-panel-alt: #edf2f4;
+    --ttl-panel-soft: #e4ecef;
+    --ttl-line: #647983;
+    --ttl-line-soft: #a4b2b9;
+    --ttl-ink: #17272f;
+    --ttl-muted: #53656e;
+    --ttl-faint: #75868e;
+    --ttl-blue: #2e708f;
+    --ttl-focus: #2b789f;
+    --ttl-success: #42744f;
+    --ttl-warning: #8a681a;
+    --ttl-danger: #8b3d3d;
+}
+
+html {
+    background: var(--ttl-app-bg);
+}
+
+body:not(.ttl-character-ui) {
+    background:
+        linear-gradient(
+            180deg,
+            #f3f6f7 0,
+            var(--ttl-app-bg) 170px,
+            var(--ttl-app-bg-deep) 100%
+        );
+    color: var(--ttl-ink);
+}
+
+body:not(.ttl-character-ui) .panel,
+body:not(.ttl-character-ui) .subpanel,
+body:not(.ttl-character-ui) .virtual-folder-card {
+    border-color: var(--ttl-line);
+    background: rgba(248, 250, 251, .98);
+    color: var(--ttl-ink);
+}
+
+body:not(.ttl-character-ui) .subpanel {
+    background: #eef3f5;
+}
+
+body:not(.ttl-character-ui) .virtual-folder-card {
+    background: #f8fafb;
+}
+
+body:not(.ttl-character-ui) .intro,
+body:not(.ttl-character-ui) .muted,
+body:not(.ttl-character-ui) .folder-meta,
+body:not(.ttl-character-ui) .book-type {
+    color: var(--ttl-muted);
+}
+
+body:not(.ttl-character-ui) .eyebrow {
+    color: #285f7b;
+}
+
+body:not(.ttl-character-ui) a {
+    color: #1f5f82;
+}
+
+body:not(.ttl-character-ui) a:hover {
+    color: #123f59;
+}
+
+body:not(.ttl-character-ui) button,
+body:not(.ttl-character-ui) .button-link {
+    border-color: #718792;
+    background: #e5ecef;
+    color: #17272f;
+}
+
+body:not(.ttl-character-ui) button:hover,
+body:not(.ttl-character-ui) .button-link:hover {
+    border-color: #466877;
+    background: #f8fafb;
+    color: #10212a;
+}
+
+body:not(.ttl-character-ui) .secondary-button {
+    border-color: #718792;
+    background: #d9e4e9;
+    color: #17272f;
+}
+
+body:not(.ttl-character-ui) .secondary-button:hover {
+    background: #eef3f5;
+}
+
+body:not(.ttl-character-ui) .danger-button {
+    border-color: #9b5959;
+    background: #f0dede;
+    color: #682828;
+}
+
+body:not(.ttl-character-ui) input:not([type="checkbox"]):not([type="radio"]),
+body:not(.ttl-character-ui) select,
+body:not(.ttl-character-ui) textarea {
+    border-color: #748790;
+    background: #fff;
+    color: #17272f;
+}
+
+body:not(.ttl-character-ui) input::placeholder,
+body:not(.ttl-character-ui) textarea::placeholder {
+    color: #829098;
+}
+
+body:not(.ttl-character-ui) input:focus,
+body:not(.ttl-character-ui) select:focus,
+body:not(.ttl-character-ui) textarea:focus {
+    border-color: var(--ttl-focus);
+    box-shadow: 0 0 0 1px var(--ttl-focus);
+}
+
+body:not(.ttl-character-ui) .source-row,
+body:not(.ttl-character-ui) .user-row,
+body:not(.ttl-character-ui) .setting-box,
+body:not(.ttl-character-ui) .document-permission-row,
+body:not(.ttl-character-ui) .empty-state,
+body:not(.ttl-character-ui) .ttl-multi-selected {
+    border-color: var(--ttl-line-soft);
+    background: #f3f6f7;
+    color: var(--ttl-ink);
+}
+
+body:not(.ttl-character-ui) .folder-art,
+body:not(.ttl-character-ui) .book-placeholder,
+body:not(.ttl-character-ui) .cover-image {
+    border-color: #7a8c95;
+    background-color: #dfe7ea;
+}
+
+body:not(.ttl-character-ui) .error {
+    border-color: #aa6767;
+    border-left-color: var(--ttl-danger);
+    background: #f4e3e3;
+    color: #632d2d;
+}
+
+body:not(.ttl-character-ui) .success-message {
+    border-color: #75997d;
+    border-left-color: var(--ttl-success);
+    background: #e4f0e6;
+    color: #285331;
+}
+
+body:not(.ttl-character-ui) .warning-list,
+body:not(.ttl-character-ui) .knowledgebase-global-warning {
+    border-color: #aa9057;
+    border-left-color: var(--ttl-warning);
+    background: #f5ecd5;
+    color: #5d4714;
+}
+
+/* Global nav uses the same pale-blue sheet chrome on every page. */
+.ttl-global-nav,
+body:not(.ttl-character-ui) .ttl-global-nav {
+    border-bottom: 2px solid #2d6f8f;
+    background: #dbe8ee;
+    color: #17272f;
+    box-shadow: none;
+}
+
+.ttl-global-nav-brand,
+body:not(.ttl-character-ui) .ttl-global-nav-brand {
+    color: #1d5876;
+}
+
+.ttl-global-nav-links a,
+body:not(.ttl-character-ui) .ttl-global-nav-links a {
+    color: #183f55;
+}
+
+.ttl-global-nav-links a:hover,
+.ttl-global-nav-account button:hover,
+body:not(.ttl-character-ui) .ttl-global-nav-links a:hover,
+body:not(.ttl-character-ui) .ttl-global-nav-account button:hover {
+    border-color: #6f8996;
+    background: #eef4f6;
+    color: #102f40;
+}
+
+.ttl-global-nav-user,
+body:not(.ttl-character-ui) .ttl-global-nav-user {
+    color: #36535f;
+}
+
+.ttl-global-nav-account button,
+body:not(.ttl-character-ui) .ttl-global-nav-account button {
+    border-color: #708993;
+    background: #edf3f5;
+    color: #183743;
+}
+
+/* Normalize tables to the same light technical-sheet treatment. */
+body:not(.ttl-character-ui) table:not(.markdown-document table) {
+    background: #fff;
+    color: #17272f;
+}
+
+body:not(.ttl-character-ui) table:not(.markdown-document table) th,
+body:not(.ttl-character-ui) table:not(.markdown-document table) td {
+    border-color: #9baab1;
+}
+
+body:not(.ttl-character-ui) table:not(.markdown-document table) th {
+    background: #dbe4e8;
+    color: #1c303a;
+}
+
+body:not(.ttl-character-ui) table:not(.markdown-document table) tbody tr:nth-child(even) {
+    background: #eef3f5;
+}
+
+/* Reader/admin shells should no longer reintroduce dark islands. */
+body:not(.ttl-character-ui) .inline-admin-form,
+body:not(.ttl-character-ui) .reader-toolbar,
+body:not(.ttl-character-ui) .search-panel,
+body:not(.ttl-character-ui) .ask-panel,
+body:not(.ttl-character-ui) .results-panel {
+    background: #edf2f4;
+    color: #17272f;
+    border-color: #80929a;
+}
+
+body:not(.ttl-character-ui) .pdf-frame-wrap,
+body:not(.ttl-character-ui) .image-reader,
+body:not(.ttl-character-ui) .comic-reader,
+body:not(.ttl-character-ui) .text-document {
+    border-color: #748790;
+    background: #f7f9fa;
+}
+
+/* Generic utility surfaces commonly used by admin/search/RAG pages. */
+body:not(.ttl-character-ui) .card,
+body:not(.ttl-character-ui) .status-card,
+body:not(.ttl-character-ui) .tool-card,
+body:not(.ttl-character-ui) .result-card,
+body:not(.ttl-character-ui) .search-result,
+body:not(.ttl-character-ui) .rag-result,
+body:not(.ttl-character-ui) .settings-card {
+    border-color: #899ba3;
+    background: #f7f9fa;
+    color: #17272f;
+}
+
+body:not(.ttl-character-ui) code,
+body:not(.ttl-character-ui) pre {
+    background: #e5ecef;
+    color: #1b2c34;
+    border-color: #a1afb5;
+}
+
+/* Keep dialogs visually continuous with the rest of the light application. */
+body:not(.ttl-character-ui) dialog {
+    border-color: #617983;
+    background: #f7f9fa;
+    color: #17272f;
+}
+
+body:not(.ttl-character-ui) dialog::backdrop {
+    background: rgba(31, 45, 52, .45);
+}
+
+
+/* ==========================================================================
+   v0.4.22.16 contrast correction pass
+   Readability takes precedence over decorative tinting.
+   ========================================================================== */
+
+/* Dark navigation is the one intentional dark surface across the application. */
+.ttl-global-nav,
+body:not(.ttl-character-ui) .ttl-global-nav,
+.ttl-character-ui .ttl-global-nav {
+    background: #17242c !important;
+    border-bottom: 2px solid #4e93b8 !important;
+    color: #f2f7f9 !important;
+}
+
+.ttl-global-nav-brand,
+body:not(.ttl-character-ui) .ttl-global-nav-brand,
+.ttl-character-ui .ttl-global-nav-brand {
+    color: #72c5ed !important;
+}
+
+.ttl-global-nav-links a,
+body:not(.ttl-character-ui) .ttl-global-nav-links a,
+.ttl-character-ui .ttl-global-nav-links a {
+    color: #f2f7f9 !important;
+}
+
+.ttl-global-nav-links a:hover,
+body:not(.ttl-character-ui) .ttl-global-nav-links a:hover,
+.ttl-character-ui .ttl-global-nav-links a:hover,
+.ttl-global-nav-account button:hover,
+body:not(.ttl-character-ui) .ttl-global-nav-account button:hover,
+.ttl-character-ui .ttl-global-nav-account button:hover {
+    background: #2a3c46 !important;
+    border-color: #7d9aa8 !important;
+    color: #ffffff !important;
+}
+
+.ttl-global-nav-user,
+body:not(.ttl-character-ui) .ttl-global-nav-user,
+.ttl-character-ui .ttl-global-nav-user {
+    color: #dce8ed !important;
+}
+
+.ttl-global-nav-account button,
+body:not(.ttl-character-ui) .ttl-global-nav-account button,
+.ttl-character-ui .ttl-global-nav-account button {
+    border-color: #8ba0aa !important;
+    background: #263944 !important;
+    color: #ffffff !important;
+}
+
+/* Generic light-page text should never rely on the former dark-theme colors. */
+body:not(.ttl-character-ui) label,
+body:not(.ttl-character-ui) dt,
+body:not(.ttl-character-ui) small,
+body:not(.ttl-character-ui) .muted,
+body:not(.ttl-character-ui) .intro,
+body:not(.ttl-character-ui) .source-help,
+body:not(.ttl-character-ui) .scope-help {
+    color: #4d6069;
+}
+
+body:not(.ttl-character-ui) .eyebrow {
+    color: #285f7b;
+}
+
+body:not(.ttl-character-ui) .auth-form label,
+body:not(.ttl-character-ui) .setting-box label,
+body:not(.ttl-character-ui) .folder-cover-form label,
+body:not(.ttl-character-ui) .rag-scope-field label,
+body:not(.ttl-character-ui) .embedding-model-form > label {
+    color: #334b57 !important;
+    font-weight: 700;
+}
+
+body:not(.ttl-character-ui) .library-admin-panel .create-folder-panel h2,
+body:not(.ttl-character-ui) .library-admin-panel .virtual-folder-card > .virtual-folder-header .eyebrow,
+body:not(.ttl-character-ui) .library-admin-panel .virtual-folder-card h3 {
+    color: #285f7b !important;
+}
+
+body:not(.ttl-character-ui) .document-permission-name span,
+body:not(.ttl-character-ui) .user-summary span,
+body:not(.ttl-character-ui) .user-summary small,
+body:not(.ttl-character-ui) .rag-doc-folder,
+body:not(.ttl-character-ui) .folder-meta,
+body:not(.ttl-character-ui) .book-type {
+    color: #586b74 !important;
+}
+
+/* Home/library cards. */
+body:not(.ttl-character-ui) .folder-name,
+body:not(.ttl-character-ui) .book-title {
+    color: #17272f !important;
+}
+
+body:not(.ttl-character-ui) .cover-image,
+body:not(.ttl-character-ui) .folder-art,
+body:not(.ttl-character-ui) .book-placeholder {
+    background: #b8c2c7 !important;
+    border-color: #73858e !important;
+    box-shadow: none !important;
+}
+
+body:not(.ttl-character-ui) .folder-art,
+body:not(.ttl-character-ui) .book-placeholder {
+    color: #243841 !important;
+}
+
+/* Knowledgebase metric cards must stay light with high-contrast values. */
+body:not(.ttl-character-ui) .index-stats div {
+    border: 1px solid #8698a1 !important;
+    background: #e7edf0 !important;
+    color: #17272f !important;
+}
+
+body:not(.ttl-character-ui) .index-stats dt {
+    color: #4b5f68 !important;
+    font-weight: 700;
+}
+
+body:not(.ttl-character-ui) .index-stats dd {
+    color: #17272f !important;
+}
+
+body:not(.ttl-character-ui) .index-stats .small-stat {
+    color: #17272f !important;
+}
+
+/* Other RAG/Search dark remnants. */
+body:not(.ttl-character-ui) .rag-doc-list,
+body:not(.ttl-character-ui) .rag-doc-item,
+body:not(.ttl-character-ui) .rag-result,
+body:not(.ttl-character-ui) .rag-result pre {
+    border-color: #91a1a8 !important;
+    background: #eef3f5 !important;
+    color: #17272f !important;
+}
+
+body:not(.ttl-character-ui) .rag-doc-name,
+body:not(.ttl-character-ui) .rag-score-row {
+    color: #334f5d !important;
+}
+
+/* Users and library-admin cards retain tint but never pale text. */
+body:not(.ttl-character-ui) .user-row,
+body:not(.ttl-character-ui) .virtual-folder-card,
+body:not(.ttl-character-ui) .setting-box,
+body:not(.ttl-character-ui) .document-permission-row {
+    color: #17272f !important;
+}
+
+body:not(.ttl-character-ui) .user-summary strong,
+body:not(.ttl-character-ui) .virtual-folder-header h2,
+body:not(.ttl-character-ui) .source-row strong {
+    color: #17272f !important;
+}
+
+/* Inputs should have dark readable text even where older component rules win. */
+body:not(.ttl-character-ui) input:not([type="checkbox"]):not([type="radio"]),
+body:not(.ttl-character-ui) textarea,
+body:not(.ttl-character-ui) select {
+    background: #ffffff !important;
+    color: #17272f !important;
+    border-color: #71858f !important;
+}
+
+body:not(.ttl-character-ui) input::placeholder,
+body:not(.ttl-character-ui) textarea::placeholder {
+    color: #6f7f87 !important;
+    opacity: 1;
+}
+
+
+/* v0.4.22.17 incoming upload contrast + GM staging actions */
+body:not(.ttl-character-ui) .upload-row {
+    border: 1px solid #82949d !important;
+    border-radius: 2px !important;
+    background: #eef3f5 !important;
+    color: #17272f !important;
+}
+
+body:not(.ttl-character-ui) .upload-info strong {
+    color: #17272f !important;
+}
+
+body:not(.ttl-character-ui) .upload-info span,
+body:not(.ttl-character-ui) .upload-info small {
+    color: #52656e !important;
+}
+
+body:not(.ttl-character-ui) .upload-form input[type="file"] {
+    color: #17272f !important;
+    background: #ffffff !important;
+}
+
+body:not(.ttl-character-ui) .upload-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+body:not(.ttl-character-ui) .upload-delete-form {
+    display: flex;
+    align-items: center;
+}
+
+@media (max-width: 820px) {
+    body:not(.ttl-character-ui) .upload-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    body:not(.ttl-character-ui) .upload-delete-form {
+        display: block;
+    }
+
+    body:not(.ttl-character-ui) .upload-delete-form button {
+        width: 100%;
+    }
+}
+
+
+/* v0.4.22.18 embedded Ask cleanup */
+body.ttl-embedded-page {
+    min-height: 100vh;
+    margin: 0;
+    background: #eef3f5 !important;
+    color: #17272f !important;
+}
+
+body.ttl-embedded-page .ttl-embedded-shell {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+body.ttl-embedded-page .ask-embedded-panel {
+    min-height: 100vh;
+    margin: 0;
+    padding: 16px;
+    border: 0;
+    border-radius: 0;
+    background: #f7f9fa !important;
+    color: #17272f !important;
+}
+
+body.ttl-embedded-page .ask-embedded-heading {
+    margin: -16px -16px 16px;
+    padding: 11px 14px;
+    border-bottom: 1px solid #82949d;
+    background: #dbe8ee;
+    color: #17272f;
+}
+
+body.ttl-embedded-page .ask-embedded-heading .eyebrow {
+    color: #285f7b !important;
+}
+
+body.ttl-embedded-page .ask-embedded-heading h1 {
+    margin: 2px 0 0;
+    color: #17272f !important;
+}
+
+body.ttl-embedded-page .ask-scope-summary {
+    border: 1px solid #a1afb5;
+    background: #eef3f5 !important;
+    color: #263b45 !important;
+}
+
+body.ttl-embedded-page .ask-answer,
+body.ttl-embedded-page .ask-source-card,
+body.ttl-embedded-page .subpanel {
+    background: #ffffff !important;
+    color: #17272f !important;
+    border-color: #94a4ab !important;
+}
+
+/* Reader-side AI header: keep it light and legible. */
+.reader-ai-pane {
+    border-left-color: #8799a1 !important;
+    background: #eef3f5 !important;
+}
+
+.reader-ai-pane-toolbar {
+    border-bottom: 1px solid #82949d !important;
+    background: #dbe8ee !important;
+    color: #17272f !important;
+}
+
+.reader-ai-pane-toolbar strong,
+.reader-ai-pane-toolbar span {
+    color: #17272f !important;
+}
+
+.reader-ai-pane-toolbar button {
+    border-color: #718792 !important;
+    background: #f5f8f9 !important;
+    color: #17272f !important;
+}
+
+.reader-ai-frame {
+    background: #f7f9fa !important;
+}
+
+/* Folder Ask dialog uses the same light embedded treatment. */
+.ask-folder-dialog {
+    border: 1px solid #6f838d !important;
+    background: #f7f9fa !important;
+}
+
+.ask-folder-dialog-shell {
+    background: #f7f9fa !important;
+}
+
+.ask-folder-dialog-topline {
+    border-bottom: 1px solid #82949d !important;
+    background: #dbe8ee !important;
+    color: #17272f !important;
+}
+
+.ask-folder-dialog-topline strong,
+.ask-folder-dialog-topline span {
+    color: #17272f !important;
+}
+
+.ask-folder-dialog-topline button {
+    border-color: #718792 !important;
+    background: #f5f8f9 !important;
+    color: #17272f !important;
+}
+
+.ask-folder-frame {
+    background: #f7f9fa !important;
+}
+
+@media (max-width: 900px) {
+    .reader-ai-pane {
+        border-left: 0 !important;
+        border-top: 1px solid #8799a1 !important;
+    }
+}
+
+
+/* v0.4.22.19: reader workspaces use available browser width.
+   This intentionally overrides the normal centered application shell. */
+body:not(.ttl-character-ui) > .shell:has(.reader-shell) {
+    width: calc(100vw - 16px) !important;
+    max-width: none !important;
+    margin: 0 auto !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    box-sizing: border-box;
+}
+
+body:not(.ttl-character-ui) > .shell:has(.reader-shell) > .reader-shell {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+}
+
+body:not(.ttl-character-ui) > .shell:has(.reader-shell) .reader-split {
+    width: 100%;
+    max-width: none;
+}
+
+/* Give both panes useful space on large displays instead of preserving
+   the old fixed reader width. */
+@media (min-width: 1500px) {
+    .reader-split.with-ai {
+        grid-template-columns: minmax(0, 1.2fr) minmax(430px, .8fr);
+    }
+}
+
+
+/* v0.4.22.20: Knowledgebase embedding progress contrast */
+body:not(.ttl-character-ui) .embedding-progress,
+body:not(.ttl-character-ui) .embedding-build-progress,
+body:not(.ttl-character-ui) .progress-shell,
+body:not(.ttl-character-ui) .build-progress {
+    border: 1px solid #81949d !important;
+    border-radius: 2px !important;
+    background: #e7edf0 !important;
+    color: #17272f !important;
+}
+
+body:not(.ttl-character-ui) .embedding-progress *,
+body:not(.ttl-character-ui) .embedding-build-progress *,
+body:not(.ttl-character-ui) .progress-shell *,
+body:not(.ttl-character-ui) .build-progress * {
+    color: #17272f;
+}
+
+body:not(.ttl-character-ui) .embedding-progress-track,
+body:not(.ttl-character-ui) .progress-track,
+body:not(.ttl-character-ui) progress {
+    background: #c7d2d7 !important;
+    border-color: #7f9199 !important;
+}
+
+body:not(.ttl-character-ui) .embedding-progress-bar,
+body:not(.ttl-character-ui) .progress-bar {
+    background: #5fa4c7 !important;
+}
+
+body:not(.ttl-character-ui) progress::-webkit-progress-bar {
+    background: #c7d2d7 !important;
+}
+
+body:not(.ttl-character-ui) progress::-webkit-progress-value {
+    background: #5fa4c7 !important;
+}
+
+body:not(.ttl-character-ui) progress::-moz-progress-bar {
+    background: #5fa4c7 !important;
+}
+
+
+/* v0.4.22.21 character ownership + portability */
+.ttl-character-ui .ttl-character-row-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.ttl-character-ui .ttl-character-owner {
+    font-weight: 800;
+    color: #6b3e16;
+}
+
+.ttl-character-ui .ttl-character-import {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid #8a9aa2;
+}
+
+.ttl-character-ui .ttl-character-import form {
+    display: grid;
+    gap: 9px;
+}
+
+.ttl-character-ui .ttl-import-note {
+    margin-top: 8px;
+}
+
+
+/* v0.4.22.22 professional browser error pages */
+body:not(.ttl-character-ui) .ttl-error-page {
+    width: min(760px, 100%);
+    margin: 7vh auto 0;
+}
+body:not(.ttl-character-ui) .ttl-error-code {
+    margin-bottom: -18px;
+    padding-left: 18px;
+    color: #87979f;
+    font-size: clamp(4.8rem, 14vw, 8rem);
+    font-weight: 900;
+    line-height: .85;
+    letter-spacing: -.055em;
+    user-select: none;
+}
+body:not(.ttl-character-ui) .ttl-error-card {
+    position: relative;
+    padding: 30px 32px 28px;
+    border: 1px solid #6f838d;
+    border-top: 5px solid #2e708f;
+    border-radius: 3px;
+    background: #f7f9fa;
+    color: #17272f;
+}
+body:not(.ttl-character-ui) .ttl-error-card h1 {
+    margin: 5px 0 12px;
+    color: #17272f;
+    font-size: clamp(1.6rem, 4vw, 2.25rem);
+}
+body:not(.ttl-character-ui) .ttl-error-message {
+    max-width: 62ch;
+    margin: 0;
+    color: #40545e;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+body:not(.ttl-character-ui) .ttl-error-reference {
+    margin-top: 18px;
+    color: #5c6e77;
+    font-size: .82rem;
+}
+body:not(.ttl-character-ui) .ttl-error-reference code {
+    padding: 2px 5px;
+    border: 1px solid #acb8bd;
+    background: #e5ecef;
+    color: #233840;
+}
+body:not(.ttl-character-ui) .ttl-error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 24px;
+}
+body:not(.ttl-character-ui) .ttl-error-actions .button-link,
+body:not(.ttl-character-ui) .ttl-error-actions button {
+    min-width: 92px;
+    text-align: center;
+}
+@media (max-width: 600px) {
+    body:not(.ttl-character-ui) .ttl-error-page { margin-top: 3vh; }
+    body:not(.ttl-character-ui) .ttl-error-card { padding: 22px 20px; }
+}
