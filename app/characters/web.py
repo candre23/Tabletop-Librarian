@@ -19,6 +19,7 @@ from app.characters.temporary_effects import (
     temporary_influence_map,
 )
 from app.compendium import load_compendium
+from app.config import APP_VERSION
 from app.auth import get_user, list_users
 from app.characters.portability import (
     CharacterPackageError,
@@ -61,6 +62,7 @@ from app.rules import (
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["app_version"] = APP_VERSION
 
 PACK_ROOT = Path("data/system_packs")
 CHARACTER_ROOT = Path("data/characters")
@@ -1147,6 +1149,7 @@ def _render_character_edit_page(
                 schema,
                 record.data,
             ),
+            "embed": request.query_params.get("embed") == "1",
         },
         status_code=status_code,
     )

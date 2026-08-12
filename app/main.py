@@ -30,6 +30,9 @@ from app.auth import (
 )
 from app.config import APP_NAME, APP_VERSION, STATIC_DIR, TEMPLATE_DIR
 from app.knowledgebase import knowledgebase_status
+from app.ocr import cancel_ocr_job, ocr_job_status, ocr_status, start_ocr_job
+from app.characters.ai_context import build_character_ai_context, character_retrieval_query
+from app.characters.storage import CharacterStorageError, list_characters
 from app.library.covers import (
     cached_cover_path,
     get_cover_path,
@@ -69,12 +72,29 @@ from app.rag.embeddings import (
     start_embedding_build,
 )
 from app.ai.provider import (
+    AIRequestCancelled,
     chat_completion,
+    provider_health_check,
     provider_settings_for_ui,
     save_provider_settings,
     test_provider_connection,
 )
+from app.ai.requests import (
+    ai_request_progress,
+    cancel_ai_request,
+    finish_ai_request,
+    register_ai_request,
+    update_ai_request_progress,
+)
 from app.ai.markdown_render import render_answer_markdown
+from app.ai.query_planner import plan_retrieval_queries
+from app.ai.evidence_ranker import rank_evidence
+from app.ai.pipelines import (
+    PipelinePresetError,
+    execute_advanced_pipeline,
+    get_pipeline_preset,
+    pipeline_options_for_ui,
+)
 from app.ai.citations import attach_citation_excerpts
 
 logger = logging.getLogger(__name__)
@@ -455,7 +475,13 @@ async def document_cover(request: Request, folder_name: str, doc_key: str):
 
 
 @app.get("/read/{folder_name}/{doc_key}", response_class=HTMLResponse)
-async def read_document(request: Request, folder_name: str, doc_key: str):
+async def read_document(
+    request: Request,
+    folder_name: str,
+    doc_key: str,
+    embed: str = "",
+    workspace: str = "",
+):
     user = current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
@@ -476,6 +502,8 @@ async def read_document(request: Request, folder_name: str, doc_key: str):
         "user": user,
         "folder": folder,
         "document": document,
+        "embed": embed == "1",
+        "workspace": workspace == "1",
     }
 
     if document["type"] == "PDF":
@@ -493,6 +521,21 @@ async def read_document(request: Request, folder_name: str, doc_key: str):
         )
 
     if document["type"] in {"CBZ", "CBR"}:
+        from app.ocr import current_ocr_pdf, cached_ocr_pdf_for_unavailable_source
+
+        ocr_pdf = current_ocr_pdf(path)
+        if ocr_pdf is None and document.get("source_available") is False:
+            ocr_pdf = cached_ocr_pdf_for_unavailable_source(path)
+
+        if ocr_pdf is not None:
+            # The archive remains the canonical library object, but its valid
+            # OCR derivative is the preferred reader representation.
+            return templates.TemplateResponse(
+                request=request,
+                name="reader_pdf.html",
+                context={**common, "ocr_derivative": True},
+            )
+
         try:
             page_count = len(comic_pages(path))
         except Exception:
@@ -541,6 +584,15 @@ async def document_content(request: Request, folder_name: str, doc_key: str):
 
     if document["type"] == "PDF":
         return stream_pdf(request, path)
+
+    if document["type"] in {"CBZ", "CBR"}:
+        from app.ocr import current_ocr_pdf, cached_ocr_pdf_for_unavailable_source
+
+        ocr_pdf = current_ocr_pdf(path)
+        if ocr_pdf is None and document.get("source_available") is False:
+            ocr_pdf = cached_ocr_pdf_for_unavailable_source(path)
+        if ocr_pdf is not None:
+            return stream_pdf(request, ocr_pdf)
 
     if document["type"] == "Image":
         return serve_image(path)
@@ -919,10 +971,64 @@ async def admin_knowledgebase(request: Request):
             "embedding_status": embedding_status(),
             "embedding_models": model_options(),
             "ai_settings": provider_settings_for_ui(),
+            "pipeline_options": pipeline_options_for_ui(),
+            "ocr": ocr_status(),
             "message": request.query_params.get("message"),
             "error": request.query_params.get("error"),
         },
     )
+
+
+@app.post("/admin/ocr/start-all")
+async def admin_ocr_start_all(request: Request):
+    user = current_user(request)
+    if not user or user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+    try:
+        start_ocr_job()
+    except Exception as exc:
+        return RedirectResponse(
+            f"/admin/knowledgebase?error={quote(str(exc))}",
+            status_code=303,
+        )
+    return RedirectResponse(
+        f"/admin/knowledgebase?message={quote('OCR job started in the background.')}",
+        status_code=303,
+    )
+
+
+@app.post("/admin/ocr/start/{document_key}")
+async def admin_ocr_start_one(document_key: str, request: Request):
+    user = current_user(request)
+    if not user or user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+    try:
+        start_ocr_job([document_key])
+    except Exception as exc:
+        return RedirectResponse(
+            f"/admin/knowledgebase?error={quote(str(exc))}",
+            status_code=303,
+        )
+    return RedirectResponse(
+        f"/admin/knowledgebase?message={quote('OCR job started in the background.')}",
+        status_code=303,
+    )
+
+
+@app.post("/admin/ocr/cancel")
+async def admin_ocr_cancel(request: Request):
+    user = current_user(request)
+    if not user or user["role"] != "gm":
+        return JSONResponse({"error": "Forbidden"}, status_code=403)
+    return JSONResponse(cancel_ocr_job())
+
+
+@app.get("/admin/ocr/status")
+async def admin_ocr_status(request: Request):
+    user = current_user(request)
+    if not user or user["role"] != "gm":
+        return JSONResponse({"error": "Forbidden"}, status_code=403)
+    return JSONResponse(ocr_job_status())
 
 
 @app.get("/admin/rag", response_class=HTMLResponse)
@@ -942,14 +1048,77 @@ async def admin_knowledgebase_update(request: Request):
         return RedirectResponse("/", status_code=303)
 
     try:
+        if embedding_build_status()["running"]:
+            raise RuntimeError("Wait for the current embedding build to finish before updating the knowledgebase.")
         text_summary = build_text_cache(force=False)
+        if text_summary["errors"]:
+            raise RuntimeError(
+                f"Text extraction completed with {text_summary['errors']} error(s); "
+                "fix those before updating downstream knowledgebase stages."
+            )
+
+        changed_paths = set(text_summary.get("changed_paths", []))
+        removed_paths = set(text_summary.get("removed_paths", []))
+        chunk_summary = build_chunk_cache(
+            changed_paths=changed_paths,
+            removed_paths=removed_paths,
+            force=False,
+        )
+        start_embedding_build(
+            changed_paths=set(chunk_summary.get("changed_paths", [])),
+            removed_chunk_ids=set(chunk_summary.get("removed_chunk_ids", [])),
+            force=bool(chunk_summary.get("full_rebuild")),
+        )
+    except Exception as exc:
+        return RedirectResponse(
+            f"/admin/knowledgebase?error={quote(str(exc))}",
+            status_code=303,
+        )
+
+    if chunk_summary.get("full_rebuild"):
+        message = (
+            f"Knowledgebase rebuild started because no compatible chunk cache was available: "
+            f"{chunk_summary['documents']} documents / {chunk_summary['chunks']} chunks. "
+            "Semantic embeddings are rebuilding in the background."
+        )
+    else:
+        changed_count = len(changed_paths)
+        removed_count = len(removed_paths)
+        if changed_count == 0 and removed_count == 0:
+            message = (
+                "Knowledgebase scan found no document changes. "
+                "The existing chunks and vectors are being verified in the background."
+            )
+        else:
+            message = (
+                f"Incremental knowledgebase update started: {changed_count} added/changed "
+                f"document{'s' if changed_count != 1 else ''}, {removed_count} removed. "
+                "Unchanged chunks and semantic vectors are being reused."
+            )
+
+    return RedirectResponse(
+        f"/admin/knowledgebase?message={quote(message)}",
+        status_code=303,
+    )
+
+
+@app.post("/admin/knowledgebase/rebuild")
+async def admin_knowledgebase_rebuild(request: Request):
+    user = current_user(request)
+    if not user or user["role"] != "gm":
+        return RedirectResponse("/", status_code=303)
+
+    try:
+        if embedding_build_status()["running"]:
+            raise RuntimeError("Wait for the current embedding build to finish before rebuilding the knowledgebase.")
+        text_summary = build_text_cache(force=True)
         if text_summary["errors"]:
             raise RuntimeError(
                 f"Text extraction completed with {text_summary['errors']} error(s); "
                 "fix those before rebuilding downstream knowledgebase stages."
             )
-        chunk_summary = build_chunk_cache()
-        start_embedding_build()
+        chunk_summary = build_chunk_cache(force=True)
+        start_embedding_build(force=True)
     except Exception as exc:
         return RedirectResponse(
             f"/admin/knowledgebase?error={quote(str(exc))}",
@@ -957,9 +1126,9 @@ async def admin_knowledgebase_update(request: Request):
         )
 
     message = (
-        f"Knowledgebase update started: {text_summary['documents_seen']} library documents scanned, "
-        f"{chunk_summary['documents']} context documents / {chunk_summary['chunks']} chunks built. "
-        "Semantic embeddings are building in the background."
+        f"Full knowledgebase rebuild started: {text_summary['documents_seen']} library documents scanned, "
+        f"{chunk_summary['documents']} context documents / {chunk_summary['chunks']} chunks rebuilt. "
+        "All semantic embeddings are rebuilding in the background."
     )
     return RedirectResponse(
         f"/admin/knowledgebase?message={quote(message)}",
@@ -974,7 +1143,7 @@ async def admin_rag_build(request: Request):
     if not user or user["role"] != "gm":
         return RedirectResponse("/", status_code=303)
 
-    summary = build_chunk_cache()
+    summary = build_chunk_cache(force=True)
 
     message = (
         f"Context chunks built: {summary['documents']} documents, "
@@ -1024,7 +1193,7 @@ async def admin_rag_embeddings_build(request: Request):
         return RedirectResponse("/", status_code=303)
 
     try:
-        start_embedding_build()
+        start_embedding_build(force=True)
     except Exception as exc:
         return RedirectResponse(
             f"/admin/knowledgebase?error={quote(str(exc))}",
@@ -1094,6 +1263,7 @@ async def admin_ai_save(request: Request):
             timeout=str(form.get("timeout", "120")),
             temperature=str(form.get("temperature", "0.2")),
             max_tokens=str(form.get("max_tokens", "1200")),
+            pipeline_preset=get_pipeline_preset(str(form.get("pipeline_preset", "") or "").strip()).preset_id,
         )
     except Exception as exc:
         return RedirectResponse(f"/admin/knowledgebase?error={quote(str(exc))}", status_code=303)
@@ -1116,6 +1286,7 @@ async def admin_ai_test(request: Request):
             timeout=str(form.get("timeout", "120")),
             temperature=str(form.get("temperature", "0.2")),
             max_tokens=str(form.get("max_tokens", "1200")),
+            pipeline_preset=get_pipeline_preset(str(form.get("pipeline_preset", "") or "").strip()).preset_id,
         )
         result = await asyncio.to_thread(test_provider_connection)
     except Exception as exc:
@@ -1129,6 +1300,207 @@ async def admin_ai_test(request: Request):
     return RedirectResponse(f"/admin/knowledgebase?message={quote(message)}", status_code=303)
 
 
+
+@app.get("/ai/status")
+async def ai_backend_status(request: Request):
+    user = current_user(request)
+    if not user:
+        return JSONResponse(
+            status_code=401,
+            content={"ok": False, "message": "Login required."},
+        )
+
+    status = await asyncio.to_thread(provider_health_check, timeout=2.0)
+    return JSONResponse(
+        status_code=200 if status.get("ok") else 503,
+        content=status,
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/ai/progress/{request_id}")
+async def ai_progress(request: Request, request_id: str):
+    user = current_user(request)
+    if not user:
+        return JSONResponse(
+            status_code=401,
+            content={"ok": False, "message": "Login required."},
+        )
+
+    status = ai_request_progress(request_id)
+    return JSONResponse(
+        content={"ok": True, **status},
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.post("/ai/cancel/{request_id}")
+async def ai_cancel(request: Request, request_id: str):
+    user = current_user(request)
+    if not user:
+        return JSONResponse(
+            status_code=401,
+            content={"ok": False, "message": "Login required."},
+        )
+
+    cancelled = cancel_ai_request(request_id)
+    return JSONResponse(
+        content={
+            "ok": True,
+            "cancelled": cancelled,
+            "message": (
+                "Cancellation requested."
+                if cancelled
+                else "Request was no longer active."
+            ),
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+def _ask_character_options(user: dict[str, str]) -> list[dict[str, str]]:
+    owners = [user["username"]]
+    if user["role"] == "gm":
+        all_owners = [
+            str(item.get("username") or "").strip()
+            for item in list_users()
+            if str(item.get("username") or "").strip()
+        ]
+        owners = [user["username"]] + [
+            owner
+            for owner in all_owners
+            if owner.casefold() != user["username"].casefold()
+        ]
+
+    result = []
+    for owner in owners:
+        for row in list_characters(owner, character_root=Path("data/characters")):
+            data = row.get("data") if isinstance(row.get("data"), dict) else {}
+            name = str(
+                data.get("name")
+                or data.get("character_name")
+                or row.get("character_id")
+            ).strip()
+            selection = f"{owner}\t{row['character_id']}"
+            result.append(
+                {
+                    "value": selection,
+                    "owner": owner,
+                    "character_id": row["character_id"],
+                    "name": name,
+                    "system_id": str(row.get("system_id") or ""),
+                    "label": (
+                        name
+                        if owner.casefold() == user["username"].casefold()
+                        else f"{owner} — {name}"
+                    ),
+                }
+            )
+    return result
+
+
+def _resolve_ask_character(
+    user: dict[str, str],
+    selection: str,
+):
+    selection = str(selection or "")
+    if not selection.strip():
+        return None
+    if "\t" not in selection:
+        raise CharacterStorageError("Selected character is invalid.")
+
+    owner, character_id = selection.split("\t", 1)
+    owner = owner.strip()
+    character_id = character_id.strip()
+    if not owner or not character_id:
+        raise CharacterStorageError("Selected character is invalid.")
+
+    if user["role"] != "gm" and owner.casefold() != user["username"].casefold():
+        raise CharacterStorageError("You do not have access to that character.")
+
+    if user["role"] == "gm":
+        known = {
+            str(item.get("username") or "").strip().casefold()
+            for item in list_users()
+            if str(item.get("username") or "").strip()
+        }
+        if owner.casefold() not in known:
+            raise CharacterStorageError("Character owner no longer exists.")
+
+    return build_character_ai_context(
+        owner,
+        character_id,
+        character_root=Path("data/characters"),
+        pack_root=Path("data/system_packs"),
+    )
+
+
+
+def _workspace_document_options(user: dict[str, str]) -> list[dict[str, str]]:
+    scope = available_rag_scope(user["role"])
+    return [
+        {
+            "value": f"{item['folder_name']}\t{item['doc_key']}",
+            "folder": item["folder_name"],
+            "doc_key": item["doc_key"],
+            "display_name": item["display_name"],
+            "type": item["type"],
+            "label": f"{item['folder_name']} — {item['display_name']}",
+        }
+        for item in scope["documents"]
+    ]
+
+
+@app.get("/workspace", response_class=HTMLResponse)
+async def play_workspace(
+    request: Request,
+    character: str = "",
+    document: str = "",
+):
+    user = current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    character_options = _ask_character_options(user)
+    document_options = _workspace_document_options(user)
+
+    selected_character = character if any(
+        item["value"] == character
+        for item in character_options
+    ) else (character_options[0]["value"] if character_options else "")
+
+    selected_document = document if any(
+        item["value"] == document
+        for item in document_options
+    ) else (document_options[0]["value"] if document_options else "")
+
+    selected_character_row = next(
+        (item for item in character_options if item["value"] == selected_character),
+        None,
+    )
+    selected_document_row = next(
+        (item for item in document_options if item["value"] == selected_document),
+        None,
+    )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="workspace.html",
+        context={
+            "app_name": APP_NAME,
+            "app_version": APP_VERSION,
+            "user": user,
+            "character_options": character_options,
+            "document_options": document_options,
+            "selected_character": selected_character,
+            "selected_document": selected_document,
+            "selected_character_row": selected_character_row,
+            "selected_document_row": selected_document_row,
+            "workspace_page": True,
+        },
+    )
+
+
 @app.get("/ask", response_class=HTMLResponse)
 async def ask_page(
     request: Request,
@@ -1136,6 +1508,10 @@ async def ask_page(
     embed: str = "",
     doc: str = "",
     split: str = "",
+    character: str = "",
+    lock_character: str = "",
+    workspace_compact: str = "",
+    reasoning_mode: str = "basic",
 ):
     user = current_user(request)
     if not user:
@@ -1147,6 +1523,23 @@ async def ask_page(
         selected_documents=[],
         selected_document_keys=[doc] if doc.strip() else [],
     )
+    character_options = _ask_character_options(user)
+    selected_character = character if any(
+        option["value"] == character
+        for option in character_options
+    ) else ""
+    reasoning_mode = (
+        "advanced"
+        if str(reasoning_mode or "").strip().lower() == "advanced"
+        else "basic"
+    )
+    pipeline_options = pipeline_options_for_ui()
+    configured_pipeline = str(provider_settings_for_ui().get("pipeline_preset", "") or "").strip()
+    try:
+        selected_pipeline = get_pipeline_preset(configured_pipeline).preset_id
+    except PipelinePresetError:
+        selected_pipeline = pipeline_options[0]["id"] if pipeline_options else ""
+
     response_id = uuid.uuid4().hex
     return templates.TemplateResponse(
         request=request,
@@ -1167,6 +1560,13 @@ async def ask_page(
             "split": split == "1",
             "locked_folder": bool(folder.strip()),
             "locked_document_key": doc.strip(),
+            "character_options": character_options,
+            "selected_character": selected_character,
+            "character_locked": lock_character == "1" and bool(selected_character),
+            "workspace_compact": workspace_compact == "1",
+            "reasoning_mode": reasoning_mode,
+            "selected_pipeline": selected_pipeline,
+            "selected_character_context": None,
             "response_id": response_id,
             "error": None,
         },
@@ -1186,6 +1586,21 @@ async def ask_question(request: Request):
     embed = str(form.get("embed", "")).strip() == "1"
     split = str(form.get("split", "")).strip() == "1"
     locked_document_key = str(form.get("locked_document_key", "")).strip()
+    selected_character = str(form.get("character", "") or "")
+    character_locked = str(form.get("lock_character", "") or "") == "1"
+    workspace_compact = str(form.get("workspace_compact", "") or "") == "1"
+    reasoning_mode = (
+        "advanced"
+        if str(form.get("reasoning_mode", "") or "").strip().lower() == "advanced"
+        else "basic"
+    )
+    pipeline_options = pipeline_options_for_ui()
+    configured_pipeline = str(provider_settings_for_ui().get("pipeline_preset", "") or "").strip()
+    try:
+        selected_pipeline = get_pipeline_preset(configured_pipeline).preset_id
+    except PipelinePresetError:
+        selected_pipeline = pipeline_options[0]["id"] if pipeline_options else ""
+    ai_request_id = str(form.get("ai_request_id", "") or "").strip() or uuid.uuid4().hex
     selected_document_keys = [str(value) for value in form.getlist("docs") if str(value).strip()]
 
     if locked_document_key:
@@ -1205,84 +1620,150 @@ async def ask_question(request: Request):
     answer_model = ""
     elapsed_seconds = None
     sources = []
+    character_options = _ask_character_options(user)
+    selected_character_context = None
 
-    if not question:
+    if selected_character and not any(
+        option["value"] == selected_character
+        for option in character_options
+    ):
+        error = "Selected character is not available."
+
+    if error:
+        pass
+    elif not question:
         error = "Enter a question."
     elif not provider_configured:
         error = "The AI provider has not been configured."
     else:
+        backend_status = await asyncio.to_thread(
+            provider_health_check,
+            timeout=2.0,
+        )
+        if not backend_status.get("ok"):
+            error = backend_status.get("message") or "AI backend is unavailable."
+
+    if not error:
         document_scope = scope["selected_document_paths"] or None
         folder_scope = scope["selected_folder"] or None
+        cancel_event = register_ai_request(ai_request_id)
 
         try:
-            sources = retrieve_chunks(
-                question,
-                user["role"],
-                limit=8,
-                folder_scope=folder_scope,
-                document_paths=document_scope,
-            )
-
-            if not sources:
-                raise RuntimeError("No relevant source passages were found in the selected scope.")
-
-            source_blocks = []
-            for index, source in enumerate(sources, start=1):
-                page = source.get("page")
-                page_label = f", page {page}" if page else ""
-                revision_label = (
-                    " [REVISION/UPDATE CANDIDATE]"
-                    if source.get("revision_candidate")
-                    else ""
-                )
-                source_blocks.append(
-                    f"[{index}] {source['display_name']}{page_label}{revision_label}\n"
-                    f"{source.get('context_text') or source.get('text', '').strip()}"
+            update_ai_request_progress(ai_request_id, 16, "Loading character context")
+            if selected_character:
+                selected_character_context = _resolve_ask_character(
+                    user,
+                    selected_character,
                 )
 
-            system_prompt = (
-                "You are Tabletop Librarian, a tabletop RPG rules and reference assistant. "
-                "Answer the user's question using only the supplied source passages. "
-                "Do not invent rules, classifications, relationships, facts, names, or interpretations "
-                "that the passages do not explicitly support. "
-                "Treat each numbered source as evidence, not as permission to extrapolate beyond its text. "
-                "For comparisons, compare only attributes explicitly stated in the sources. "
-                "Do not infer that one creature, rule, class, category, or option is stronger, more dangerous, "
-                "higher-ranked, or otherwise superior merely from a label unless the sources explicitly establish "
-                "that relationship. "
-                "If sources conflict, describe the conflict rather than silently choosing or merging them. "
-                "A source marked [REVISION/UPDATE CANDIDATE] must be checked first for explicit language that a rule is now, revised, updated, changed, replaced, or no longer used. "
-                "When that language clearly applies to the user's question, treat the revised rule as controlling and do not present the older formula as the current rule. "
-                "If one source explicitly says a rule is revised, updated, changed, replaced, or now calculated "
-                "differently, identify that as the newer rule and mention the older conflicting rule when relevant. "
-                "Adjacent passages may be included around a primary retrieved passage; use them only when they "
-                "actually support the answer. "
-                "If the evidence is insufficient to answer the question, say exactly what cannot be established. "
-                "When making factual claims, cite the supporting numbered sources using [1], [2], etc. "
-                "Do not add a mechanical explanation, causal explanation, formula, interaction, or consequence unless a supplied passage explicitly states it. "
-                "Do not combine modifiers or invent calculation procedures from separate facts unless the text explicitly tells the reader to do so. "
-                "For direct comparisons, prefer explicit comparable statistics, scores, quantities, or stated rankings over descriptive flavor text. "
-                "Do not override a clear numerical comparison with narrative adjectives unless a source explicitly states that the narrative distinction supersedes the statistic. "
-                "When the question asks for a specific rule, preparation note, procedure, or encounter fact, answer that directly and omit tangential rules even if they are related. "
-                "Prefer the shortest answer that completely answers the user's question, and omit unrelated details."
-            )
+            if reasoning_mode == "advanced":
+                preset = get_pipeline_preset(selected_pipeline)
+                selected_pipeline = preset.preset_id
+                started = time.perf_counter()
 
-            user_prompt = f"Question:\n{question}\n\nSource passages:\n\n" + "\n\n".join(source_blocks)
-            started = time.perf_counter()
-            completion = await asyncio.to_thread(
-                chat_completion,
-                [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-            )
-            elapsed_seconds = time.perf_counter() - started
-            answer = completion["content"]
-            attach_citation_excerpts(answer, sources)
-            answer_html = render_answer_markdown(answer, source_count=len(sources))
-            answer_model = completion["model"]
+                def pipeline_progress(value: int, stage: str) -> None:
+                    update_ai_request_progress(ai_request_id, value, stage)
+
+                pipeline_result = await asyncio.to_thread(
+                    execute_advanced_pipeline,
+                    preset=preset,
+                    question=question,
+                    role=user["role"],
+                    character_context=selected_character_context,
+                    folder_scope=folder_scope,
+                    document_paths=document_scope,
+                    cancel_event=cancel_event,
+                    progress=pipeline_progress,
+                )
+                answer = pipeline_result["answer"]
+                answer_model = pipeline_result["model"]
+                sources = pipeline_result["sources"]
+                elapsed_seconds = time.perf_counter() - started
+                update_ai_request_progress(ai_request_id, 99, "Finalizing answer")
+                attach_citation_excerpts(answer, sources)
+                answer_html = render_answer_markdown(answer, source_count=len(sources))
+            else:
+                update_ai_request_progress(ai_request_id, 30, "Retrieving sources")
+                retrieval_query = character_retrieval_query(
+                    question,
+                    selected_character_context,
+                )
+                sources = retrieve_chunks(
+                    retrieval_query,
+                    user["role"],
+                    limit=8,
+                    folder_scope=folder_scope,
+                    document_paths=document_scope,
+                )
+
+                if not sources and selected_character_context is None:
+                    raise RuntimeError("No relevant source passages were found in the selected scope.")
+
+                update_ai_request_progress(ai_request_id, 52, "Assembling evidence")
+                source_blocks = []
+                for index, source in enumerate(sources, start=1):
+                    page = source.get("page")
+                    page_label = f", page {page}" if page else ""
+                    revision_label = (
+                        " [REVISION/UPDATE CANDIDATE]"
+                        if source.get("revision_candidate")
+                        else ""
+                    )
+                    source_blocks.append(
+                        f"[{index}] {source['display_name']}{page_label}{revision_label}\n"
+                        f"{source.get('context_text') or source.get('text', '').strip()}"
+                    )
+
+                system_prompt = (
+                    "You are Tabletop Librarian, a tabletop RPG rules assistant. "
+                    "Answer using only the selected character context and the supplied numbered source passages. "
+                    "Character context tells you what the selected character currently has; numbered sources tell you the rules. "
+                    "Apply explicit rules literally, including exceptions, defaults, and untrained rules. "
+                    "A missing skill, item, trait, or other entry on the character sheet does not by itself forbid an action unless a supplied rule says it does. "
+                    "Do not invent restrictions, classifications, interactions, or rules that are not stated in the supplied sources. "
+                    "If a supplied rule directly answers the question, follow that rule even if a simpler assumption would suggest a different answer. "
+                    "If sources conflict, briefly identify the conflict instead of silently resolving it. "
+                    "If the supplied evidence does not establish the answer, say what cannot be established. "
+                    "Give the direct answer first, then the minimum explanation needed. "
+                    "Cite rules claims with the numbered source that supports them, using [1], [2], etc. "
+                    "Do not cite character-sheet context as a numbered source. "
+                    "Do not pad the answer with unrelated character details or rules."
+                )
+                character_block = (
+                    "Selected character context (authoritative current sheet state; not a numbered source):\n"
+                    + selected_character_context["text"]
+                    if selected_character_context is not None
+                    else "Selected character context: none"
+                )
+                source_text = "\n\n".join(source_blocks) if source_blocks else "(No relevant numbered source passages were retrieved.)"
+                user_prompt = (
+                    f"Question:\n{question}\n\n"
+                    "Retrieval mode: Basic single-query retrieval.\n\n"
+                    f"{character_block}\n\n"
+                    f"Numbered source passages:\n\n{source_text}"
+                )
+                started = time.perf_counter()
+                update_ai_request_progress(ai_request_id, 58, "Generating answer")
+                completion = await asyncio.to_thread(
+                    chat_completion,
+                    [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    cancel_event=cancel_event,
+                )
+                answer = completion["content"]
+                answer_model = completion["model"]
+                elapsed_seconds = time.perf_counter() - started
+                update_ai_request_progress(ai_request_id, 97, "Finalizing answer")
+                attach_citation_excerpts(answer, sources)
+                answer_html = render_answer_markdown(answer, source_count=len(sources))
+        except AIRequestCancelled:
+            error = "AI request cancelled."
         except Exception as exc:
             error = str(exc)
+        finally:
+            finish_ai_request(ai_request_id)
 
     response_id = uuid.uuid4().hex
     return templates.TemplateResponse(
@@ -1304,6 +1785,13 @@ async def ask_question(request: Request):
             "split": split,
             "locked_folder": bool(folder.strip()) and embed,
             "locked_document_key": locked_document_key,
+            "character_options": character_options,
+            "selected_character": selected_character,
+            "character_locked": character_locked and bool(selected_character),
+            "workspace_compact": workspace_compact,
+            "reasoning_mode": reasoning_mode,
+            "selected_pipeline": selected_pipeline,
+            "selected_character_context": selected_character_context,
             "response_id": response_id,
             "error": error,
         },

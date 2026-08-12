@@ -57,7 +57,16 @@ def load_cached_text(path: Path) -> dict[str, Any] | None:
         return None
 
     if not _cache_is_current(path, data):
-        return None
+        # A configured library source may be temporarily offline. The library
+        # manifest decides whether the document still belongs to TTL; keep its
+        # last known extracted text available while the canonical file cannot
+        # be stat'ed. A successful source scan will later identify true deletes.
+        if path.exists():
+            return None
+        if data.get("cache_version") != CACHE_VERSION:
+            return None
+        if str(data.get("path") or "") != str(path.expanduser().resolve(strict=False)):
+            return None
 
     return data
 
@@ -111,15 +120,32 @@ def extract_document(document: dict[str, Any], force: bool = False) -> dict[str,
                 "characters": cached.get("characters", 0),
             }
 
+    extracted_from = path
     if document["type"] == "PDF":
         if document.get("text_status") == "scanned":
+            from app.ocr import current_ocr_pdf
+            ocr_path = current_ocr_pdf(path)
+            if ocr_path is None:
+                return {
+                    "status": "skipped_scanned",
+                    "path": str(path),
+                    "pages": 0,
+                    "characters": 0,
+                }
+            extracted_from = ocr_path
+        extracted = extract_pdf(extracted_from)
+    elif document["type"] in {"CBZ", "CBR"}:
+        from app.ocr import current_ocr_pdf
+        ocr_path = current_ocr_pdf(path)
+        if ocr_path is None:
             return {
                 "status": "skipped_scanned",
                 "path": str(path),
                 "pages": 0,
                 "characters": 0,
             }
-        extracted = extract_pdf(path)
+        extracted_from = ocr_path
+        extracted = extract_pdf(extracted_from)
     elif document["type"] in {"Text", "Markdown"}:
         extracted = extract_text_file(path)
     else:
@@ -137,10 +163,13 @@ def extract_document(document: dict[str, Any], force: bool = False) -> dict[str,
         "source": _source_signature(path),
         "path": str(path.resolve()),
         "filename": path.name,
+        "display_name": document.get("display_name") or path.stem,
         "type": document["type"],
         "kind": extracted["kind"],
         "pages": extracted["pages"],
         "characters": characters,
+        "extracted_from": str(extracted_from.resolve()),
+        "ocr_derived": extracted_from != path,
     }
 
     TEXT_CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -174,9 +203,13 @@ def build_text_cache(force: bool = False) -> dict[str, Any]:
         "errors": 0,
         "pages": 0,
         "characters": 0,
+        "changed_paths": [],
+        "removed_paths": [],
     }
 
     seen_paths: set[str] = set()
+    unavailable_paths: set[str] = set()
+    changed_paths: set[str] = set()
 
     for folder in list_folders():
         scan = scan_folder(folder, generate_covers=False)
@@ -190,6 +223,12 @@ def build_text_cache(force: bool = False) -> dict[str, Any]:
             seen_paths.add(path)
             summary["documents_seen"] += 1
 
+            if document.get("source_available") is False:
+                unavailable_paths.add(path)
+                # Preserve the last successful extraction/chunks/vectors. An
+                # unavailable source is not evidence that the document changed.
+                continue
+
             try:
                 result = extract_document(document, force=force)
             except Exception:
@@ -202,12 +241,17 @@ def build_text_cache(force: bool = False) -> dict[str, Any]:
             if status in summary:
                 summary[status] += 1
 
+            if status == "extracted":
+                changed_paths.add(str(Path(path).resolve()))
+
             summary["pages"] += result.get("pages", 0)
             summary["characters"] += result.get("characters", 0)
 
-    # Remove orphaned extracted-text entries for documents that are no longer
-    # present in any virtual folder. Without this, cache counts can include
-    # books removed from the library and make downstream corpus counts confusing.
+    # Remove orphaned or stale extracted-text entries. A stale cache can occur
+    # when a formerly searchable source changes into a scanned/unsupported file.
+    # Downstream incremental stages need the path so they can discard old chunks
+    # and vectors for that document.
+    removed_paths: set[str] = set()
     if TEXT_CACHE_DIR.exists():
         for cache in TEXT_CACHE_DIR.glob("*.json"):
             try:
@@ -215,14 +259,32 @@ def build_text_cache(force: bool = False) -> dict[str, Any]:
                 cached_path = str(cached_data.get("path") or "")
             except Exception:
                 cached_path = ""
+
+            remove_cache = False
             if not cached_path or cached_path not in seen_paths:
+                remove_cache = True
+            elif cached_path in unavailable_paths:
+                remove_cache = False
+            else:
+                source = Path(cached_path)
+                if not _cache_is_current(source, cached_data):
+                    remove_cache = True
+
+            if remove_cache:
                 cache.unlink(missing_ok=True)
+                if cached_path:
+                    if cached_path in seen_paths:
+                        changed_paths.add(cached_path)
+                    else:
+                        removed_paths.add(cached_path)
+
+    summary["changed_paths"] = sorted(changed_paths)
+    summary["removed_paths"] = sorted(removed_paths)
 
     if summary["errors"] == 0:
         mark_text_current()
 
     return summary
-
 
 def text_cache_status() -> dict[str, Any]:
     status = {

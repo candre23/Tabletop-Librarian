@@ -138,8 +138,10 @@
                     <div class="document-permission-name">
                         <strong>{{ doc.display_name }}</strong>
                         <span>{{ doc.path }}</span>
-                        {% if doc.type == "PDF" and doc.text_status == "scanned" %}
-                        <small class="scan-warning">Scanned PDF: OCR required for search/AI</small>
+                        {% if doc.ocr_status == "required" %}
+                        <small class="ocr-status-tag ocr-required">OCR required</small>
+                        {% elif doc.ocr_status == "complete" %}
+                        <small class="ocr-status-tag ocr-complete">OCR complete</small>
                         {% endif %}
                     </div>
 

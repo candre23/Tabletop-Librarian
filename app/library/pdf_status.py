@@ -11,7 +11,7 @@ from app.config import PDF_STATUS_CACHE_DIR
 
 logger = logging.getLogger(__name__)
 
-DETECTOR_VERSION = 2
+DETECTOR_VERSION = 3
 
 
 def _cache_path(path: Path) -> Path:
@@ -23,10 +23,19 @@ def _cache_path(path: Path) -> Path:
 def detect_pdf_text_status(path: Path) -> str:
     cache = _cache_path(path)
 
+    try:
+        stat = path.stat()
+        source_signature = {"size": stat.st_size, "mtime_ns": stat.st_mtime_ns}
+    except OSError:
+        source_signature = None
+
     if cache.exists():
         try:
             data = json.loads(cache.read_text(encoding="utf-8"))
-            if data.get("detector_version") == DETECTOR_VERSION:
+            if (
+                data.get("detector_version") == DETECTOR_VERSION
+                and data.get("source") == source_signature
+            ):
                 status = data.get("status")
                 if status in {"searchable", "scanned"}:
                     return status
@@ -109,6 +118,7 @@ def detect_pdf_text_status(path: Path) -> str:
         json.dumps(
             {
                 "detector_version": DETECTOR_VERSION,
+                "source": source_signature,
                 "status": status,
                 **diagnostic,
             },

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import re
 import shutil
 import subprocess
 import zipfile
@@ -14,6 +16,14 @@ IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
 CBR_CACHE_DIR = CACHE_DIR / "comics"
 
 
+def _natural_sort_key(value: str) -> list[tuple[int, object]]:
+    """Sort archive paths naturally while keeping directory context."""
+    return [
+        (1, int(part)) if part.isdigit() else (0, part.casefold())
+        for part in re.split(r"(\d+)", value)
+    ]
+
+
 def cbz_pages(path: Path) -> list[str]:
     with zipfile.ZipFile(path, "r") as archive:
         return sorted(
@@ -23,7 +33,7 @@ def cbz_pages(path: Path) -> list[str]:
                 if not name.endswith("/")
                 and Path(name).suffix.casefold() in IMAGE_EXTENSIONS
             ],
-            key=str.casefold,
+            key=_natural_sort_key,
         )
 
 
@@ -80,11 +90,33 @@ def _extract_with_7zip(path: Path, cache_path: Path) -> subprocess.CompletedProc
     )
 
 
+def _cbr_source_signature(path: Path) -> dict[str, int]:
+    stat = path.stat()
+    return {"size": stat.st_size, "mtime_ns": stat.st_mtime_ns}
+
+
+def _cbr_cache_current(path: Path, marker: Path) -> bool:
+    if not marker.exists():
+        return False
+    try:
+        payload = json.loads(marker.read_text(encoding="utf-8"))
+        return payload.get("source") == _cbr_source_signature(path)
+    except Exception:
+        return False
+
+
+def _write_cbr_marker(path: Path, marker: Path) -> None:
+    marker.write_text(
+        json.dumps({"source": _cbr_source_signature(path)}) + "\n",
+        encoding="utf-8",
+    )
+
+
 def _extract_cbr(path: Path) -> Path:
     cache_path = _cbr_cache_path(path)
     marker = cache_path / ".complete"
 
-    if marker.exists():
+    if _cbr_cache_current(path, marker):
         return cache_path
 
     if cache_path.exists():
@@ -97,7 +129,7 @@ def _extract_cbr(path: Path) -> Path:
     if _find_unrar():
         result = _extract_with_unrar(path, cache_path)
         if result.returncode == 0:
-            marker.touch()
+            _write_cbr_marker(path, marker)
             return cache_path
 
         errors.append(
@@ -112,7 +144,7 @@ def _extract_cbr(path: Path) -> Path:
     if _find_7zip():
         result = _extract_with_7zip(path, cache_path)
         if result.returncode == 0:
-            marker.touch()
+            _write_cbr_marker(path, marker)
             return cache_path
 
         errors.append(
@@ -142,7 +174,7 @@ def cbr_page_files(path: Path) -> list[Path]:
 
     return sorted(
         pages,
-        key=lambda item: str(item.relative_to(cache_path)).casefold(),
+        key=lambda item: _natural_sort_key(str(item.relative_to(cache_path))),
     )
 
 

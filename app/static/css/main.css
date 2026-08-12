@@ -1085,9 +1085,27 @@ mark.tt-search-match.active {
     color: #cbd3d8;
 }
 
-.scan-warning {
-    color: #e0ba6a;
-    font-weight: 600;
+.ocr-status-tag {
+    display: inline-block;
+    width: fit-content;
+    font-weight: 700;
+}
+
+.ocr-required {
+    color: #e3a64d;
+}
+
+.ocr-complete {
+    color: #72c98a;
+}
+
+/* Keep OCR status colors from being overridden by the global light-page small-text rule. */
+body:not(.ttl-character-ui) .ocr-status-tag.ocr-required {
+    color: #e3a64d;
+}
+
+body:not(.ttl-character-ui) .ocr-status-tag.ocr-complete {
+    color: #72c98a;
 }
 
 @media (max-width: 820px) {
@@ -5312,4 +5330,449 @@ body:not(.ttl-character-ui) .ttl-error-actions button {
 @media (max-width: 600px) {
     body:not(.ttl-character-ui) .ttl-error-page { margin-top: 3vh; }
     body:not(.ttl-character-ui) .ttl-error-card { padding: 22px 20px; }
+}
+
+
+/* v0.5.1 character-aware Ask foundation */
+body:not(.ttl-character-ui) .ask-character-context {
+    display: grid;
+    gap: 5px;
+    margin: 12px 0;
+    padding: 10px 12px;
+    border: 1px solid #8b9da6;
+    background: #edf3f5;
+}
+
+body:not(.ttl-character-ui) .ask-character-context label {
+    color: #294a59;
+    font-weight: 800;
+}
+
+body:not(.ttl-character-ui) .ask-character-context select {
+    width: 100%;
+}
+
+body:not(.ttl-character-ui) .ask-character-active {
+    margin: 8px 0 12px;
+    padding: 7px 10px;
+    border-left: 4px solid #2e708f;
+    background: #e3edf2;
+    color: #20343e;
+}
+
+body.ttl-embedded-page .ask-character-context {
+    margin-top: 8px;
+}
+
+
+/* v0.5.2 AI backend preflight + cancellation */
+body:not(.ttl-character-ui) .ask-submit-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+}
+
+body:not(.ttl-character-ui) #ask-cancel[hidden] {
+    display: none;
+}
+
+body:not(.ttl-character-ui) #ask-client-error {
+    margin-bottom: 12px;
+}
+
+
+/* ==========================================================================
+   v0.5.3 tri-pane play workspace foundation
+   ========================================================================== */
+body:not(.ttl-character-ui) > .shell:has(.ttl-workspace) {
+    width: calc(100vw - 12px) !important;
+    max-width: none !important;
+    margin: 0 auto !important;
+    padding: 6px 0 8px !important;
+}
+
+.ttl-workspace {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 6px;
+    height: calc(100vh - 48px);
+    min-height: 620px;
+}
+
+.ttl-workspace-toolbar {
+    display: grid;
+    grid-template-columns: auto minmax(180px, .75fr) minmax(240px, 1.1fr) auto;
+    gap: 8px;
+    align-items: end;
+    padding: 7px 9px;
+    border: 1px solid #71858f;
+    background: #eef3f5;
+}
+
+.ttl-workspace-title {
+    align-self: center;
+    min-width: 170px;
+}
+
+.ttl-workspace-title strong {
+    display: block;
+    color: #17272f;
+    font-size: 14px;
+}
+
+.ttl-workspace-toolbar label {
+    display: grid;
+    gap: 2px;
+    color: #324b57;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .035em;
+}
+
+.ttl-workspace-toolbar select {
+    min-height: 28px !important;
+    padding: 4px 6px !important;
+    font-size: 12px;
+}
+
+.ttl-workspace-layout-buttons {
+    display: flex;
+    gap: 4px;
+}
+
+.ttl-workspace-layout-buttons button {
+    min-height: 28px !important;
+    padding: 4px 7px !important;
+    font-size: 11px !important;
+}
+
+.ttl-workspace-layout-buttons button.is-active {
+    border-color: #285f7b !important;
+    background: #285f7b !important;
+    color: #fff !important;
+}
+
+.ttl-workspace-grid {
+    display: grid;
+    min-height: 0;
+    gap: 5px;
+    grid-template-columns: minmax(0, 1fr) minmax(400px, .9fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 2fr);
+    grid-template-areas:
+        "ask character"
+        "book character";
+}
+
+.ttl-workspace-grid.mode-search-large {
+    grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
+}
+
+.ttl-workspace-grid.mode-book-focus {
+    grid-template-columns: minmax(520px, 1.35fr) minmax(360px, .65fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 2fr);
+    grid-template-areas:
+        "book ask"
+        "book character";
+}
+
+.ttl-workspace-pane {
+    display: grid;
+    grid-template-rows: 24px minmax(0, 1fr);
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid #71858f;
+    background: #f7f9fa;
+}
+
+.ttl-workspace-ask { grid-area: ask; }
+.ttl-workspace-book { grid-area: book; }
+.ttl-workspace-character { grid-area: character; }
+
+.ttl-workspace-pane-label {
+    padding: 4px 7px;
+    border-bottom: 1px solid #81949d;
+    background: #dbe8ee;
+    color: #173b4d;
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 15px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.ttl-workspace-pane iframe {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    border: 0;
+    background: #f7f9fa;
+}
+
+.ttl-workspace-empty {
+    align-self: start;
+}
+
+.ttl-character-ui.ttl-character-embedded {
+    background: #eef3f5;
+}
+
+.ttl-character-ui.ttl-character-embedded .ttl-char-wrap {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 4px;
+}
+
+.ttl-character-ui.ttl-character-embedded .ttl-char-head {
+    position: sticky;
+    top: 0;
+    z-index: 25;
+    margin-bottom: 4px;
+    background: #f7f9fa;
+}
+
+body.ttl-embedded-page .reader-shell {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+}
+
+body.ttl-embedded-page .reader-toolbar {
+    padding: 4px 6px !important;
+}
+
+@media (max-width: 1050px) {
+    .ttl-workspace {
+        height: auto;
+        min-height: 0;
+    }
+
+    .ttl-workspace-toolbar {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .ttl-workspace-layout-buttons {
+        grid-column: 1 / -1;
+    }
+
+    .ttl-workspace-grid,
+    .ttl-workspace-grid.mode-search-large,
+    .ttl-workspace-grid.mode-book-focus {
+        height: 1350px;
+        grid-template-columns: 1fr;
+        grid-template-rows: 340px 560px 430px;
+        grid-template-areas:
+            "ask"
+            "book"
+            "character";
+    }
+}
+
+
+/* v0.5.3.1 workspace render/cache hardening */
+body.ttl-workspace-page {
+    overflow: hidden;
+}
+
+body.ttl-workspace-page > .shell {
+    width: calc(100vw - 12px) !important;
+    max-width: none !important;
+    margin: 0 auto !important;
+    padding: 6px 0 8px !important;
+    box-sizing: border-box;
+}
+
+body.ttl-workspace-page .ttl-workspace {
+    width: 100%;
+    height: calc(100vh - 48px);
+    min-height: 0;
+}
+
+body.ttl-workspace-page .ttl-workspace-grid {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+}
+
+body.ttl-workspace-page .ttl-workspace-pane {
+    width: auto;
+    max-width: none;
+}
+
+body.ttl-workspace-page .ttl-workspace-pane iframe {
+    display: block;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+}
+
+@media (max-width: 1050px) {
+    body.ttl-workspace-page {
+        overflow: auto;
+    }
+}
+
+
+/* v0.5.3.2 compact Ask presentation inside tri-pane workspace */
+body.ttl-embedded-page .ask-embedded-panel.ask-workspace-compact {
+    padding: 7px 9px !important;
+}
+
+body.ttl-embedded-page .ask-workspace-compact .ask-form {
+    margin-top: 0;
+}
+
+body.ttl-embedded-page .ask-workspace-compact textarea[name="question"] {
+    min-height: 76px;
+    height: 76px;
+}
+
+body.ttl-embedded-page .ask-workspace-compact .ask-submit-row {
+    margin-top: 5px;
+}
+
+body.ttl-embedded-page .ask-workspace-compact .ask-document-scope,
+body.ttl-embedded-page .ask-workspace-compact .ask-answer,
+body.ttl-embedded-page .ask-workspace-compact .ask-sources {
+    margin-top: 7px;
+}
+
+
+/* v0.5.4 character-aware rules analysis */
+body:not(.ttl-character-ui) .ask-analysis-mode {
+    margin: 5px 0 6px;
+    color: #365b6d;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .025em;
+    text-transform: uppercase;
+}
+
+body.ttl-embedded-page .ask-workspace-compact .ask-analysis-mode {
+    margin-top: 0;
+}
+
+
+/* v0.5.5 selectable Basic / Advanced reasoning */
+body:not(.ttl-character-ui) .ask-reasoning-mode {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 3px 0 7px;
+    padding: 0;
+    border: 0;
+}
+
+body:not(.ttl-character-ui) .ask-reasoning-mode legend {
+    margin-right: 2px;
+    color: #365b6d;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+body:not(.ttl-character-ui) .ask-reasoning-mode label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    padding: 4px 6px;
+    border: 1px solid #9babb3;
+    border-radius: 5px;
+    background: #eef3f5;
+    color: #20343e;
+    cursor: pointer;
+}
+
+body:not(.ttl-character-ui) .ask-reasoning-mode input {
+    width: auto;
+    margin: 0;
+}
+
+body:not(.ttl-character-ui) .ask-reasoning-mode span {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+body:not(.ttl-character-ui) .ask-reasoning-mode strong {
+    font-size: 11px;
+}
+
+body:not(.ttl-character-ui) .ask-reasoning-mode small {
+    color: #58707b;
+    font-size: 9px;
+}
+
+body.ttl-embedded-page .ask-workspace-compact .ask-reasoning-mode {
+    margin-top: 0;
+    margin-bottom: 5px;
+}
+
+/* v0.5.11 GM-managed Advanced Ask pipeline preset */
+.ai-pipeline-description { margin: 0.35rem 0 0; }
+
+/* v0.5.12 persistent local OCR workflow */
+.ocr-admin-panel {
+    margin-top: 1rem;
+}
+
+.ocr-admin-panel .knowledgebase-step-title {
+    align-items: flex-start;
+}
+
+.ocr-admin-panel .knowledgebase-step-number {
+    min-width: 3.4rem;
+    text-align: center;
+}
+
+.ocr-stats {
+    margin-top: 1rem;
+}
+
+.ocr-dependency-warning {
+    margin-top: 1rem;
+}
+
+.ocr-progress {
+    margin-top: 1rem;
+}
+
+.ocr-document-list {
+    display: grid;
+    gap: 0.55rem;
+    margin-top: 1rem;
+}
+
+.ocr-document-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--ttl-line);
+    border-radius: 0.65rem;
+}
+
+.ocr-document-name {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.ocr-document-name strong,
+.ocr-document-name span {
+    overflow-wrap: anywhere;
+}
+
+.ocr-ready-badge {
+    flex: 0 0 auto;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid var(--ttl-line);
+    font-size: 0.85rem;
 }

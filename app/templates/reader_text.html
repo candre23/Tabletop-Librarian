@@ -4,17 +4,23 @@
 <section class="reader-shell text-reader-shell">
     <div class="reader-toolbar sticky-reader-toolbar">
         <div class="reader-title-group">
-            <a class="button-link secondary-button compact-button" href="/library/{{ folder.name|urlencode }}">Back</a>
+            {% if not embed %}<a class="button-link secondary-button compact-button" href="/library/{{ folder.name|urlencode }}">Back</a>{% endif %}
             <div><div class="eyebrow">{{ folder.name }}</div><div class="reader-title">{{ document.display_name }}</div></div>
         </div>
         <div class="reader-toolbar-actions">
+            {% if not embed %}
+            <a
+              class="button-link secondary-button compact-button"
+              href="/workspace?document={{ (folder.name ~ '\t' ~ document.key)|urlencode }}"
+            >Workspace</a>
+            {% endif %}
             <div class="text-search">
                 <input id="textSearch" type="search" placeholder="Find in document">
                 <button id="findPrev" class="secondary-button compact-button">Previous</button>
                 <button id="findNext" class="secondary-button compact-button">Next</button>
                 <span id="searchStatus"></span>
             </div>
-            <button type="button" class="secondary-button compact-button" id="ask-file-toggle">Ask this file</button>
+            {% if not workspace %}<button type="button" class="secondary-button compact-button" id="ask-file-toggle">Ask this file</button>{% endif %}
         </div>
     </div>
 

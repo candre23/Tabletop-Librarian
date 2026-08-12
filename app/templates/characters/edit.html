@@ -4,10 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Character - Tabletop Librarian</title>
-  <link rel="stylesheet" href="/static/css/main.css">
+  <link rel="stylesheet" href="/static/css/main.css?v={{ app_version }}">
 </head>
-<body class="ttl-character-ui">
-  {% include "_global_nav.html" %}
+{% set is_embedded = embed or request.query_params.get("embed") == "1" %}
+<body class="ttl-character-ui{% if is_embedded %} ttl-character-embedded{% endif %}">
+  {% if not is_embedded %}{% include "_global_nav.html" %}{% endif %}
   <main class="ttl-char-wrap">
     <div class="ttl-char-head">
       <div class="ttl-character-summary">
@@ -23,7 +24,13 @@
         </div>
       </div>
       <div class="ttl-character-head-actions">
+        {% if not is_embedded %}
+        <a
+          class="ttl-mode-switch"
+          href="/workspace?character={{ (record.owner ~ '\t' ~ record.character_id)|urlencode }}"
+        >Workspace</a>
         <a class="ttl-mode-switch" href="/characters/{{ record.character_id }}/export{{ character_owner_query }}">Export</a>
+        {% endif %}
         {% if mode == "play" %}
           <button
             type="button"

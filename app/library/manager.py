@@ -6,12 +6,125 @@ from pathlib import Path
 from typing import Any, Callable
 
 from app.knowledgebase import mark_library_changed
-from app.config import LIBRARY_FILE, SUPPORTED_EXTENSIONS
+from app.config import LIBRARY_FILE, LIBRARY_MANIFEST_FILE, SUPPORTED_EXTENSIONS
 from app.library.covers import ensure_cover
 from app.library.pdf_status import detect_pdf_text_status
 from app.storage import read_json, write_json
 
 logger = logging.getLogger(__name__)
+
+
+LIBRARY_MANIFEST_VERSION = 1
+
+
+def _default_manifest() -> dict[str, Any]:
+    return {"version": LIBRARY_MANIFEST_VERSION, "sources": {}}
+
+
+def _manifest_source_key(folder_name: str, source_type: str, source_path: str) -> str:
+    raw = f"{folder_name.casefold()}\0{source_type}\0{source_path}".encode("utf-8", errors="surrogatepass")
+    return hashlib.sha256(raw).hexdigest()[:32]
+
+
+def _load_manifest() -> dict[str, Any]:
+    data = read_json(LIBRARY_MANIFEST_FILE, _default_manifest())
+    if data.get("version") != LIBRARY_MANIFEST_VERSION or not isinstance(data.get("sources"), dict):
+        return _default_manifest()
+    return data
+
+
+def _save_manifest(data: dict[str, Any]) -> None:
+    data["version"] = LIBRARY_MANIFEST_VERSION
+    data.setdefault("sources", {})
+    write_json(LIBRARY_MANIFEST_FILE, data)
+
+
+def _manifest_documents(folder_name: str, source_type: str, source_path: str) -> list[dict[str, Any]]:
+    key = _manifest_source_key(folder_name, source_type, source_path)
+    entry = _load_manifest().get("sources", {}).get(key, {})
+    docs = entry.get("documents", [])
+    return [dict(item) for item in docs if isinstance(item, dict)]
+
+
+def _store_manifest_documents(
+    folder_name: str,
+    source_type: str,
+    source_path: str,
+    documents: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    data = _load_manifest()
+    key = _manifest_source_key(folder_name, source_type, source_path)
+    old = data.setdefault("sources", {}).get(key, {})
+    previous = [dict(item) for item in old.get("documents", []) if isinstance(item, dict)]
+    data["sources"][key] = {
+        "folder": folder_name,
+        "source_type": source_type,
+        "source_path": source_path,
+        "documents": [dict(item) for item in documents],
+    }
+    _save_manifest(data)
+    return previous
+
+
+def _drop_manifest_source(folder_name: str, source_type: str, source_path: str) -> list[dict[str, Any]]:
+    data = _load_manifest()
+    key = _manifest_source_key(folder_name, source_type, source_path)
+    entry = data.setdefault("sources", {}).pop(key, None)
+    if entry is not None:
+        _save_manifest(data)
+    if not isinstance(entry, dict):
+        return []
+    return [dict(item) for item in entry.get("documents", []) if isinstance(item, dict)]
+
+
+def _cleanup_removed_ocr(previous: list[dict[str, Any]], current: list[dict[str, Any]]) -> None:
+    current_paths = {str(item.get("path") or "") for item in current}
+    removed = [item for item in previous if str(item.get("path") or "") not in current_paths]
+    if not removed:
+        return
+    try:
+        from app.ocr import remove_ocr_derivative
+        for item in removed:
+            path = str(item.get("path") or "")
+            if path:
+                remove_ocr_derivative(Path(path))
+    except Exception:
+        logger.exception("Unable to clean OCR derivatives for removed library documents")
+
+
+
+
+def _missing_source_is_confirmed_removed(folder: dict[str, Any], source_path: Path) -> bool:
+    """Return True only when a reachable configured ancestor proves deletion.
+
+    Recursive library imports register descendant directories as independent
+    sources. If one descendant disappears while its configured parent is still
+    reachable, that is a real removal. If the whole mount/share disappears, no
+    configured ancestor is reachable and TTL conservatively treats it as offline.
+    """
+    target = source_path.expanduser().resolve(strict=False)
+    for candidate in folder.get("sources", []):
+        if candidate.get("type") != "directory":
+            continue
+        ancestor = Path(str(candidate.get("path") or "")).expanduser().resolve(strict=False)
+        if ancestor == target:
+            continue
+        try:
+            target.relative_to(ancestor)
+        except ValueError:
+            continue
+        try:
+            if ancestor.exists() and ancestor.is_dir():
+                return True
+        except OSError:
+            continue
+    return False
+
+def _offline_manifest_documents(folder_name: str, source_type: str, source_path: str) -> list[dict[str, Any]]:
+    docs = _manifest_documents(folder_name, source_type, source_path)
+    for item in docs:
+        item["source_available"] = False
+    return docs
 
 
 def _default_library() -> dict[str, Any]:
@@ -128,6 +241,19 @@ def remove_folder(name: str) -> bool:
 
     if len(new_folders) == len(folders):
         return False
+
+    removed_folder = next(
+        (folder for folder in folders if str(folder.get("name", "")).casefold() == normalized),
+        None,
+    )
+    if removed_folder:
+        for source in removed_folder.get("sources", []):
+            prior = _drop_manifest_source(
+                str(removed_folder.get("name", name)),
+                str(source.get("type") or ""),
+                str(source.get("path") or ""),
+            )
+            _cleanup_removed_ocr(prior, [])
 
     data["folders"] = new_folders
     save_library(data)
@@ -304,6 +430,8 @@ def remove_source(folder_name: str, source_type: str, source_path: str) -> bool:
 
         folder["sources"] = new_sources
         save_library(data)
+        prior = _drop_manifest_source(folder_name, source_type, source_path)
+        _cleanup_removed_ocr(prior, [])
         mark_library_changed(f"Library source removed from {folder_name}: {Path(source_path).name}")
         logger.info("Physical source removed from %s: %s", folder_name, source_path)
         return True
@@ -376,8 +504,20 @@ def _document_record(
         )
 
     text_status = None
+    ocr_status = None
     if doc_type == "PDF":
         text_status = detect_pdf_text_status(resolved)
+        if text_status == "scanned":
+            # The source remains image-only by design. A persistent local OCR
+            # derivative changes Library Management status without modifying
+            # the read-only source file.
+            from app.ocr import current_ocr_pdf
+            ocr_status = "complete" if current_ocr_pdf(resolved) is not None else "required"
+    elif doc_type in {"CBZ", "CBR"}:
+        # Comic archives are inherently page-image containers. Their OCR text
+        # lives in the same persistent local PDF derivative cache as scans.
+        from app.ocr import current_ocr_pdf
+        ocr_status = "complete" if current_ocr_pdf(resolved) is not None else "required"
 
     return {
         "key": document_key(resolved),
@@ -392,6 +532,7 @@ def _document_record(
         "visibility_override": override or "inherit",
         "cover_available": cover_available,
         "text_status": text_status,
+        "ocr_status": ocr_status,
     }
 
 
@@ -409,13 +550,24 @@ def scan_folder(
 
     documents_by_path: dict[str, dict[str, Any]] = {}
     scanned_count = 0
+    folder_name = str(folder.get("name") or "")
 
     for source in folder.get("sources", []):
         source_path = Path(source.get("path", ""))
-        source_type = source.get("type")
+        source_type = str(source.get("type") or "")
+        source_path_text = str(source_path)
+        source_documents: list[dict[str, Any]] = []
 
         if not source_path.exists():
-            result["missing_sources"].append(str(source_path))
+            if _missing_source_is_confirmed_removed(folder, source_path):
+                previous = _store_manifest_documents(
+                    folder_name, source_type, source_path_text, []
+                )
+                _cleanup_removed_ocr(previous, [])
+                continue
+            result["missing_sources"].append(source_path_text)
+            for record in _offline_manifest_documents(folder_name, source_type, source_path_text):
+                documents_by_path[str(record.get("path") or "")] = record
             continue
 
         try:
@@ -438,6 +590,8 @@ def scan_folder(
                     )
 
                     if record:
+                        record["source_available"] = True
+                        source_documents.append(record)
                         documents_by_path[record["path"]] = record
 
             elif source_type == "file" and source_path.is_file():
@@ -453,18 +607,30 @@ def scan_folder(
                 )
 
                 if record:
+                    record["source_available"] = True
+                    source_documents.append(record)
                     documents_by_path[record["path"]] = record
+
+            # A successful scan is authoritative for this source. Only now is
+            # absence evidence of a real deletion.
+            previous = _store_manifest_documents(
+                folder_name, source_type, source_path_text, source_documents
+            )
+            _cleanup_removed_ocr(previous, source_documents)
 
         except OSError as exc:
             logger.exception("Failed to scan source %s", source_path)
             result["missing_sources"].append(f"{source_path}: {exc}")
+            for record in _offline_manifest_documents(folder_name, source_type, source_path_text):
+                documents_by_path[str(record.get("path") or "")] = record
 
     documents = sorted(
-        documents_by_path.values(),
+        (item for path, item in documents_by_path.items() if path),
         key=lambda item: (item["display_name"].casefold(), item["path"].casefold()),
     )
 
     result["documents"] = documents
+    result["available"] = not bool(result["missing_sources"])
     return result
 
 

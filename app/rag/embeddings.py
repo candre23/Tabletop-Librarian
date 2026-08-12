@@ -59,6 +59,9 @@ _build_state: dict[str, Any] = {
     "started_at": None,
     "finished_at": None,
     "error": None,
+    "mode": "full",
+    "reused": 0,
+    "embedded_new": 0,
 }
 
 
@@ -197,48 +200,170 @@ def clear_embeddings() -> None:
     invalidate_embeddings()
 
 
-def build_embeddings() -> dict[str, Any]:
-    chunks = load_chunks()
-    if not chunks:
-        raise RuntimeError("Build the RAG corpus before creating embeddings.")
-    texts = [chunk.get("text", "") for chunk in chunks]
-    chunk_ids = [chunk["id"] for chunk in chunks]
-    total = len(texts)
-    model_info = selected_model()
-    model_id = model_info["model"]
+def _load_embedding_cache():
+    if not EMBEDDINGS_FILE.exists() or not EMBEDDING_META_FILE.exists():
+        return None, None
+    try:
+        metadata = json.loads(EMBEDDING_META_FILE.read_text(encoding="utf-8"))
+        if metadata.get("embedding_version") != EMBEDDING_VERSION:
+            return None, None
+        if metadata.get("model") != selected_model()["model"]:
+            return None, None
+        vectors = np.load(EMBEDDINGS_FILE, mmap_mode="r")
+        if vectors.shape[0] != len(metadata.get("chunk_ids", [])):
+            return None, None
+        return vectors, metadata
+    except Exception:
+        logger.exception("Unable to load embedding cache")
+        return None, None
 
-    _set_build_state(stage="loading_model", message=f"Preparing {model_info['label']} model...", current=0, total=total, percent=0.0)
-    model = _load_model()
-    logger.info("Embedding %s RAG chunks with %s using OpenVINO", total, model_id)
 
-    vector_batches = []
-    for start in range(0, total, BATCH_SIZE):
-        end = min(start + BATCH_SIZE, total)
+def _encode_texts(model, texts: list[str], total: int) -> np.ndarray:
+    if not texts:
+        return np.empty((0, 0), dtype=np.float32)
+    batches = []
+    for start in range(0, len(texts), BATCH_SIZE):
+        end = min(start + BATCH_SIZE, len(texts))
         _set_build_state(
             stage="embedding",
-            message=f"Embedding chunks {start + 1:,}-{end:,} of {total:,}...",
+            message=f"Embedding changed chunks {start + 1:,}-{end:,} of {len(texts):,}...",
             current=start,
-            total=total,
-            percent=(start / total) * 100.0,
+            total=len(texts),
+            percent=(start / len(texts)) * 100.0,
         )
-        batch_vectors = model.encode(
+        batch = model.encode(
             texts[start:end],
             batch_size=BATCH_SIZE,
             show_progress_bar=False,
             convert_to_numpy=True,
             normalize_embeddings=True,
         )
-        vector_batches.append(np.asarray(batch_vectors, dtype=np.float32))
+        batches.append(np.asarray(batch, dtype=np.float32))
         _set_build_state(
             stage="embedding",
-            message=f"Embedded {end:,} of {total:,} chunks",
+            message=f"Embedded {end:,} of {len(texts):,} changed chunks",
             current=end,
-            total=total,
-            percent=(end / total) * 100.0,
+            total=len(texts),
+            percent=(end / len(texts)) * 100.0,
         )
+    return np.vstack(batches)
 
-    _set_build_state(stage="saving_index", message="Saving embedding index...", current=total, total=total, percent=100.0)
-    vectors = np.vstack(vector_batches)
+
+def build_embeddings(
+    *,
+    changed_paths: list[str] | set[str] | None = None,
+    removed_chunk_ids: list[str] | set[str] | None = None,
+    force: bool = False,
+) -> dict[str, Any]:
+    chunks = load_chunks()
+    model_info = selected_model()
+    model_id = model_info["model"]
+    changed = {str(path) for path in (changed_paths or [])}
+    removed_ids = {str(chunk_id) for chunk_id in (removed_chunk_ids or [])}
+    old_vectors, old_metadata = _load_embedding_cache()
+
+    if not chunks:
+        EMBEDDINGS_FILE.unlink(missing_ok=True)
+        EMBEDDING_META_FILE.unlink(missing_ok=True)
+        mark_embeddings_current()
+        return {
+            "model": model_id,
+            "model_label": model_info["label"],
+            "vectors": 0,
+            "dimensions": 0,
+            "cache_bytes": 0,
+            "reused": 0,
+            "embedded_new": 0,
+            "full_rebuild": force or old_vectors is None,
+        }
+
+    full_rebuild = force or old_vectors is None or old_metadata is None
+    chunk_ids = [str(chunk["id"]) for chunk in chunks]
+
+    if full_rebuild:
+        embed_indexes = list(range(len(chunks)))
+        reusable: dict[str, np.ndarray] = {}
+    else:
+        old_ids = list(old_metadata.get("chunk_ids", []))
+        old_lookup = {chunk_id: index for index, chunk_id in enumerate(old_ids)}
+        reusable = {}
+        embed_indexes = []
+        for index, chunk in enumerate(chunks):
+            chunk_id = str(chunk["id"])
+            path = str(chunk.get("path") or "")
+            old_index = old_lookup.get(chunk_id)
+            if path not in changed and chunk_id not in removed_ids and old_index is not None:
+                reusable[chunk_id] = np.asarray(old_vectors[old_index], dtype=np.float32)
+            else:
+                embed_indexes.append(index)
+
+    if (
+        not full_rebuild
+        and not embed_indexes
+        and not removed_ids
+        and list(old_metadata.get("chunk_ids", [])) == chunk_ids
+    ):
+        mark_embeddings_current()
+        return {
+            "model": model_id,
+            "model_label": model_info["label"],
+            "vectors": len(chunk_ids),
+            "dimensions": int(old_metadata.get("dimensions", 0)),
+            "cache_bytes": EMBEDDINGS_FILE.stat().st_size + EMBEDDING_META_FILE.stat().st_size,
+            "reused": len(chunk_ids),
+            "embedded_new": 0,
+            "full_rebuild": False,
+        }
+
+    _set_build_state(
+        mode="full" if full_rebuild else "incremental",
+        reused=len(reusable),
+        embedded_new=len(embed_indexes),
+        stage="loading_model" if embed_indexes else "saving_index",
+        message=(
+            f"Preparing {model_info['label']} model..."
+            if embed_indexes
+            else "No new vectors required; updating embedding index..."
+        ),
+        current=0,
+        total=len(embed_indexes),
+        percent=0.0,
+    )
+
+    new_vectors_by_index: dict[int, np.ndarray] = {}
+    if embed_indexes:
+        model = _load_model()
+        logger.info(
+            "%s embedding update: %s changed/new chunks, %s reusable vectors",
+            "Full" if full_rebuild else "Incremental",
+            len(embed_indexes),
+            len(reusable),
+        )
+        encoded = _encode_texts(
+            model,
+            [str(chunks[index].get("text", "")) for index in embed_indexes],
+            len(embed_indexes),
+        )
+        for position, chunk_index in enumerate(embed_indexes):
+            new_vectors_by_index[chunk_index] = encoded[position]
+
+    _set_build_state(
+        stage="saving_index",
+        message="Saving embedding index...",
+        current=len(embed_indexes),
+        total=len(embed_indexes),
+        percent=100.0,
+    )
+
+    rows: list[np.ndarray] = []
+    for index, chunk in enumerate(chunks):
+        chunk_id = str(chunk["id"])
+        if index in new_vectors_by_index:
+            rows.append(new_vectors_by_index[index])
+        else:
+            rows.append(reusable[chunk_id])
+
+    vectors = np.vstack(rows).astype(np.float32, copy=False)
     RAG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     np.save(EMBEDDINGS_FILE, vectors)
     metadata = {
@@ -257,28 +382,53 @@ def build_embeddings() -> dict[str, Any]:
         "vectors": int(vectors.shape[0]),
         "dimensions": int(vectors.shape[1]),
         "cache_bytes": EMBEDDINGS_FILE.stat().st_size + EMBEDDING_META_FILE.stat().st_size,
+        "reused": len(reusable),
+        "embedded_new": len(embed_indexes),
+        "full_rebuild": full_rebuild,
     }
 
 
-def _background_build_worker() -> None:
+def _background_build_worker(changed_paths: set[str], removed_chunk_ids: set[str], force: bool) -> None:
     try:
-        result = build_embeddings()
+        result = build_embeddings(
+            changed_paths=changed_paths,
+            removed_chunk_ids=removed_chunk_ids,
+            force=force,
+        )
+        detail = (
+            f"{result['embedded_new']:,} new/changed vectors, {result['reused']:,} reused"
+            if not result["full_rebuild"]
+            else f"{result['vectors']:,} vectors rebuilt"
+        )
         _set_build_state(
             running=False,
             stage="complete",
-            message=f"Complete: {result['vectors']:,} vectors, {result['dimensions']} dimensions",
-            current=result["vectors"],
-            total=result["vectors"],
+            message=f"Complete: {detail}",
+            current=result["embedded_new"],
+            total=result["embedded_new"],
             percent=100.0,
             finished_at=time(),
             error=None,
         )
     except Exception as exc:
         logger.exception("Embedding build failed")
-        _set_build_state(running=False, stage="error", message=f"Embedding build failed: {exc}", finished_at=time(), error=str(exc))
+        _set_build_state(
+            running=False,
+            stage="error",
+            message=f"Embedding build failed: {exc}",
+            finished_at=time(),
+            error=str(exc),
+        )
 
 
-def start_embedding_build() -> dict[str, Any]:
+def start_embedding_build(
+    *,
+    changed_paths: list[str] | set[str] | None = None,
+    removed_chunk_ids: list[str] | set[str] | None = None,
+    force: bool = False,
+) -> dict[str, Any]:
+    changed = {str(path) for path in (changed_paths or [])}
+    removed = {str(chunk_id) for chunk_id in (removed_chunk_ids or [])}
     with _build_lock:
         if _build_state["running"]:
             return dict(_build_state)
@@ -292,27 +442,17 @@ def start_embedding_build() -> dict[str, Any]:
             "started_at": time(),
             "finished_at": None,
             "error": None,
+            "mode": "full" if force else "incremental",
+            "reused": 0,
+            "embedded_new": 0,
         })
-    Thread(target=_background_build_worker, name="ttlibrarian-embedding-build", daemon=True).start()
+    Thread(
+        target=_background_build_worker,
+        args=(changed, removed, force),
+        name="ttlibrarian-embedding-build",
+        daemon=True,
+    ).start()
     return embedding_build_status()
-
-
-def _load_embedding_cache():
-    if not EMBEDDINGS_FILE.exists() or not EMBEDDING_META_FILE.exists():
-        return None, None
-    try:
-        metadata = json.loads(EMBEDDING_META_FILE.read_text(encoding="utf-8"))
-        if metadata.get("embedding_version") != EMBEDDING_VERSION:
-            return None, None
-        if metadata.get("model") != selected_model()["model"]:
-            return None, None
-        vectors = np.load(EMBEDDINGS_FILE, mmap_mode="r")
-        if vectors.shape[0] != len(metadata.get("chunk_ids", [])):
-            return None, None
-        return vectors, metadata
-    except Exception:
-        logger.exception("Unable to load embedding cache")
-        return None, None
 
 
 def semantic_scores(query: str, allowed_chunk_ids: set[str] | None = None, limit: int = 40) -> list[dict[str, Any]]:

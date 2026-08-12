@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Play Workspace - {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="ttl-workspace">
+  <form method="get" action="/workspace" class="ttl-workspace-toolbar">
+    <div class="ttl-workspace-title">
+      <div class="eyebrow">Play Workspace</div>
+      <strong>Rules + Book + Character</strong>
+    </div>
+
+    <label>
+      <span>Character</span>
+      <select name="character" onchange="this.form.submit()">
+        {% if not character_options %}<option value="">No characters available</option>{% endif %}
+        {% for item in character_options %}
+        <option value="{{ item.value }}" {% if item.value == selected_character %}selected{% endif %}>
+          {{ item.label }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label>
+      <span>Book</span>
+      <select name="document" onchange="this.form.submit()">
+        {% if not document_options %}<option value="">No documents available</option>{% endif %}
+        {% for item in document_options %}
+        <option value="{{ item.value }}" {% if item.value == selected_document %}selected{% endif %}>
+          {{ item.label }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <div class="ttl-workspace-layout-buttons" aria-label="Workspace layout">
+      <button type="button" data-workspace-mode="search-small" class="is-active">Search 1/3</button>
+      <button type="button" data-workspace-mode="search-large">Search 2/3</button>
+      <button type="button" data-workspace-mode="book-focus">Book Focus</button>
+    </div>
+  </form>
+
+  {% if selected_character_row and selected_document_row %}
+  <div class="ttl-workspace-grid mode-search-small" id="ttl-workspace-grid">
+    <section class="ttl-workspace-pane ttl-workspace-ask">
+      <div class="ttl-workspace-pane-label">AI Ask / Search</div>
+      <iframe
+        id="ttl-workspace-ask-frame"
+        title="Character-aware rules assistant"
+        src="/ask?embed=1&split=1&workspace_compact=1&lock_character=1&character={{ selected_character|urlencode }}&folder={{ selected_document_row.folder|urlencode }}&doc={{ selected_document_row.doc_key|urlencode }}"
+      ></iframe>
+    </section>
+
+    <section class="ttl-workspace-pane ttl-workspace-book">
+      <div class="ttl-workspace-pane-label">Book Viewer</div>
+      <iframe
+        id="ttl-workspace-book-frame"
+        title="{{ selected_document_row.display_name }}"
+        src="/read/{{ selected_document_row.folder|urlencode }}/{{ selected_document_row.doc_key|urlencode }}?embed=1&workspace=1"
+      ></iframe>
+    </section>
+
+    <section class="ttl-workspace-pane ttl-workspace-character">
+      <div class="ttl-workspace-pane-label">Character Sheet</div>
+      <iframe
+        id="ttl-workspace-character-frame"
+        title="{{ selected_character_row.name }}"
+        src="/characters/{{ selected_character_row.character_id }}?embed=1{% if user.role == 'gm' and selected_character_row.owner != user.username %}&owner={{ selected_character_row.owner|urlencode }}{% endif %}"
+      ></iframe>
+    </section>
+  </div>
+  {% else %}
+  <div class="ttl-card ttl-workspace-empty">
+    {% if not character_options %}
+      <strong>No completed character is available.</strong>
+      <p>Create or import a character before opening the play workspace.</p>
+    {% elif not document_options %}
+      <strong>No readable library document is available.</strong>
+      <p>Add a rules document to the library and update the knowledgebase first.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+<script>
+(() => {
+  const grid=document.getElementById("ttl-workspace-grid");
+  if(!grid)return;
+
+  const buttons=[...document.querySelectorAll("[data-workspace-mode]")];
+  const allowed=new Set(["search-small","search-large","book-focus"]);
+  const key="ttl-workspace-layout";
+  let mode=localStorage.getItem(key)||"search-small";
+  if(!allowed.has(mode))mode="search-small";
+
+  function apply(next){
+    if(!allowed.has(next))return;
+    grid.classList.remove("mode-search-small","mode-search-large","mode-book-focus");
+    grid.classList.add("mode-"+next);
+    buttons.forEach(button=>{
+      const active=button.dataset.workspaceMode===next;
+      button.classList.toggle("is-active",active);
+      button.setAttribute("aria-pressed",active?"true":"false");
+    });
+    localStorage.setItem(key,next);
+  }
+
+  buttons.forEach(button=>{
+    button.addEventListener("click",()=>apply(button.dataset.workspaceMode));
+  });
+  apply(mode);
+
+  const askFrame=document.getElementById("ttl-workspace-ask-frame");
+  const bookFrame=document.getElementById("ttl-workspace-book-frame");
+
+  window.addEventListener("message",event=>{
+    if(event.origin!==window.location.origin||!event.data)return;
+    if(event.source!==askFrame?.contentWindow)return;
+    if(event.data.type==="ttl-source-jump"){
+      bookFrame?.contentWindow?.postMessage(event.data,window.location.origin);
+    }
+  });
+})();
+</script>
+{% endblock %}

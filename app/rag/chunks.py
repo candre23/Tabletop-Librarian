@@ -47,6 +47,8 @@ def chunk_build_status() -> dict[str, Any]:
 
 
 def _chunk_id(path: str, page: int, ordinal: int, text: str) -> str:
+    # Preserve the established ID format so existing embeddings for unchanged
+    # documents remain reusable across the incremental-indexing upgrade.
     raw = f"{path}\0{page}\0{ordinal}\0{text[:200]}".encode(
         "utf-8",
         errors="surrogatepass",
@@ -126,137 +128,223 @@ def chunk_page(text: str) -> list[str]:
     return [chunk for chunk in chunks if len(chunk.strip()) >= MIN_CHARS]
 
 
-def _plan_build() -> tuple[list[dict[str, Any]], int]:
-    _set_build_state(
-        stage="scanning",
-        message="Scanning indexed documents and counting pages...",
-        current=0,
-        total=0,
-        percent=0.0,
-    )
-
-    planned = []
-    seen_paths = set()
-    total_pages = 0
-
-    for folder in list_folders():
-        scan = scan_folder(folder, generate_covers=False)
-
-        for document in scan["documents"]:
-            path_text = document["path"]
-
-            if path_text in seen_paths:
-                continue
-
-            seen_paths.add(path_text)
-
-            if document["type"] not in {"PDF", "Text", "Markdown"}:
-                continue
-
-            cached = load_cached_text(Path(path_text))
-            if cached is None:
-                continue
-
-            page_count = sum(
-                1
-                for page_data in cached.get("pages", [])
-                if page_data.get("text", "").strip()
-            )
-
-            if page_count == 0:
-                continue
-
-            planned.append(
-                {
-                    "path": path_text,
-                    "filename": document["filename"],
-                    "display_name": document["display_name"],
-                    "type": document["type"],
-                }
-            )
-            total_pages += page_count
-
-    return planned, total_pages
+def _load_chunk_payload() -> dict[str, Any] | None:
+    if not CHUNK_CACHE_FILE.exists():
+        return None
+    try:
+        data = json.loads(CHUNK_CACHE_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if data.get("chunk_version") != CHUNK_VERSION:
+        return None
+    if not isinstance(data.get("chunks"), list):
+        return None
+    return data
 
 
-def build_chunk_cache() -> dict[str, int]:
-    RAG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-
-    planned, total_pages = _plan_build()
-
-    chunks = []
-    documents = 0
+def _document_chunks(path_text: str, cached: dict[str, Any]) -> tuple[list[dict[str, Any]], int, int]:
+    filename = str(cached.get("filename") or Path(path_text).name)
+    display_name = str(cached.get("display_name") or Path(path_text).stem)
+    document_type = str(cached.get("type") or "PDF")
+    chunks: list[dict[str, Any]] = []
     pages = 0
     characters = 0
 
-    _set_build_state(
-        stage="chunking",
-        message=f"Building context chunks from {total_pages:,} pages...",
-        current=0,
-        total=total_pages,
-        percent=0.0,
-    )
-
-    for document in planned:
-        cached = load_cached_text(Path(document["path"]))
-        if cached is None:
+    for page_data in cached.get("pages", []):
+        page_number = int(page_data.get("page", 1))
+        page_text = str(page_data.get("text", ""))
+        if not page_text.strip():
             continue
 
-        documents += 1
+        for ordinal, chunk_text in enumerate(chunk_page(page_text)):
+            characters += len(chunk_text)
+            chunks.append(
+                {
+                    "id": _chunk_id(path_text, page_number, ordinal, chunk_text),
+                    "path": path_text,
+                    "filename": filename,
+                    "display_name": display_name,
+                    "type": document_type,
+                    "page": page_number,
+                    "ordinal": ordinal,
+                    "text": chunk_text,
+                }
+            )
+        pages += 1
 
-        for page_data in cached.get("pages", []):
-            page_number = int(page_data.get("page", 1))
-            page_text = page_data.get("text", "")
+    return chunks, pages, characters
 
-            if not page_text.strip():
+
+def _current_cached_documents() -> list[tuple[str, dict[str, Any]]]:
+    planned: list[tuple[str, dict[str, Any]]] = []
+    seen_paths: set[str] = set()
+
+    for folder in list_folders():
+        scan = scan_folder(folder, generate_covers=False)
+        for document in scan["documents"]:
+            path_text = str(Path(document["path"]).resolve())
+            if path_text in seen_paths:
                 continue
+            seen_paths.add(path_text)
+            if document["type"] not in {"PDF", "Text", "Markdown", "CBZ", "CBR"}:
+                continue
+            cached = load_cached_text(Path(path_text))
+            if cached is None:
+                continue
+            if not any(str(page.get("text", "")).strip() for page in cached.get("pages", [])):
+                continue
+            planned.append((path_text, cached))
 
-            for ordinal, chunk_text in enumerate(chunk_page(page_text)):
-                characters += len(chunk_text)
-                chunks.append(
-                    {
-                        "id": _chunk_id(
-                            document["path"],
-                            page_number,
-                            ordinal,
-                            chunk_text,
-                        ),
-                        "path": document["path"],
-                        "filename": document["filename"],
-                        "display_name": document["display_name"],
-                        "type": document["type"],
-                        "page": page_number,
-                        "ordinal": ordinal,
-                        "text": chunk_text,
-                    }
-                )
+    return planned
 
-            pages += 1
-            percent = (pages / total_pages * 100.0) if total_pages else 100.0
+
+def _payload_from_chunks(chunks: list[dict[str, Any]]) -> dict[str, Any]:
+    documents = {str(chunk.get("path") or "") for chunk in chunks if chunk.get("path")}
+    pages = {
+        (str(chunk.get("path") or ""), int(chunk.get("page", 1)))
+        for chunk in chunks
+        if chunk.get("path")
+    }
+    return {
+        "chunk_version": CHUNK_VERSION,
+        "documents": len(documents),
+        "pages": len(pages),
+        "characters": sum(len(str(chunk.get("text", ""))) for chunk in chunks),
+        "chunks": chunks,
+    }
+
+
+def build_chunk_cache(
+    *,
+    changed_paths: list[str] | set[str] | None = None,
+    removed_paths: list[str] | set[str] | None = None,
+    force: bool = False,
+) -> dict[str, Any]:
+    """Build or incrementally update the context-chunk cache.
+
+    Normal knowledgebase updates pass the paths whose extracted text changed and
+    paths removed from the library. Existing chunks for every other document are
+    copied through untouched. A missing/incompatible chunk cache automatically
+    falls back to a full build.
+    """
+    RAG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    old_payload = _load_chunk_payload()
+    full_rebuild = force or old_payload is None
+
+    changed = {str(Path(path).resolve()) for path in (changed_paths or [])}
+    removed = {str(Path(path).resolve()) for path in (removed_paths or [])}
+    affected = changed | removed
+
+    if full_rebuild:
+        _set_build_state(
+            stage="scanning",
+            message="Scanning indexed documents and counting pages...",
+            current=0,
+            total=0,
+            percent=0.0,
+        )
+        planned = _current_cached_documents()
+        total_pages = sum(
+            sum(1 for page in cached.get("pages", []) if str(page.get("text", "")).strip())
+            for _, cached in planned
+        )
+        _set_build_state(
+            stage="chunking",
+            message=f"Building context chunks from {total_pages:,} pages...",
+            current=0,
+            total=total_pages,
+            percent=0.0,
+        )
+        chunks: list[dict[str, Any]] = []
+        pages_done = 0
+        for path_text, cached in planned:
+            document_chunks, document_pages, _ = _document_chunks(path_text, cached)
+            chunks.extend(document_chunks)
+            pages_done += document_pages
             _set_build_state(
                 stage="chunking",
-                message=f"Processed {pages:,} of {total_pages:,} pages",
-                current=pages,
+                message=f"Processed {pages_done:,} of {total_pages:,} pages",
+                current=pages_done,
                 total=total_pages,
-                percent=percent,
+                percent=(pages_done / total_pages * 100.0) if total_pages else 100.0,
             )
+        removed_chunk_ids: list[str] = []
+        new_chunk_ids = [chunk["id"] for chunk in chunks]
+        updated_documents = len({chunk["path"] for chunk in chunks})
+        removed_documents = 0
+    else:
+        old_chunks = list(old_payload.get("chunks", []))
+        removed_chunk_ids = [
+            str(chunk.get("id") or "")
+            for chunk in old_chunks
+            if str(Path(str(chunk.get("path") or "")).resolve()) in affected
+        ]
+        chunks = [
+            chunk
+            for chunk in old_chunks
+            if str(Path(str(chunk.get("path") or "")).resolve()) not in affected
+        ]
+
+        cached_by_path: dict[str, dict[str, Any]] = {}
+        total_pages = 0
+        for path_text in sorted(changed):
+            cached = load_cached_text(Path(path_text))
+            if cached is None:
+                continue
+            cached_by_path[path_text] = cached
+            total_pages += sum(
+                1 for page in cached.get("pages", []) if str(page.get("text", "")).strip()
+            )
+
+        _set_build_state(
+            stage="chunking",
+            message=(
+                f"Updating context chunks for {len(changed):,} changed document"
+                f"{'s' if len(changed) != 1 else ''}..."
+            ),
+            current=0,
+            total=total_pages,
+            percent=0.0,
+        )
+
+        pages_done = 0
+        new_chunk_ids: list[str] = []
+        for path_text in sorted(changed):
+            cached = cached_by_path.get(path_text)
+            if cached is None:
+                continue
+            document_chunks, document_pages, _ = _document_chunks(path_text, cached)
+            chunks.extend(document_chunks)
+            new_chunk_ids.extend(chunk["id"] for chunk in document_chunks)
+            pages_done += document_pages
+            _set_build_state(
+                stage="chunking",
+                message=f"Processed {pages_done:,} of {total_pages:,} changed pages",
+                current=pages_done,
+                total=total_pages,
+                percent=(pages_done / total_pages * 100.0) if total_pages else 100.0,
+            )
+
+        updated_documents = len(changed)
+        removed_documents = len(removed)
+
+    # Keep deterministic document/page ordering for stable retrieval and vector files.
+    chunks.sort(
+        key=lambda chunk: (
+            str(chunk.get("path", "")).casefold(),
+            int(chunk.get("page", 1)),
+            int(chunk.get("ordinal", 0)),
+        )
+    )
 
     _set_build_state(
         stage="saving",
         message="Saving context chunk cache...",
-        current=pages,
+        current=pages_done,
         total=total_pages,
         percent=100.0,
     )
-
-    payload = {
-        "chunk_version": CHUNK_VERSION,
-        "documents": documents,
-        "pages": pages,
-        "characters": characters,
-        "chunks": chunks,
-    }
-
+    payload = _payload_from_chunks(chunks)
     CHUNK_CACHE_FILE.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
@@ -264,16 +352,23 @@ def build_chunk_cache() -> dict[str, int]:
     mark_chunks_current()
 
     return {
-        "documents": documents,
-        "pages": pages,
+        "documents": payload["documents"],
+        "pages": payload["pages"],
         "chunks": len(chunks),
-        "characters": characters,
+        "characters": payload["characters"],
+        "updated_documents": updated_documents,
+        "removed_documents": removed_documents,
+        "changed_paths": sorted(changed),
+        "removed_paths": sorted(removed),
+        "removed_chunk_ids": [chunk_id for chunk_id in removed_chunk_ids if chunk_id],
+        "new_chunk_ids": new_chunk_ids,
+        "full_rebuild": full_rebuild,
     }
 
 
 def _background_build_worker() -> None:
     try:
-        result = build_chunk_cache()
+        result = build_chunk_cache(force=True)
         _set_build_state(
             running=False,
             stage="complete",
@@ -301,7 +396,6 @@ def start_chunk_build() -> dict[str, Any]:
     with _build_lock:
         if _build_state["running"]:
             return dict(_build_state)
-
         _build_state.update(
             {
                 "running": True,
@@ -315,33 +409,18 @@ def start_chunk_build() -> dict[str, Any]:
                 "error": None,
             }
         )
-
-    Thread(
-        target=_background_build_worker,
-        name="ttlibrarian-chunk-build",
-        daemon=True,
-    ).start()
-
+    Thread(target=_background_build_worker, name="ttlibrarian-chunk-build", daemon=True).start()
     return chunk_build_status()
 
 
 def load_chunks() -> list[dict]:
-    if not CHUNK_CACHE_FILE.exists():
-        return []
-
-    try:
-        data = json.loads(CHUNK_CACHE_FILE.read_text(encoding="utf-8"))
-    except Exception:
-        return []
-
-    if data.get("chunk_version") != CHUNK_VERSION:
-        return []
-
-    return data.get("chunks", [])
+    payload = _load_chunk_payload()
+    return list(payload.get("chunks", [])) if payload else []
 
 
 def chunk_cache_status() -> dict[str, int]:
-    if not CHUNK_CACHE_FILE.exists():
+    payload = _load_chunk_payload()
+    if payload is None:
         return {
             "documents": 0,
             "pages": 0,
@@ -349,24 +428,13 @@ def chunk_cache_status() -> dict[str, int]:
             "characters": 0,
             "cache_bytes": 0,
         }
-
-    try:
-        data = json.loads(CHUNK_CACHE_FILE.read_text(encoding="utf-8"))
-        return {
-            "documents": data.get("documents", 0),
-            "pages": data.get("pages", 0),
-            "chunks": len(data.get("chunks", [])),
-            "characters": data.get("characters", 0),
-            "cache_bytes": CHUNK_CACHE_FILE.stat().st_size,
-        }
-    except Exception:
-        return {
-            "documents": 0,
-            "pages": 0,
-            "chunks": 0,
-            "characters": 0,
-            "cache_bytes": 0,
-        }
+    return {
+        "documents": int(payload.get("documents", 0)),
+        "pages": int(payload.get("pages", 0)),
+        "chunks": len(payload.get("chunks", [])),
+        "characters": int(payload.get("characters", 0)),
+        "cache_bytes": CHUNK_CACHE_FILE.stat().st_size,
+    }
 
 
 def clear_chunk_cache() -> None:

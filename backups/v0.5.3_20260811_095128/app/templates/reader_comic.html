@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document.display_name }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="reader-shell">
+    <div class="reader-toolbar comic-toolbar">
+        <div class="reader-title-group">
+            <a class="button-link secondary-button compact-button" href="/library/{{ folder.name|urlencode }}">Back</a>
+            <div>
+                <div class="eyebrow">{{ folder.name }}</div>
+                <div class="reader-title">{{ document.display_name }}</div>
+            </div>
+        </div>
+
+        {% if page_count %}
+        <div class="comic-controls">
+            <button id="prevPage" class="secondary-button compact-button">Previous</button>
+            <span>
+                Page
+                <input id="pageInput" type="number" min="1" max="{{ page_count }}" value="1">
+                of {{ page_count }}
+            </span>
+            <button id="nextPage" class="secondary-button compact-button">Next</button>
+            <select id="fitMode">
+                <option value="width">Fit width</option>
+                <option value="page">Fit page</option>
+                <option value="actual">Actual size</option>
+            </select>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if page_count %}
+    <div id="comicViewport" class="comic-reader fit-width">
+        <img
+            id="comicImage"
+            src="/comic-page/{{ folder.name|urlencode }}/{{ document.key }}/0"
+            alt="Page 1"
+        >
+    </div>
+    {% else %}
+    <div class="error">No readable image pages were found in this archive.</div>
+    {% endif %}
+</section>
+
+{% if page_count %}
+<script>
+(() => {
+    const pageCount = {{ page_count }};
+    let currentPage = 0;
+
+    const image = document.getElementById("comicImage");
+    const input = document.getElementById("pageInput");
+    const prev = document.getElementById("prevPage");
+    const next = document.getElementById("nextPage");
+    const fit = document.getElementById("fitMode");
+    const viewport = document.getElementById("comicViewport");
+
+    function loadPage(index) {
+        currentPage = Math.max(0, Math.min(pageCount - 1, index));
+        image.src = "/comic-page/{{ folder.name|urlencode }}/{{ document.key }}/" + currentPage;
+        image.alt = "Page " + (currentPage + 1);
+        input.value = currentPage + 1;
+        prev.disabled = currentPage === 0;
+        next.disabled = currentPage === pageCount - 1;
+        viewport.scrollTop = 0;
+    }
+
+    prev.addEventListener("click", () => loadPage(currentPage - 1));
+    next.addEventListener("click", () => loadPage(currentPage + 1));
+
+    input.addEventListener("change", () => {
+        const requested = parseInt(input.value, 10);
+        if (!Number.isNaN(requested)) loadPage(requested - 1);
+    });
+
+    fit.addEventListener("change", () => {
+        viewport.className = "comic-reader fit-" + fit.value;
+    });
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "ArrowLeft") loadPage(currentPage - 1);
+        if (event.key === "ArrowRight") loadPage(currentPage + 1);
+    });
+
+    loadPage(0);
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -4,11 +4,16 @@ import json
 import os
 import urllib.error
 import urllib.request
+from threading import Event
 from typing import Any
 
 from app.config import DATA_DIR
 
 SETTINGS_FILE = DATA_DIR / "ai_provider.json"
+
+class AIRequestCancelled(RuntimeError):
+    pass
+
 
 DEFAULT_SETTINGS = {
     "provider": "openai_compatible",
@@ -18,6 +23,7 @@ DEFAULT_SETTINGS = {
     "timeout": 120,
     "temperature": 0.2,
     "max_tokens": 1200,
+    "pipeline_preset": "qwen3.5-9b-v10",
 }
 
 
@@ -34,6 +40,7 @@ def load_provider_settings() -> dict[str, Any]:
     settings["base_url"] = str(settings.get("base_url", "")).rstrip("/")
     settings["model"] = str(settings.get("model", DEFAULT_SETTINGS["model"])).strip()
     settings["api_key"] = str(settings.get("api_key", "")).strip()
+    settings["pipeline_preset"] = str(settings.get("pipeline_preset", DEFAULT_SETTINGS["pipeline_preset"]) or DEFAULT_SETTINGS["pipeline_preset"]).strip()
 
     try:
         settings["timeout"] = max(5, min(600, int(settings.get("timeout", 120))))
@@ -62,12 +69,13 @@ def provider_settings_for_ui() -> dict[str, Any]:
         "timeout": settings["timeout"],
         "temperature": settings["temperature"],
         "max_tokens": settings["max_tokens"],
+        "pipeline_preset": settings["pipeline_preset"],
         "has_api_key": bool(settings["api_key"]),
         "configured": bool(settings["base_url"] and settings["model"]),
     }
 
 
-def save_provider_settings(*, base_url: str, model: str, api_key: str = "", timeout: int | str = 120, temperature: float | str = 0.2, max_tokens: int | str = 1200) -> dict[str, Any]:
+def save_provider_settings(*, base_url: str, model: str, api_key: str = "", timeout: int | str = 120, temperature: float | str = 0.2, max_tokens: int | str = 1200, pipeline_preset: str | None = None) -> dict[str, Any]:
     current = load_provider_settings()
     base_url = str(base_url or "").strip().rstrip("/")
     model = str(model or "").strip()
@@ -95,6 +103,7 @@ def save_provider_settings(*, base_url: str, model: str, api_key: str = "", time
         raise ValueError("Maximum output tokens must be a whole number.") from exc
 
     submitted_key = str(api_key or "").strip()
+    submitted_pipeline = str(pipeline_preset or "").strip()
     settings = {
         "provider": "openai_compatible",
         "base_url": base_url,
@@ -103,6 +112,7 @@ def save_provider_settings(*, base_url: str, model: str, api_key: str = "", time
         "timeout": timeout_value,
         "temperature": temperature_value,
         "max_tokens": max_tokens_value,
+        "pipeline_preset": submitted_pipeline or current.get("pipeline_preset", DEFAULT_SETTINGS["pipeline_preset"]),
     }
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -162,16 +172,184 @@ def test_provider_connection() -> dict[str, Any]:
     return {"ok": True, "models": models, "configured_model": settings["model"]}
 
 
-def chat_completion(messages: list[dict[str, str]]) -> dict[str, Any]:
+def provider_health_check(*, timeout: float = 2.0) -> dict[str, Any]:
+    """Fast reachability check used before any user-facing generation request."""
+    settings = load_provider_settings()
+    if not settings["base_url"]:
+        return {
+            "ok": False,
+            "configured": False,
+            "message": "AI backend is not configured.",
+        }
+
+    try:
+        result = _request_json(
+            "GET",
+            f"{settings['base_url']}/models",
+            timeout=max(0.5, min(float(timeout), 5.0)),
+        )
+    except Exception as exc:
+        return {
+            "ok": False,
+            "configured": True,
+            "message": f"AI backend is unavailable: {exc}",
+        }
+
+    models = [
+        str(item.get("id"))
+        for item in result.get("data", [])
+        if isinstance(item, dict) and item.get("id")
+    ]
+    return {
+        "ok": True,
+        "configured": True,
+        "message": "AI backend is available.",
+        "models": models,
+        "configured_model": settings["model"],
+    }
+
+
+def _streaming_chat_completion(
+    messages: list[dict[str, str]],
+    *,
+    cancel_event: Event,
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+    model: str | None = None,
+) -> dict[str, Any]:
+    """OpenAI-compatible streaming request that can be interrupted by TTL."""
     settings = load_provider_settings()
     if not settings["base_url"]:
         raise RuntimeError("AI provider is not configured.")
 
     payload = {
-        "model": settings["model"],
+        "model": str(model or settings["model"]),
         "messages": messages,
-        "temperature": settings["temperature"],
-        "max_tokens": settings["max_tokens"],
+        "temperature": settings["temperature"] if temperature is None else max(0.0, min(2.0, float(temperature))),
+        "max_tokens": settings["max_tokens"] if max_tokens is None else max(64, min(8192, int(max_tokens))),
+        "stream": True,
+    }
+
+    headers = {
+        "Accept": "text/event-stream",
+        "Content-Type": "application/json",
+    }
+    if settings["api_key"]:
+        headers["Authorization"] = f"Bearer {settings['api_key']}"
+
+    request = urllib.request.Request(
+        f"{settings['base_url']}/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST",
+    )
+
+    parts: list[str] = []
+    response_model = str(model or settings["model"])
+    usage: dict[str, Any] = {}
+
+    try:
+        with urllib.request.urlopen(request, timeout=settings["timeout"]) as response:
+            while True:
+                if cancel_event.is_set():
+                    # Exiting the response context closes the client socket. Most
+                    # OpenAI-compatible local servers, including llama.cpp, stop
+                    # generation when the streaming client disconnects.
+                    raise AIRequestCancelled("AI request cancelled.")
+
+                raw_line = response.readline()
+                if not raw_line:
+                    break
+
+                line = raw_line.decode("utf-8", errors="replace").strip()
+                if not line or line.startswith(":"):
+                    continue
+                if not line.startswith("data:"):
+                    continue
+
+                data = line[5:].strip()
+                if data == "[DONE]":
+                    break
+
+                try:
+                    event = json.loads(data)
+                except json.JSONDecodeError:
+                    continue
+
+                if isinstance(event.get("model"), str):
+                    response_model = event["model"]
+
+                if isinstance(event.get("usage"), dict):
+                    usage = event["usage"]
+
+                choices = event.get("choices")
+                if not isinstance(choices, list) or not choices:
+                    continue
+
+                choice = choices[0] if isinstance(choices[0], dict) else {}
+                delta = choice.get("delta")
+                if isinstance(delta, dict):
+                    content = delta.get("content")
+                    if isinstance(content, str):
+                        parts.append(content)
+                else:
+                    # Some compatible servers stream a message/text shape.
+                    message = choice.get("message")
+                    if isinstance(message, dict) and isinstance(message.get("content"), str):
+                        parts.append(message["content"])
+                    elif isinstance(choice.get("text"), str):
+                        parts.append(choice["text"])
+
+    except AIRequestCancelled:
+        raise
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Provider returned HTTP {exc.code}: {body[:500]}") from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"Could not reach AI provider: {exc.reason}") from exc
+    except TimeoutError as exc:
+        raise RuntimeError("AI provider request timed out.") from exc
+
+    if cancel_event.is_set():
+        raise AIRequestCancelled("AI request cancelled.")
+
+    content = "".join(parts).strip()
+    if not content:
+        raise RuntimeError("AI provider returned an empty response.")
+
+    return {
+        "content": content,
+        "model": response_model,
+        "usage": usage,
+    }
+
+
+def chat_completion(
+    messages: list[dict[str, str]],
+    *,
+    cancel_event: Event | None = None,
+    temperature: float | None = None,
+    max_tokens: int | None = None,
+    model: str | None = None,
+) -> dict[str, Any]:
+    if cancel_event is not None:
+        return _streaming_chat_completion(
+            messages,
+            cancel_event=cancel_event,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            model=model,
+        )
+
+    settings = load_provider_settings()
+    if not settings["base_url"]:
+        raise RuntimeError("AI provider is not configured.")
+
+    payload = {
+        "model": str(model or settings["model"]),
+        "messages": messages,
+        "temperature": settings["temperature"] if temperature is None else max(0.0, min(2.0, float(temperature))),
+        "max_tokens": settings["max_tokens"] if max_tokens is None else max(64, min(8192, int(max_tokens))),
         "stream": False,
     }
 
@@ -187,6 +365,6 @@ def chat_completion(messages: list[dict[str, str]]) -> dict[str, Any]:
 
     return {
         "content": content.strip(),
-        "model": result.get("model", settings["model"]),
+        "model": result.get("model", str(model or settings["model"])),
         "usage": result.get("usage") or {},
     }

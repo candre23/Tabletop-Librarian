@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body{% if embed %} class="ttl-embedded-page"{% endif %}>
+    {% if not embed %}
+      {% include "_global_nav.html" %}
+      {% set base_role = (request.session.get("role") or "player")|lower if request else "player" %}
+      {% if not error_page and base_role == "gm" %}
+        {% set kb_state = knowledgebase_status() %}
+        {% if kb_state.library_changed %}
+        <div class="knowledgebase-global-warning">
+          <a href="/admin/knowledgebase"><strong>Library contents have changed - knowledgebase will need to be updated.</strong></a>
+        </div>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+    <main class="shell{% if embed %} ttl-embedded-shell{% endif %}">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

@@ -6,7 +6,7 @@
 <section class="reader-shell">
     <div class="reader-toolbar comic-toolbar">
         <div class="reader-title-group">
-            <a class="button-link secondary-button compact-button" href="/library/{{ folder.name|urlencode }}">Back</a>
+            {% if not embed %}<a class="button-link secondary-button compact-button" href="/library/{{ folder.name|urlencode }}">Back</a>{% endif %}
             <div>
                 <div class="eyebrow">{{ folder.name }}</div>
                 <div class="reader-title">{{ document.display_name }}</div>
@@ -15,6 +15,12 @@
 
         {% if page_count %}
         <div class="comic-controls">
+            {% if not embed %}
+            <a
+              class="button-link secondary-button compact-button"
+              href="/workspace?document={{ (folder.name ~ '\t' ~ document.key)|urlencode }}"
+            >Workspace</a>
+            {% endif %}
             <button id="prevPage" class="secondary-button compact-button">Previous</button>
             <span>
                 Page

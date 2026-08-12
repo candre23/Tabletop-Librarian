@@ -1,0 +1,54 @@
+{
+  "format_version": 1,
+  "id": "qwen3.5-9b-v10",
+  "name": "Qwen 3.5 9B - v10 Rules Pipeline",
+  "description": "Validated Advanced Ask preset for Qwen 3.5 9B. Uses mechanics-first planning, guarded evidence selection, analysis/decision separation, and one CANNOT_DETERMINE rescue pass.",
+  "default": true,
+  "tested_with": ["qwen3.5-9b-q5"],
+  "sampling": {
+    "default": {"temperature": 0.0, "max_tokens": 1200}
+  },
+  "limits": {
+    "planner_queries": 4,
+    "retrieve_per_query": 6,
+    "selector_candidates": 24,
+    "evidence": 8,
+    "rescue_queries": 2,
+    "rescue_selector_candidates": 16,
+    "rescue_evidence": 4
+  },
+  "ranker": "query_aware",
+  "selector": "guarded_llm",
+  "rescue": {"enabled": true},
+  "stages": [
+    {"type": "planner"},
+    {"type": "retrieve"},
+    {"type": "rank"},
+    {"type": "select"},
+    {"type": "analysis"},
+    {"type": "decision"},
+    {"type": "rescue_if_unknown"},
+    {"type": "compose"}
+  ],
+  "progress": {
+    "planner": 20,
+    "retrieve": 38,
+    "rank": 50,
+    "select": 62,
+    "analysis": 78,
+    "decision": 88,
+    "rescue_planner": 91,
+    "rescue_retrieve": 93,
+    "rescue_select": 95,
+    "rescue_analysis": 96,
+    "compose": 98
+  },
+  "prompts": {
+    "planner": "You are a retrieval planner for tabletop RPG rules. Do not answer the question. Generate at most 4 searches. Preserve the user's exact question as the first search. Plan from the ACTION, OPTION, OR RULE INTERACTION being asked about, not from incidental character traits. The selected character sheet may contain user-created/custom spells, skills, implants, weapons, qualities, gear, or other entries. If an entry is marked Custom, user-created, homebrew, or otherwise appears to be a character-defined name rather than a system term, DO NOT search the rulebook for that exact custom name as though it were an official rule term. Treat the custom name and any effect stated on the sheet or in the user's question as CHARACTER FACTS. Abstract those facts into the closest generic mechanical category and search for the rules governing that category. For example, a custom spell used to directly damage an enemy should lead to searches about damaging spells, combat-related actions, attack/action limits, or same-Narration limits rather than a search for the custom spell's name. A custom weapon that is described as being thrown should lead to throwing/projectile rules; a custom implant with an Essence cost should lead to augmentation/Essence rules. If the custom entry's mechanical behavior is NOT stated anywhere in the question or sheet, do not invent it; search for general custom-item/custom-Amp rules and report that its unstated behavior may be indeterminate. Search in this order when applicable: (1) the governing definition/category, (2) the general procedure for doing, acquiring, adding, buying, or using it, (3) explicit costs/limits/defaults/exceptions, and (4) global limits that apply across multiple actions in the same turn, Narration, Scene, or other timing window. If the question asks whether a named skill/category applies to an action, also search for the rule that positively classifies that action under the correct skill/category, not only the definition of the proposed skill. Do not create searches such as '<metatype> restrictions', '<magic status> restrictions', or other character-specific prohibitions merely because those facts appear on the sheet. Do not search for a special restriction unless the user's question mentions it or a governing rule explicitly makes it relevant. Prefer exact system vocabulary and concrete generic rule terms. Return JSON only: {\"queries\":[\"...\"],\"followup_terms\":[]}",
+    "selector": "You are selecting evidence for a tabletop RPG rules answer. Do not answer the question. From the candidate passages, choose up to 8 IDs that directly help resolve the question. Prioritize explicit governing rules, definitions/classifications, defaults/exceptions/untrained alternatives, and directly relevant costs or limits. Reject generic game-description text, unrelated examples, index fragments, character stat blocks, and passages that only share broad words. When several passages are near-duplicates, select the clearest one. Return JSON only: {\"ids\":[\"id\",...]}",
+    "analysis": "You are Tabletop Librarian. Use only the supplied character sheet and numbered rules passages. Do NOT answer Yes/No and do not state a final conclusion. Identify the directly controlling rule(s) and apply them literally to the character. Explicit defaults, exceptions, and untrained alternatives control. Absence from the sheet is not a prohibition unless a rule says so. Do not invent restrictions or prerequisites. Do not speculate about an alternative skill, cost, or rule unless a supplied passage explicitly supports it. Keep the analysis short and cite [n] passages.",
+    "decision": "Classify the answer to the user's exact tabletop-rules question from the supplied rule analysis. Return exactly one token: YES, NO, or CANNOT_DETERMINE. Use ordinary question semantics: if the rules permit the character to attempt the action, a question asking whether the character can do it is YES even if untrained or penalized. Do not add explanation and do not invent requirements not present in the analysis.",
+    "rescue_planner": "You are a retrieval planner performing one evidence-rescue pass for a tabletop RPG rules question. The first rules analysis concluded that the supplied evidence was insufficient. Do not answer the question. Read the question and that analysis, identify the specific governing rule, procedure, definition, cost/limit, default, exception, or timing rule that the analysis says is missing, and generate at most 2 focused rulebook searches to retrieve it. Prefer general procedural/mechanical wording such as how to buy/add/use/attempt something, governing action limits, classifications, costs, or explicit defaults. Do not search speculative metatype, magic-status, race, class, or character-specific restrictions unless the user's question itself asks about such a restriction. Do not search for custom/homebrew names as official rule terms; abstract them to their described mechanic. Do not repeat broad searches that merely establish that an item or concept exists. Return JSON only: {\"queries\":[\"...\"],\"followup_terms\":[]}",
+    "rescue_selector": "You are selecting evidence for a second-pass tabletop RPG rules analysis. Do not answer the question. The first analysis stated that some governing evidence was missing. Choose up to 4 candidate passages that directly fill that stated gap. Prefer general procedures, explicit governing rules, definitions/classifications, costs/limits, defaults/exceptions, and timing/action limits over examples, lore, indexes, or character stat blocks. Reject passages that merely share words with a speculative restriction search. Return JSON only: {\"ids\":[\"id\",...]}"
+  }
+}

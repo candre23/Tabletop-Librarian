@@ -4,12 +4,18 @@
 <section class="reader-shell">
     <div class="reader-toolbar">
         <div class="reader-title-group">
-            <a class="button-link secondary-button compact-button" href="/library/{{ folder.name|urlencode }}">Back</a>
+            {% if not embed %}<a class="button-link secondary-button compact-button" href="/library/{{ folder.name|urlencode }}">Back</a>{% endif %}
             <div><div class="eyebrow">{{ folder.name }}</div><div class="reader-title">{{ document.display_name }}</div></div>
         </div>
         <div class="reader-toolbar-actions">
+            {% if not embed %}
+            <a
+              class="button-link secondary-button compact-button"
+              href="/workspace?document={{ (folder.name ~ '\t' ~ document.key)|urlencode }}"
+            >Workspace</a>
+            {% endif %}
             <div class="reader-note">Use the PDF viewer controls for navigation, zoom, and search.</div>
-            <button type="button" class="secondary-button compact-button" id="ask-file-toggle">Ask this file</button>
+            {% if not workspace %}<button type="button" class="secondary-button compact-button" id="ask-file-toggle">Ask this file</button>{% endif %}
         </div>
     </div>
 
@@ -38,8 +44,10 @@
     }
     function closeAsk(){pane.hidden=true;split.classList.remove("with-ai");toggle.hidden=false;}
 
-    toggle.addEventListener("click",openAsk);
-    close.addEventListener("click",closeAsk);
+    if(toggle&&close){
+        toggle.addEventListener("click",openAsk);
+        close.addEventListener("click",closeAsk);
+    }
 
     let currentAskResponseId=null;
 

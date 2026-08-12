@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}{{ document.display_name }} - {{ app_name }}{% endblock %}
+{% block content %}
+<section class="reader-shell text-reader-shell">
+    <div class="reader-toolbar sticky-reader-toolbar">
+        <div class="reader-title-group">
+            <a class="button-link secondary-button compact-button" href="/library/{{ folder.name|urlencode }}">Back</a>
+            <div><div class="eyebrow">{{ folder.name }}</div><div class="reader-title">{{ document.display_name }}</div></div>
+        </div>
+        <div class="reader-toolbar-actions">
+            <div class="text-search">
+                <input id="textSearch" type="search" placeholder="Find in document">
+                <button id="findPrev" class="secondary-button compact-button">Previous</button>
+                <button id="findNext" class="secondary-button compact-button">Next</button>
+                <span id="searchStatus"></span>
+            </div>
+            <button type="button" class="secondary-button compact-button" id="ask-file-toggle">Ask this file</button>
+        </div>
+    </div>
+
+    <div class="reader-split" id="reader-split">
+        <div class="reader-document-pane text-reader-pane">
+            <article id="textDocument" class="text-document{% if markdown %} markdown-document{% endif %}">
+                {% if markdown %}{{ content|safe }}{% else %}<pre>{{ content }}</pre>{% endif %}
+            </article>
+        </div>
+        <aside class="reader-ai-pane" id="reader-ai-pane" hidden>
+            <div class="reader-ai-pane-toolbar"><strong>Ask this file</strong><button type="button" class="secondary-button compact-button" id="ask-file-close">Close</button></div>
+            <iframe id="ask-file-frame" class="reader-ai-frame" title="Ask {{ document.display_name }}" loading="lazy"></iframe>
+        </aside>
+    </div>
+</section>
+
+<script>
+(() => {
+    const search=document.getElementById("textSearch"),root=document.getElementById("textDocument"),prev=document.getElementById("findPrev"),next=document.getElementById("findNext"),status=document.getElementById("searchStatus");
+    let matches=[],current=-1;
+    function clearMarks(){root.querySelectorAll("mark.tt-search-match").forEach(m=>{const p=m.parentNode;p.replaceChild(document.createTextNode(m.textContent),m);p.normalize();});matches=[];current=-1;status.textContent="";}
+    function buildMatches(){
+        clearMarks();const q=search.value.trim();if(!q)return;
+        const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(n){if(!n.nodeValue.trim()||n.parentElement?.closest("script, style, mark"))return NodeFilter.FILTER_REJECT;return NodeFilter.FILTER_ACCEPT;}}),nodes=[];
+        while(walker.nextNode())nodes.push(walker.currentNode);
+        const needle=q.toLocaleLowerCase();
+        nodes.forEach(n=>{const raw=n.nodeValue,lower=raw.toLocaleLowerCase();let start=0,index,found=false;const f=document.createDocumentFragment();while((index=lower.indexOf(needle,start))!==-1){found=true;f.appendChild(document.createTextNode(raw.slice(start,index)));const m=document.createElement("mark");m.className="tt-search-match";m.textContent=raw.slice(index,index+q.length);f.appendChild(m);matches.push(m);start=index+q.length;}if(found){f.appendChild(document.createTextNode(raw.slice(start)));n.parentNode.replaceChild(f,n);}});
+        if(matches.length){current=0;showCurrent();}else status.textContent="0 matches";
+    }
+    function showCurrent(){matches.forEach((m,i)=>m.classList.toggle("active",i===current));if(!matches.length){status.textContent="0 matches";return;}matches[current].scrollIntoView({behavior:"smooth",block:"center"});status.textContent=(current+1)+" of "+matches.length;}
+    function goNext(){if(!matches.length){buildMatches();return;}current=(current+1)%matches.length;showCurrent();}
+    function goPrev(){if(!matches.length){buildMatches();return;}current=(current-1+matches.length)%matches.length;showCurrent();}
+    search.addEventListener("input",clearMarks);search.addEventListener("keydown",e=>{if(e.key!=="Enter")return;e.preventDefault();if(!matches.length)buildMatches();else if(e.shiftKey)goPrev();else goNext();});
+    next.addEventListener("click",goNext);prev.addEventListener("click",goPrev);
+})();
+</script>
+
+<script>
+(() => {
+    const split=document.getElementById("reader-split"),pane=document.getElementById("reader-ai-pane"),ask=document.getElementById("ask-file-frame"),toggle=document.getElementById("ask-file-toggle"),close=document.getElementById("ask-file-close"),root=document.getElementById("textDocument");
+    let loaded=false;
+    function openAsk(){if(!loaded){ask.src="/ask?embed=1&split=1&folder={{ folder.name|urlencode }}&doc={{ document.key }}";loaded=true;}pane.hidden=false;split.classList.add("with-ai");toggle.hidden=true;}
+    function closeAsk(){pane.hidden=true;split.classList.remove("with-ai");toggle.hidden=false;}
+    function clearSource(){
+        root.querySelectorAll(".tt-source-target").forEach(el=>{
+            el.classList.remove("tt-source-target");
+        });
+    }
+
+    function tokenize(value){
+        return new Set(
+            (value||"")
+                .toLocaleLowerCase()
+                .replace(/[^a-z0-9_\'’-]+/g," ")
+                .split(/\s+/)
+                .filter(word=>word.length>=3)
+        );
+    }
+
+    function overlapScore(sourceTokens,candidateText){
+        const candidateTokens=tokenize(candidateText);
+        if(!candidateTokens.size||!sourceTokens.size)return 0;
+
+        let overlap=0;
+        for(const token of candidateTokens){
+            if(sourceTokens.has(token))overlap++;
+        }
+
+        const candidateCoverage=overlap/Math.max(1,candidateTokens.size);
+        const sourceCoverage=overlap/Math.max(1,sourceTokens.size);
+        return (candidateCoverage*0.72)+(sourceCoverage*0.28);
+    }
+
+    function jump(excerpt){
+        clearSource();
+        const sourceTokens=tokenize(excerpt);
+        if(!sourceTokens.size)return;
+
+        const selectors=["h1","h2","h3","h4","h5","h6","p","li","blockquote","pre","td","th"];
+        const candidates=Array.from(root.querySelectorAll(selectors.join(",")))
+            .filter(el=>el.textContent.trim().length>=20);
+
+        let best=null;
+        let bestScore=0;
+
+        for(const el of candidates){
+            const score=overlapScore(sourceTokens,el.textContent);
+            if(score>bestScore){
+                bestScore=score;
+                best=el;
+            }
+        }
+
+        if(!best||bestScore<0.12)return;
+
+        best.classList.add("tt-source-target");
+        best.scrollIntoView({behavior:"smooth",block:"center"});
+    }
+
+    toggle.addEventListener("click",openAsk);close.addEventListener("click",closeAsk);
+
+    let currentAskResponseId=null;
+
+    window.addEventListener("message",event=>{
+        if(event.origin!==window.location.origin||!event.data)return;
+
+        if(event.data.type==="ttl-ask-ready"){
+            currentAskResponseId=event.data.responseId||null;
+            return;
+        }
+
+        if(event.data.type!=="ttl-source-jump")return;
+        if(event.data.docKey!=="{{ document.key }}")return;
+        if(currentAskResponseId&&event.data.responseId!==currentAskResponseId)return;
+
+        jump(event.data.excerpt||"");
+    });
+})();
+</script>
+{% endblock %}

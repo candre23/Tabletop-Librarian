@@ -11,16 +11,18 @@ COVER_CACHE_DIR = CACHE_DIR / "covers"
 MANUAL_COVER_DIR = DATA_DIR / "covers"
 UPLOAD_DIR = DATA_DIR / "uploads"
 PDF_STATUS_CACHE_DIR = CACHE_DIR / "pdf_status"
+OCR_DATA_DIR = DATA_DIR / "ocr"
 
 CONFIG_FILE = DATA_DIR / "config.json"
 USERS_FILE = DATA_DIR / "users.json"
 LIBRARY_FILE = DATA_DIR / "library.json"
+LIBRARY_MANIFEST_FILE = DATA_DIR / "library_manifest.json"
 LOG_FILE = LOG_DIR / "server.log"
 
 APP_HOST = "0.0.0.0"
 APP_PORT = 8080
 APP_NAME = "Tabletop Librarian"
-APP_VERSION = "0.4.22.22"
+APP_VERSION = "0.5.14"
 
 SUPPORTED_EXTENSIONS = {
     ".pdf": "PDF",

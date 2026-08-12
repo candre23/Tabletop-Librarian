@@ -1,35 +1,85 @@
 {% extends "base.html" %}
 {% block title %}Ask - {{ app_name }}{% endblock %}
 {% block content %}
-<section class="panel {% if embed %}ask-embedded-panel{% endif %}" data-response-id="{{ response_id }}">
+<section class="panel {% if embed %}ask-embedded-panel{% endif %}{% if workspace_compact %} ask-workspace-compact{% endif %}" data-response-id="{{ response_id }}">
     {% if not embed %}
     <div class="topline">
         <div><div class="eyebrow">Rules Assistant</div><h1>Ask Tabletop Librarian</h1></div>
         <a class="button-link secondary-button" href="/">Back to Library</a>
     </div>
     {% else %}
-    <div class="ask-embedded-heading">
-        <div class="eyebrow">Rules Assistant</div>
-        <h1>{% if locked_document_key %}Ask this file{% else %}Ask {{ scope.selected_folder or "Tabletop Librarian" }}{% endif %}</h1>
-    </div>
+      {% if not workspace_compact %}
+      <div class="ask-embedded-heading">
+          <div class="eyebrow">Rules Assistant</div>
+          <h1>{% if locked_document_key %}Ask this file{% else %}Ask {{ scope.selected_folder or "Tabletop Librarian" }}{% endif %}</h1>
+      </div>
+      {% endif %}
     {% endif %}
 
     {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <div class="error" id="ask-client-error" hidden></div>
     {% if not provider_configured %}
     <div class="error">The AI provider has not been configured.{% if user.role == "gm" %} Configure it from Knowledgebase Tools.{% endif %}</div>
     {% endif %}
 
     <form method="post" action="/ask" class="ask-form" id="ask-form">
+        <input type="hidden" name="ai_request_id" id="ai-request-id" value="{{ response_id }}">
+        {% if workspace_compact %}<input type="hidden" name="workspace_compact" value="1">{% endif %}
         {% if embed %}<input type="hidden" name="embed" value="1">{% endif %}
         {% if split %}<input type="hidden" name="split" value="1">{% endif %}
         {% if locked_folder %}<input type="hidden" name="folder" value="{{ scope.selected_folder }}">{% endif %}
         {% if locked_document_key %}<input type="hidden" name="locked_document_key" value="{{ locked_document_key }}">{% endif %}
 
-        {% if locked_document_key %}
+        {% if character_locked and selected_character %}
+        <input type="hidden" name="character" value="{{ selected_character }}">
+        <input type="hidden" name="lock_character" value="1">
+        {% elif character_options %}
+        <div class="ask-character-context">
+            <label for="ask-character">Character context</label>
+            <select id="ask-character" name="character">
+                <option value="">None</option>
+                {% for character in character_options %}
+                <option value="{{ character.value }}" {% if character.value == selected_character %}selected{% endif %}>
+                    {{ character.label }} · {{ character.system_id }}
+                </option>
+                {% endfor %}
+            </select>
+            <div class="muted">
+                Adds the selected character's current sheet state to this question. Rules still come from the knowledgebase.
+            </div>
+        </div>
+        {% endif %}
+
+        {% if selected_character_context and not workspace_compact %}
+        <div class="ask-character-active">
+            Character: <strong>{{ selected_character_context.name }}</strong>
+            {% if user.role == "gm" %} · Owner: {{ selected_character_context.owner }}{% endif %}
+        </div>
+        {% endif %}
+
+        {% if locked_document_key and not workspace_compact %}
         <div class="ask-scope-summary">Searching <strong>{% for document in scope.documents %}{% if document.doc_key == locked_document_key %}{{ document.display_name }}{% endif %}{% endfor %}</strong></div>
-        {% elif locked_folder %}
+        {% elif locked_folder and not workspace_compact %}
         <div class="ask-scope-summary">Searching <strong>{{ scope.selected_folder }}</strong></div>
         {% endif %}
+
+        {% if selected_character %}
+        <div class="ask-analysis-mode">Character-aware</div>
+        {% endif %}
+
+        <fieldset class="ask-reasoning-mode">
+            <legend>Reasoning</legend>
+            <label>
+                <input type="radio" name="reasoning_mode" value="basic"
+                       {% if reasoning_mode != "advanced" %}checked{% endif %}>
+                <span><strong>Basic</strong><small>Single retrieval</small></span>
+            </label>
+            <label>
+                <input type="radio" name="reasoning_mode" value="advanced"
+                       {% if reasoning_mode == "advanced" %}checked{% endif %}>
+                <span title="Query planning, multi-step retrieval, deterministic evidence ranking, and one final answer"><strong>Advanced</strong><small>Multi-step retrieval</small></span>
+            </label>
+        </fieldset>
 
         <label for="question">Question</label>
         <textarea id="question" name="question" rows="4" required placeholder="Ask a rules, setting, adventure, or reference question...">{{ question }}</textarea>
@@ -59,6 +109,7 @@
 
         <div class="ask-submit-row">
             <button type="submit" id="ask-submit" {% if not provider_configured %}disabled{% endif %}>Ask</button>
+            <button type="button" id="ask-cancel" class="danger-button" hidden>Cancel</button>
             <div class="ask-progress" id="ask-progress" hidden aria-live="polite">
                 <div class="ask-progress-pie" id="ask-progress-pie" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
                 <div><strong id="ask-progress-label">Preparing scope</strong><div class="muted" id="ask-progress-percent">10%</div></div>
@@ -70,7 +121,7 @@
     <section class="subpanel ask-answer">
         <h2>Answer</h2>
         <div class="ask-answer-markdown">{{ answer_html }}</div>
-        <p class="muted">Model: {{ answer_model }}{% if elapsed_seconds is not none %} · {{ "%.1f"|format(elapsed_seconds) }} sec{% endif %}</p>
+        <p class="muted">Model: {{ answer_model }}{% if reasoning_mode == "advanced" and selected_pipeline %} · Pipeline: {{ selected_pipeline }}{% endif %}{% if elapsed_seconds is not none %} · {{ "%.1f"|format(elapsed_seconds) }} sec{% endif %}</p>
     </section>
     {% endif %}
 
@@ -89,11 +140,132 @@
 
 <script>
 (() => {
-    const form=document.getElementById("ask-form"),button=document.getElementById("ask-submit"),progress=document.getElementById("ask-progress"),pie=document.getElementById("ask-progress-pie"),label=document.getElementById("ask-progress-label"),percent=document.getElementById("ask-progress-percent");
-    if(form&&button&&progress&&pie&&label&&percent){
-        const stages=[[10,"Preparing scope",0],[20,"Retrieving sources",350],[30,"Assembling context",850],[40,"Sending to AI",1350],[50,"Generating answer",2200],[60,"Generating answer",4500],[70,"Generating answer",7000],[80,"Generating answer",10000],[90,"Finishing answer",13500]];
-        const setProgress=(v,t)=>{pie.style.setProperty("--progress",(v*3.6)+"deg");pie.setAttribute("aria-valuenow",String(v));label.textContent=t;percent.textContent=v+"%";};
-        form.addEventListener("submit",()=>{button.disabled=true;button.textContent="Working...";progress.hidden=false;for(const [v,t,d] of stages)window.setTimeout(()=>setProgress(v,t),d);});
+    const form=document.getElementById("ask-form"),
+          button=document.getElementById("ask-submit"),
+          cancelButton=document.getElementById("ask-cancel"),
+          requestId=document.getElementById("ai-request-id"),
+          clientError=document.getElementById("ask-client-error"),
+          progress=document.getElementById("ask-progress"),
+          pie=document.getElementById("ask-progress-pie"),
+          label=document.getElementById("ask-progress-label"),
+          percent=document.getElementById("ask-progress-percent");
+
+    if(form&&button&&cancelButton&&requestId&&clientError&&progress&&pie&&label&&percent){
+        let pollTimer=null;
+        let submitting=false;
+        let cancelled=false;
+
+        const setProgress=(v,t)=>{
+            pie.style.setProperty("--progress",(v*3.6)+"deg");
+            pie.setAttribute("aria-valuenow",String(v));
+            label.textContent=t;
+            percent.textContent=v+"%";
+        };
+
+        const resetWorking=()=>{
+            if(pollTimer){window.clearInterval(pollTimer);pollTimer=null;}
+            submitting=false;
+            button.disabled=false;
+            button.textContent="Ask";
+            cancelButton.hidden=true;
+            progress.hidden=true;
+        };
+
+        const showClientError=(message)=>{
+            clientError.textContent=message;
+            clientError.hidden=false;
+        };
+
+        const beginWorking=()=>{
+            clientError.hidden=true;
+            button.disabled=true;
+            button.textContent="Working...";
+            cancelButton.hidden=false;
+            progress.hidden=false;
+        };
+
+        const pollServerProgress=()=>{
+            const id=requestId.value;
+            if(!id||pollTimer)return;
+            pollTimer=window.setInterval(async()=>{
+                if(cancelled)return;
+                try{
+                    const response=await fetch(`/ai/progress/${encodeURIComponent(id)}`,{
+                        method:"GET",
+                        headers:{"Accept":"application/json"},
+                        cache:"no-store"
+                    });
+                    const status=await response.json().catch(()=>({}));
+                    if(!response.ok||!status.ok||!status.active)return;
+                    if(Number.isFinite(Number(status.progress))){
+                        setProgress(Number(status.progress),status.stage||"Working");
+                    }
+                }catch(error){
+                    // Progress reporting is advisory; never fail the request
+                    // because a polling call briefly failed.
+                }
+            },350);
+        };
+
+        form.addEventListener("submit",async event=>{
+            if(submitting)return;
+            event.preventDefault();
+            cancelled=false;
+            beginWorking();
+            setProgress(10,"Checking AI backend");
+
+            try{
+                const response=await fetch("/ai/status",{
+                    method:"GET",
+                    headers:{"Accept":"application/json"},
+                    cache:"no-store"
+                });
+                const status=await response.json().catch(()=>({}));
+                if(cancelled)return;
+                if(!response.ok||!status.ok){
+                    showClientError(status.message||"AI backend is unavailable.");
+                    resetWorking();
+                    return;
+                }
+            }catch(error){
+                if(cancelled)return;
+                showClientError("AI backend is unavailable. Check that the AI host is running and reachable.");
+                resetWorking();
+                return;
+            }
+
+            if(cancelled)return;
+            submitting=true;
+            setProgress(12,"Preparing request");
+            pollServerProgress();
+            form.submit();
+        });
+
+        cancelButton.addEventListener("click",()=>{
+            if(!submitting){
+                cancelled=true;
+                resetWorking();
+                showClientError("AI request cancelled.");
+                return;
+            }
+
+            cancelled=true;
+            const id=requestId.value;
+            if(id){
+                fetch(`/ai/cancel/${encodeURIComponent(id)}`,{
+                    method:"POST",
+                    headers:{"Accept":"application/json"},
+                    keepalive:true
+                }).catch(()=>{});
+            }
+
+            // Stop the browser's pending form navigation immediately. The
+            // server cancellation flag separately asks the provider stream to
+            // close, so the user does not have to wait either way.
+            window.stop();
+            resetWorking();
+            showClientError("AI request cancelled.");
+        });
     }
 
     if(window.parent!==window){window.parent.postMessage({type:"ttl-ask-ready",responseId:document.querySelector("section.panel")?.dataset.responseId||""},window.location.origin);}

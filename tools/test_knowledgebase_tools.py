@@ -131,6 +131,10 @@ def test_structure() -> None:
     assert "2. Chunks" in page
     assert "3. Embeddings" in page
     assert "Update Knowledgebase" in page
+    assert 'initialUrl.searchParams.delete("message")' in page
+    assert "sawEmbeddingRunning" in page
+    assert "completedAfterUpdate" in page
+    assert "window.location.reload()" in page
     assert "Extracted Text" in page
     assert "Context Chunks" in page
     assert "Semantic Embeddings" in page
