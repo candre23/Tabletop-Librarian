@@ -49,12 +49,7 @@ from app.characters.storage import (
     load_character_raw,
     save_character,
 )
-from app.system_packs import (
-    SystemPackPackageError,
-    discover_system_packs,
-    import_system_pack_package,
-    load_system_pack,
-)
+from app.system_packs import discover_system_packs, load_system_pack
 from app.rules import (
     evaluate_limits,
     load_rule_engine,
@@ -882,8 +877,6 @@ async def characters_home(request: Request):
             if str(user.get("username") or "").strip()
         ]
 
-    system_pack_import_report = request.session.pop("system_pack_import_report", None)
-
     return templates.TemplateResponse(
         request=request,
         name="characters/index.html",
@@ -897,7 +890,6 @@ async def characters_home(request: Request):
             "import_users": import_users,
             "error": request.query_params.get("error"),
             "message": request.query_params.get("message"),
-            "system_pack_import_report": system_pack_import_report,
         },
     )
 
@@ -924,53 +916,6 @@ async def character_export(request: Request, character_id: str):
             "Cache-Control": "no-store",
         },
     )
-
-
-@router.post("/characters/system-packs/import")
-async def system_pack_import(
-    request: Request,
-    system_pack_file: UploadFile = File(...),
-):
-    username, role = _identity_from_request(request)
-    if role != "gm":
-        raise HTTPException(status_code=403, detail="GM access is required.")
-
-    if not system_pack_file.filename or not system_pack_file.filename.lower().endswith(".ttlsys"):
-        return RedirectResponse(
-            "/characters?error=Choose+a+.ttlsys+System+Pack+package.",
-            status_code=303,
-        )
-
-    content = await system_pack_file.read()
-    await system_pack_file.close()
-    try:
-        result = import_system_pack_package(
-            content,
-            pack_root=PACK_ROOT,
-            character_root=CHARACTER_ROOT,
-        )
-    except SystemPackPackageError as exc:
-        from urllib.parse import quote
-        return RedirectResponse(
-            "/characters?error=" + quote(str(exc)),
-            status_code=303,
-        )
-    except Exception as exc:
-        from urllib.parse import quote
-        return RedirectResponse(
-            "/characters?error=" + quote(f"System Pack import failed: {exc}"),
-            status_code=303,
-        )
-
-    request.session["system_pack_import_report"] = {
-        "name": result.name,
-        "system_id": result.system_id,
-        "version": result.version,
-        "replaced_version": result.replaced_version,
-        "migrated_characters": result.migrated_characters,
-        "warnings": result.warnings,
-    }
-    return RedirectResponse("/characters", status_code=303)
 
 
 @router.post("/characters/import")

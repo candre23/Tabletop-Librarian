@@ -501,16 +501,6 @@ when the supplied evidence is insufficient.
 - Removes chunks/vectors belonging to deleted documents without reprocessing the rest of the library.
 - Adds **Rebuild Entire Knowledgebase** for explicit full maintenance rebuilds. Changing the embedding model or clearing an index still requires a full embedding build.
 
-
-### v0.5.15 CBR cache lifecycle cleanup
-
-- Deletes extracted CBR image caches immediately after a successful OCR PDF is created.
-- Removes CBR caches when their canonical library archive is positively deleted.
-- Preserves fallback CBR caches while a registered source is merely offline.
-- Cleans incomplete, stale, redundant, and orphaned CBR extraction caches at startup.
-- Adds a GM-facing **Clean Temporary / Orphaned Cache** action to Knowledgebase Tools.
-- CBZ archives continue to be read directly from ZIP and do not use a persistent extraction cache.
-
 ### v0.5.14 resilient library sources and OCR comic reader
 
 - Adds a persistent `data/library_manifest.json` inventory that remembers which documents belong to each configured physical source.
@@ -519,22 +509,3 @@ when the supplied evidence is insufficient.
 - Confirmed document deletion cleans up any persistent TTL-managed OCR PDF and metadata tied to that canonical source path.
 - CBR/CBZ archives with a valid OCR derivative now open in TTL's normal PDF viewer, providing continuous PDF navigation plus selectable/copyable OCR text. Archives without OCR continue to use the original comic reader as a fallback.
 - The CBR/CBZ archive remains the canonical library identity; its cached OCR PDF is only the preferred local reader/indexing derivative.
-
-### v0.5.16 navigation and About/Settings polish
-
-- Renames the redundant **Home** navigation link to **Bookshelf**.
-- Changes the **TTL** brand control into a compact Settings & About dialog showing the installed Tabletop Librarian version and the public GitHub repository link.
-- Pins the global navigation bar to the top of the visible window so navigation remains accessible while scrolling long pages.
-
-### v0.5.17a startup hotfix
-
-- Fixed a circular import introduced by the System Pack portability module that prevented TTLibrarian from starting.
-- Added an application-import smoke test so startup import failures are caught by future installers.
-
-### v0.5.17 System Pack portability
-
-- Restored the subtle blue-text TTL brand button while retaining the Settings & About dialog.
-- Added GM-only `.ttlsys` System Pack import on the Characters page.
-- `.ttlsys` packages are ZIP archives containing a validated System Pack.
-- Importing a revision with the same System Pack ID replaces the installed pack, backs up the old revision, and best-effort migrates existing characters by stable field ID.
-- Incompatible, removed, or obsolete values are reported to the GM as migration warnings.

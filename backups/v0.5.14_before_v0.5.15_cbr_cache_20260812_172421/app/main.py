@@ -54,7 +54,7 @@ from app.library.manager import (
     set_folder_visibility,
 )
 from app.readers.base import safe_document_path
-from app.readers.comic import comic_page, comic_pages, cbr_cache_status, cleanup_cbr_cache
+from app.readers.comic import comic_page, comic_pages
 from app.readers.image import serve_image
 from app.readers.pdf import stream_pdf
 from app.readers.text import read_plain_text, render_markdown
@@ -364,16 +364,6 @@ def document_visible_to_user(user: dict[str, str], document: dict) -> bool:
 @app.on_event("startup")
 async def startup_event() -> None:
     logger.info("%s v%s initialized", APP_NAME, APP_VERSION)
-    try:
-        summary = cleanup_cbr_cache()
-        if summary["removed"]:
-            logger.info(
-                "CBR cache startup cleanup removed %s item(s), freeing %.1f MB",
-                summary["removed"],
-                summary["bytes_freed"] / 1048576,
-            )
-    except Exception:
-        logger.exception("CBR cache startup cleanup failed")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -983,7 +973,6 @@ async def admin_knowledgebase(request: Request):
             "ai_settings": provider_settings_for_ui(),
             "pipeline_options": pipeline_options_for_ui(),
             "ocr": ocr_status(),
-            "comic_cache": cbr_cache_status(),
             "message": request.query_params.get("message"),
             "error": request.query_params.get("error"),
         },
@@ -1050,30 +1039,6 @@ async def admin_rag(request: Request):
     if user["role"] != "gm":
         return RedirectResponse("/", status_code=303)
     return RedirectResponse("/admin/knowledgebase", status_code=303)
-
-
-@app.post("/admin/cache/cleanup")
-async def admin_cache_cleanup(request: Request):
-    user = current_user(request)
-    if not user or user["role"] != "gm":
-        return RedirectResponse("/", status_code=303)
-    try:
-        summary = cleanup_cbr_cache()
-    except Exception as exc:
-        return RedirectResponse(
-            f"/admin/knowledgebase?error={quote(str(exc))}",
-            status_code=303,
-        )
-    message = (
-        f"Cache cleanup complete: removed {summary['removed']} temporary/orphaned CBR "
-        f"cache item{'s' if summary['removed'] != 1 else ''}, freeing "
-        f"{summary['bytes_freed'] / 1048576:.1f} MB. "
-        f"{summary['kept']} active fallback cache item{'s' if summary['kept'] != 1 else ''} kept."
-    )
-    return RedirectResponse(
-        f"/admin/knowledgebase?message={quote(message)}",
-        status_code=303,
-    )
 
 
 @app.post("/admin/knowledgebase/update")

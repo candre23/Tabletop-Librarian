@@ -151,14 +151,6 @@ def _find_7zip() -> str:
 
 
 def _cbr_cover(path: Path) -> Image.Image:
-    # Once OCR has produced a persistent PDF derivative, do not recreate the
-    # otherwise-redundant extracted CBR image cache merely to generate a cover.
-    from app.ocr import current_ocr_pdf
-
-    derivative = current_ocr_pdf(path)
-    if derivative is not None:
-        return _pdf_cover(derivative)
-
     pages = cbr_page_files(path)
 
     if not pages:

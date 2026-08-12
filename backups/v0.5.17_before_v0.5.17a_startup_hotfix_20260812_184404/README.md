@@ -526,11 +526,6 @@ when the supplied evidence is insufficient.
 - Changes the **TTL** brand control into a compact Settings & About dialog showing the installed Tabletop Librarian version and the public GitHub repository link.
 - Pins the global navigation bar to the top of the visible window so navigation remains accessible while scrolling long pages.
 
-### v0.5.17a startup hotfix
-
-- Fixed a circular import introduced by the System Pack portability module that prevented TTLibrarian from starting.
-- Added an application-import smoke test so startup import failures are caught by future installers.
-
 ### v0.5.17 System Pack portability
 
 - Restored the subtle blue-text TTL brand button while retaining the Settings & About dialog.

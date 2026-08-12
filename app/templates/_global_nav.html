@@ -3,9 +3,9 @@
 {% if nav_username %}
 <nav class="ttl-global-nav" aria-label="Primary navigation">
   <div class="ttl-global-nav-inner">
-    <a class="ttl-global-nav-brand" href="/">TTL</a>
+    <button class="ttl-global-nav-brand" type="button" data-ttl-about-open aria-haspopup="dialog" aria-controls="ttl-about-dialog">TTL</button>
     <div class="ttl-global-nav-links">
-      <a href="/">Home</a>
+      <a href="/">Bookshelf</a>
       <a href="/characters">Characters</a>
       <a href="/search">Search</a>
       <a href="/uploads">Uploads</a>
@@ -24,4 +24,40 @@
     </div>
   </div>
 </nav>
+
+<dialog class="ttl-about-dialog" id="ttl-about-dialog" aria-labelledby="ttl-about-title">
+  <div class="ttl-about-dialog-inner">
+    <div class="ttl-about-dialog-header">
+      <div>
+        <div class="ttl-about-dialog-eyebrow">Settings &amp; About</div>
+        <h2 id="ttl-about-title">Tabletop Librarian</h2>
+      </div>
+      <button class="ttl-about-dialog-close" type="button" data-ttl-about-close aria-label="Close">&times;</button>
+    </div>
+    <p class="ttl-about-version">Version {{ app_version }}</p>
+    <p class="ttl-about-copy">Local-first tabletop RPG library, reader, search, and rules assistant.</p>
+    <p class="ttl-about-repo"><a href="https://github.com/candre23/Tabletop-Librarian" target="_blank" rel="noopener noreferrer">Tabletop Librarian on GitHub</a></p>
+  </div>
+</dialog>
+<script>
+(() => {
+  const dialog = document.getElementById("ttl-about-dialog");
+  if (!dialog) return;
+  const opener = document.querySelector("[data-ttl-about-open]");
+  const closer = dialog.querySelector("[data-ttl-about-close]");
+
+  opener?.addEventListener("click", () => {
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+  });
+
+  closer?.addEventListener("click", () => dialog.close());
+  dialog.addEventListener("click", (event) => {
+    const rect = dialog.getBoundingClientRect();
+    const inside = event.clientX >= rect.left && event.clientX <= rect.right &&
+      event.clientY >= rect.top && event.clientY <= rect.bottom;
+    if (!inside) dialog.close();
+  });
+})();
+</script>
 {% endif %}

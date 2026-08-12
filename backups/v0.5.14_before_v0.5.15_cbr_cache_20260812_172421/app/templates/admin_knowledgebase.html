@@ -122,31 +122,6 @@
         {% endif %}
     </section>
 
-
-    <section class="subpanel cache-maintenance-panel">
-        <div class="knowledgebase-step-title">
-            <span class="knowledgebase-step-number">Cache</span>
-            <div>
-                <h2>Temporary / Orphaned Cache</h2>
-                <p class="muted">
-                    CBR archives are extracted locally only when the native comic reader needs them.
-                    Successful OCR removes that redundant image cache automatically. This cleanup removes
-                    abandoned, obsolete, and orphaned CBR extraction caches while preserving fallback
-                    caches for known offline library sources. OCR PDFs and knowledgebase data are not removed.
-                </p>
-            </div>
-        </div>
-        <dl class="index-stats">
-            <div><dt>CBR Fallback Caches</dt><dd>{{ comic_cache.directories }}</dd></div>
-            <div><dt>Local Storage</dt><dd>{{ "%.1f"|format(comic_cache.bytes / 1048576) }} MB</dd></div>
-        </dl>
-        <div class="index-actions">
-            <form method="post" action="/admin/cache/cleanup">
-                <button type="submit" class="secondary-button">Clean Temporary / Orphaned Cache</button>
-            </form>
-        </div>
-    </section>
-
     <div class="knowledgebase-grid">
         <section class="subpanel rag-admin-panel">
             <div class="knowledgebase-step-title">

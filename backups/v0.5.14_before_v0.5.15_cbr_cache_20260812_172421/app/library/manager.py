@@ -84,14 +84,10 @@ def _cleanup_removed_ocr(previous: list[dict[str, Any]], current: list[dict[str,
         return
     try:
         from app.ocr import remove_ocr_derivative
-        from app.readers.comic import remove_cbr_cache
         for item in removed:
             path = str(item.get("path") or "")
             if path:
-                source = Path(path)
-                remove_ocr_derivative(source)
-                if source.suffix.casefold() == ".cbr":
-                    remove_cbr_cache(source)
+                remove_ocr_derivative(Path(path))
     except Exception:
         logger.exception("Unable to clean OCR derivatives for removed library documents")
 
@@ -123,27 +119,6 @@ def _missing_source_is_confirmed_removed(folder: dict[str, Any], source_path: Pa
         except OSError:
             continue
     return False
-
-
-
-def known_library_document_paths() -> set[str]:
-    """Return canonical document paths remembered by the persistent source manifest.
-
-    This includes documents belonging to sources that are currently offline, so
-    cache maintenance never equates a network outage with deletion.
-    """
-    paths: set[str] = set()
-    manifest = _load_manifest()
-    for entry in manifest.get("sources", {}).values():
-        if not isinstance(entry, dict):
-            continue
-        for document in entry.get("documents", []):
-            if not isinstance(document, dict):
-                continue
-            path = str(document.get("path") or "")
-            if path:
-                paths.add(path)
-    return paths
 
 def _offline_manifest_documents(folder_name: str, source_type: str, source_path: str) -> list[dict[str, Any]]:
     docs = _manifest_documents(folder_name, source_type, source_path)

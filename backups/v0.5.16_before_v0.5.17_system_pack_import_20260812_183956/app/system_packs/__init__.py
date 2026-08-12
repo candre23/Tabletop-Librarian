@@ -8,11 +8,6 @@ from .loader import (
     load_system_pack,
     validate_system_pack,
 )
-from .portability import (
-    SystemPackImportResult,
-    SystemPackPackageError,
-    import_system_pack_package,
-)
 
 __all__ = [
     "PackIssue",
@@ -21,7 +16,4 @@ __all__ = [
     "discover_system_packs",
     "load_system_pack",
     "validate_system_pack",
-    "SystemPackImportResult",
-    "SystemPackPackageError",
-    "import_system_pack_package",
 ]

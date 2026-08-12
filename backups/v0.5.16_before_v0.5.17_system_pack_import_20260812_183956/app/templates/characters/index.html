@@ -111,41 +111,6 @@
           <p class="ttl-muted">No valid System Packs are installed.</p>
         {% endif %}
 
-        {% if role == "gm" %}
-        <section class="ttl-character-import ttl-system-pack-import">
-          <h2>Import System Pack</h2>
-          <form method="post" action="/characters/system-packs/import" enctype="multipart/form-data">
-            <div class="ttl-form-row">
-              <label for="system_pack_file">System Pack package</label>
-              <input id="system_pack_file" type="file" name="system_pack_file" accept=".ttlsys" required>
-            </div>
-            <button type="submit" class="ttl-button">Import System Pack</button>
-          </form>
-          <div class="ttl-muted ttl-import-note">
-            .ttlsys files are ZIP-format System Packs. Importing a newer revision of the same system replaces the installed revision and migrates existing characters by matching compatible fields.
-          </div>
-          {% if system_pack_import_report %}
-          <div class="ttl-system-pack-report {% if system_pack_import_report.warnings %}has-warnings{% endif %}">
-            <strong>Imported {{ system_pack_import_report.name }} v{{ system_pack_import_report.version }}.</strong>
-            {% if system_pack_import_report.replaced_version %}
-              <div>Replaced v{{ system_pack_import_report.replaced_version }}.</div>
-            {% endif %}
-            {% if system_pack_import_report.migrated_characters %}
-              <div>Migrated {{ system_pack_import_report.migrated_characters }} existing character{% if system_pack_import_report.migrated_characters != 1 %}s{% endif %}.</div>
-            {% endif %}
-            {% if system_pack_import_report.warnings %}
-              <details>
-                <summary>{{ system_pack_import_report.warnings|length }} migration warning{% if system_pack_import_report.warnings|length != 1 %}s{% endif %}</summary>
-                <ul>
-                  {% for warning in system_pack_import_report.warnings %}<li>{{ warning }}</li>{% endfor %}
-                </ul>
-              </details>
-            {% endif %}
-          </div>
-          {% endif %}
-        </section>
-        {% endif %}
-
         <section class="ttl-character-import">
           <h2>Import Character</h2>
           <form method="post" action="/characters/import" enctype="multipart/form-data">

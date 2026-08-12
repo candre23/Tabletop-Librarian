@@ -494,12 +494,6 @@ def _run_ocr(source: Path) -> Path:
             raise RuntimeError(f"OCRmyPDF did not create a usable output for {source.name}.")
         temp_output.replace(output)
         _write_metadata(source, output, total_pages)
-        if source.suffix.casefold() == ".cbr":
-            # The persistent searchable PDF is now the preferred reader and
-            # indexing source. The extracted images are redundant and can be
-            # regenerated from the canonical archive on demand if ever needed.
-            from app.readers.comic import remove_cbr_cache
-            remove_cbr_cache(source)
         _set_state(percent=100.0, current_page=total_pages)
         logger.info("OCR complete: %s -> %s", source, output)
         return output
