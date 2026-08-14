@@ -1,0 +1,35 @@
+tabs:
+  - id: overview
+    title: Overview
+    sections:
+      - id: identity
+        title: Identity
+        columns: 2
+        fields:
+          - name
+          - background
+          - archetype
+          - active
+
+      - id: advancement
+        title: Advancement
+        columns: 3
+        fields:
+          - level
+          - power_score
+          - skills
+
+  - id: gear_notes
+    title: Gear & Notes
+    sections:
+      - id: inventory
+        title: Inventory
+        columns: 1
+        fields:
+          - inventory
+
+      - id: notes
+        title: Notes
+        columns: 1
+        fields:
+          - notes

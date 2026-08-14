@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tabletop-librarian"
-version = "0.5.12"
+version = "0.5.23"
 description = "Self-hosted tabletop RPG library, rules helper, and character resource server."
 requires-python = ">=3.11"
 dependencies = [
@@ -20,13 +20,17 @@ dependencies = [
     "bleach>=6.2,<7.0",
     "sentence-transformers[openvino]>=5.0,<6.0",
     "numpy>=2.0,<3.0",
+    "pyyaml>=6.0,<7.0",
 ]
 
-[tool.setuptools]
-packages = ["app", "app.library"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
 
 [tool.setuptools.package-data]
 app = [
     "templates/*.html",
+    "templates/characters/*.html",
     "static/css/*.css",
+    "static/js/*.js",
 ]

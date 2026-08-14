@@ -28,13 +28,20 @@ from app.auth import (
     reset_password,
     set_user_enabled,
 )
-from app.config import APP_NAME, APP_VERSION, STATIC_DIR, TEMPLATE_DIR
+from app.config import (
+    APP_NAME,
+    APP_VERSION,
+    CHARACTER_DIR,
+    STATIC_DIR,
+    SYSTEM_PACKS_DIR,
+    TEMPLATE_DIR,
+)
+from app.runtime import seed_bundled_system_packs
 from app.knowledgebase import knowledgebase_status
 from app.ocr import cancel_ocr_job, ocr_job_status, ocr_status, start_ocr_job
 from app.characters.ai_context import build_character_ai_context, character_retrieval_query
-from app.characters.storage import CharacterStorageError, list_characters
+from app.characters.storage import CharacterStorageError, list_characters, load_character_raw
 from app.library.covers import (
-    cached_cover_path,
     get_cover_path,
     remove_manual_cover,
     save_manual_cover,
@@ -53,7 +60,6 @@ from app.library.manager import (
     set_folder_cover,
     set_folder_visibility,
 )
-from app.readers.base import safe_document_path
 from app.readers.comic import comic_page, comic_pages, cbr_cache_status, cleanup_cbr_cache
 from app.readers.image import serve_image
 from app.readers.pdf import stream_pdf
@@ -87,8 +93,6 @@ from app.ai.requests import (
     update_ai_request_progress,
 )
 from app.ai.markdown_render import render_answer_markdown
-from app.ai.query_planner import plan_retrieval_queries
-from app.ai.evidence_ranker import rank_evidence
 from app.ai.pipelines import (
     PipelinePresetError,
     execute_advanced_pipeline,
@@ -98,6 +102,7 @@ from app.ai.pipelines import (
 from app.ai.citations import attach_citation_excerpts
 
 logger = logging.getLogger(__name__)
+seed_bundled_system_packs()
 server_config = ensure_server_config()
 
 app = FastAPI(
@@ -1292,6 +1297,7 @@ async def admin_ai_save(request: Request):
     form = await request.form()
     try:
         save_provider_settings(
+            provider=str(form.get("provider", "openai_compatible")),
             base_url=str(form.get("base_url", "")),
             model=str(form.get("model", "")),
             api_key=str(form.get("api_key", "")),
@@ -1315,6 +1321,7 @@ async def admin_ai_test(request: Request):
     form = await request.form()
     try:
         save_provider_settings(
+            provider=str(form.get("provider", "openai_compatible")),
             base_url=str(form.get("base_url", "")),
             model=str(form.get("model", "")),
             api_key=str(form.get("api_key", "")),
@@ -1409,7 +1416,7 @@ def _ask_character_options(user: dict[str, str]) -> list[dict[str, str]]:
 
     result = []
     for owner in owners:
-        for row in list_characters(owner, character_root=Path("data/characters")):
+        for row in list_characters(owner, character_root=CHARACTER_DIR):
             data = row.get("data") if isinstance(row.get("data"), dict) else {}
             name = str(
                 data.get("name")
@@ -1465,8 +1472,8 @@ def _resolve_ask_character(
     return build_character_ai_context(
         owner,
         character_id,
-        character_root=Path("data/characters"),
-        pack_root=Path("data/system_packs"),
+        character_root=CHARACTER_DIR,
+        pack_root=SYSTEM_PACKS_DIR,
     )
 
 
@@ -1507,12 +1514,30 @@ async def play_workspace(
     selected_document = document if any(
         item["value"] == document
         for item in document_options
-    ) else (document_options[0]["value"] if document_options else "")
+    ) else ""
 
     selected_character_row = next(
         (item for item in character_options if item["value"] == selected_character),
         None,
     )
+    if not selected_document and selected_character_row is not None:
+        try:
+            raw_character = load_character_raw(
+                selected_character_row["owner"],
+                selected_character_row["character_id"],
+                character_root=CHARACTER_DIR,
+            )
+            preferred_document = str(
+                (raw_character.preferences or {}).get("default_workspace_document") or ""
+            )
+            if any(item["value"] == preferred_document for item in document_options):
+                selected_document = preferred_document
+        except CharacterStorageError:
+            pass
+
+    if not selected_document and document_options:
+        selected_document = document_options[0]["value"]
+
     selected_document_row = next(
         (item for item in document_options if item["value"] == selected_document),
         None,
@@ -2151,7 +2176,7 @@ async def admin_library_source_add(
 
         return JSONResponse({"job_id": job_id})
 
-    # Non-JavaScript fallback keeps the old synchronous behavior.
+    # Non-JavaScript clients use the synchronous fallback.
     try:
         result = add_source(name, path)
     except ValueError as exc:
@@ -2380,6 +2405,6 @@ async def health() -> dict[str, str]:
         "version": APP_VERSION,
     }
 
-# Character editor routes (v0.4.3)
+# Character editor routes
 from app.characters.web import router as characters_router
 app.include_router(characters_router)

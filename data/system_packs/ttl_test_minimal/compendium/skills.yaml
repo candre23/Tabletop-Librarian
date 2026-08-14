@@ -1,0 +1,71 @@
+entity: skill
+entries:
+- id: athletics
+  name: Athletics
+  tags:
+  - physical
+  effects:
+    skill_power_bonus: 1
+  description: Physical exertion, climbing, jumping, and similar feats.
+- id: lore
+  name: Lore
+  tags:
+  - knowledge
+  effects:
+    skill_power_bonus:
+    - value: 2
+    - value: 2
+      when: level >= 5
+      label: Lore veteran bonus
+  description: Recall specialized knowledge and interpret learned information.
+- id: stealth
+  name: Stealth
+  tags:
+  - general
+  effects:
+    skill_power_bonus: 3
+  description: Move quietly, hide, and avoid unwanted notice.
+- id: battle_training
+  name: Battle Training
+  tags:
+  - combat
+  eligibility:
+    rule: archetype == "Warrior" and level >= 3
+    message: Requires Warrior archetype and level 3.
+  effects:
+    skill_power_bonus: 4
+  description: Formal combat drills and advanced battlefield technique.
+- id: acrobatics
+  name: Acrobatics
+  tags:
+  - physical
+  - agility
+  description: Balance, tumbling, and aerial movement.
+- id: crafting
+  name: Crafting
+  tags:
+  - technical
+  description: Create and repair ordinary objects.
+- id: diplomacy
+  name: Diplomacy
+  tags:
+  - social
+  description: Negotiate and persuade.
+- id: medicine
+  name: Medicine
+  tags:
+  - knowledge
+  - support
+  description: Treat injury and illness.
+- id: perception
+  name: Perception
+  tags:
+  - general
+  - awareness
+  description: Notice hidden or subtle details.
+- id: survival
+  name: Survival
+  tags:
+  - general
+  - outdoors
+  description: Navigate and endure wilderness conditions.

@@ -1,0 +1,14 @@
+version: 1
+actions:
+  - id: advance_level
+    title: Advance Level
+    description: Increase the character by one level and make any newly available choices.
+    available_when: level < 100
+    changes:
+      level: level + 1
+    steps:
+      - id: choices
+        title: Advancement Choices
+        description: Review your new level and choose any newly available skills.
+        fields:
+          - skills

@@ -1715,7 +1715,7 @@ mark.tt-source-match{outline:3px solid currentColor;border-radius:2px}
     scroll-margin-top: 110px;
 }
 
-/* v0.3.12.2: keep text/Markdown document and Ask panes independently scrollable */
+/* Keep text/Markdown document and Ask panes independently scrollable. */
 .text-reader-shell {
     height: calc(100vh - 32px);
     max-height: calc(100vh - 32px);
@@ -1755,7 +1755,7 @@ mark.tt-source-match{outline:3px solid currentColor;border-radius:2px}
 .text-reader-shell .text-document {
     min-height: 100%;
 }
-/* v0.4.8.1: keep home navigation compact and inside the panel. */
+/* Keep home navigation compact and inside the panel. */
 body > .shell > .panel > .topline {
     flex-wrap: wrap;
 }
@@ -1930,7 +1930,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.8.3 account placement and compact home search */
+/* Account placement and compact home search. */
 .ttl-global-nav-account {
     margin-left: auto;
     display: flex;
@@ -2011,7 +2011,7 @@ body > .shell > .panel .top-actions button {
     }
 }
 
-/* v0.4.10 calculated-value explanations */
+/* Calculated-value explanations. */
 .ttl-calculated-label,
 .ttl-derived-label {
     display: flex;
@@ -2148,7 +2148,7 @@ body > .shell > .panel .top-actions button {
     font-style: italic;
 }
 
-/* v0.4.11 eligibility feedback */
+/* Eligibility feedback. */
 .ttl-multi-chip-ineligible {
     border-color: #9a6542;
     background: #4a3427;
@@ -2168,7 +2168,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.12.1 per-field core-aspect locking and inline save errors */
+/* Per-field core-aspect locking and inline save errors. */
 .ttl-lockable-label { display:flex; align-items:center; gap:6px; }
 .ttl-lockable-label > label { margin:0; }
 .ttl-lock-icon {
@@ -2190,7 +2190,7 @@ body > .shell > .panel .top-actions button {
 .ttl-core-readonly { background:rgba(127,127,127,.04); }
 .ttl-error { margin-bottom:16px; padding:11px 13px; border-radius:8px; background:rgba(180,70,70,.14); border:1px solid rgba(180,70,70,.45); }
 
-/* v0.4.14 dynamic collection limits */
+/* Dynamic collection limits. */
 .ttl-field-label-row {
     display: flex;
     align-items: center;
@@ -2236,7 +2236,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.15 structured repeating collections */
+/* Structured repeating collections. */
 .ttl-structured-collection {
     display: grid;
     gap: 10px;
@@ -2312,7 +2312,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.16 declarative character-sheet layout */
+/* Declarative character-sheet layout. */
 .ttl-sheet-layout {
     display: grid;
     gap: 14px;
@@ -2423,7 +2423,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.17 scalable compendium picker */
+/* Scalable compendium picker. */
 .ttl-picker-native {
     position:absolute!important;
     width:1px!important;
@@ -2474,11 +2474,11 @@ body > .shell > .panel .top-actions button {
 .ttl-picker-no-results { padding:14px; color:#89959d; text-align:center; font-size:.82rem; }
 @media (max-width:640px) { .ttl-picker-controls { grid-template-columns:1fr; } }
 
-/* v0.4.18 advancement */
+/* Advancement workflow. */
 .ttl-advancement-buttons{display:grid;gap:10px;margin-top:10px}.ttl-advancement-buttons form{display:flex;align-items:center;gap:12px}.ttl-advancement-buttons .ttl-muted{flex:1}
 
 /* ========================================================================== 
-   v0.4.19 dense character-sheet visual foundation
+   Dense character-sheet visual foundation
    Character-facing pages deliberately use a document/sheet visual language
    rather than the roomy dark-card language used by the rest of TTL.
    ========================================================================== */
@@ -2691,8 +2691,7 @@ body > .shell > .panel .top-actions button {
     display: grid;
 }
 
-/* Until v0.4.20 provides explicit page-region spans, generic sections fill
-   the available row. Dense fields inside them still use their declared grid. */
+/* Generic sections fill the available row; dense fields retain their declared grid. */
 .ttl-character-ui .ttl-sheet-section {
     grid-column: 1 / -1;
     display: grid;
@@ -3064,8 +3063,7 @@ body > .shell > .panel .top-actions button {
     display: none;
 }
 
-/* Structured collections are compact rows, preparing for the formal table
-   renderer in v0.4.20. */
+/* Structured collections use compact rows. */
 .ttl-character-ui .ttl-structured-collection,
 .ttl-character-ui .ttl-collection-rows {
     gap: 2px;
@@ -3181,7 +3179,21 @@ body > .shell > .panel .top-actions button {
     border-radius: 1px;
     background: #fff;
     color: #162028;
-    padding: 5px 6px;
+    padding: 7px 8px 8px;
+    min-height: 54px;
+    align-items: flex-start;
+    line-height: 1.2;
+}
+
+.ttl-character-ui .ttl-compendium-picker[data-picker-entity="ability"] .ttl-picker-result {
+    min-height: 68px;
+    padding-top: 8px;
+    padding-bottom: 9px;
+}
+
+.ttl-character-ui .ttl-picker-result-main {
+    gap: 4px;
+    min-width: 0;
 }
 
 .ttl-character-ui .ttl-picker-result:nth-child(even) {
@@ -3197,6 +3209,10 @@ body > .shell > .panel .top-actions button {
 .ttl-character-ui .ttl-picker-description {
     color: #4c5d66;
     font-size: 10px;
+    line-height: 1.28;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    padding-bottom: 1px;
 }
 
 .ttl-character-ui .ttl-picker-tags,
@@ -3298,7 +3314,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.19.1 dense-sheet cleanup */
+/* Dense-sheet spacing and alignment. */
 .ttl-character-ui .ttl-char-head {
     align-items: center;
     min-height: 33px;
@@ -3467,8 +3483,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.19.2: compact top-left section title tabs.
-   Section accent color is retained, but only the label consumes header space. */
+/* Compact top-left section title tabs retain section accent colors without consuming header space. */
 .ttl-character-ui .ttl-sheet-section {
     position: relative;
     display: block;
@@ -3508,7 +3523,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.19.3: compact square remove column for skill tables */
+/* Compact square remove column for skill tables. */
 .ttl-character-ui .ttl-skill-table-removable th:last-child,
 .ttl-character-ui .ttl-skill-table-removable td:last-child {
     width: 26px;
@@ -3541,7 +3556,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.20 advanced sheet framework + play semantics */
+/* Advanced sheet framework and play semantics. */
 .ttl-character-head-actions {
     display: flex;
     align-items: center;
@@ -3649,7 +3664,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.21 temporary effects and effective values */
+/* Temporary effects and effective values. */
 .ttl-effective-metric {
     display: inline-flex;
     align-items: center;
@@ -3794,7 +3809,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.21.1: temporary modifier dialog sizing/layout fix */
+/* Temporary modifier dialog sizing and layout. */
 .ttl-temp-dialog {
     width: min(760px, calc(100vw - 36px));
     max-width: 760px;
@@ -3853,7 +3868,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.21.2 propagated temporary-effect warning */
+/* Propagated temporary-effect warnings. */
 .ttl-temp-influences {
     padding: 5px 7px;
     border: 1px solid #b66b6b;
@@ -3864,7 +3879,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.21.3 play-mode autosave */
+/* Play-mode autosave. */
 .ttl-autosave-status {
     font-size: .68rem;
     color: #4d5c65;
@@ -3885,7 +3900,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.21.4 manual autosave trigger */
+/* Manual autosave trigger. */
 .ttl-autosave-status {
     border: 0;
     background: transparent;
@@ -3908,7 +3923,7 @@ body > .shell > .panel .top-actions button {
     color: #65410d;
 }
 
-/* v0.4.22 Knowledgebase Tools */
+/* Knowledgebase tools. */
 .knowledgebase-global-warning {
     border-bottom: 2px solid #7a5810;
     background: #fff1b8;
@@ -4006,7 +4021,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.22.1 recursive physical-source assignment */
+/* Recursive physical-source assignment. */
 .source-help {
     display: block;
     margin-top: 4px;
@@ -4014,7 +4029,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.22.2 library source scan progress */
+/* Library source scan progress. */
 .source-scan-overlay {
     position: fixed;
     inset: 0;
@@ -4091,9 +4106,7 @@ body > .shell > .panel .top-actions button {
     }
 }
 
-/* v0.4.22.6: character sheets respond to their own container width.
-   This preserves compact layouts when embedded in the future tri-pane
-   workspace even if the browser viewport itself remains wide. */
+/* Character sheets respond to their container width so embedded workspace panes remain compact. */
 .ttl-character-ui .ttl-char-wrap,
 .ttl-character-ui .ttl-create-wrap {
     container-type: inline-size;
@@ -4119,7 +4132,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.22.11: readable structured collections in Play mode */
+/* Readable structured collections in Play mode. */
 .ttl-character-ui .ttl-play-collection {
     display: grid;
     gap: 3px;
@@ -4181,7 +4194,7 @@ body > .shell > .panel .top-actions button {
 }
 
 
-/* v0.4.22.13: completed creation steps are direct navigation targets. */
+/* Completed creation steps are direct navigation targets. */
 .ttl-character-ui button.ttl-progress-step {
     font-family: inherit;
     cursor: pointer;
@@ -4198,7 +4211,7 @@ body > .shell > .panel .top-actions button {
 
 
 /* ==========================================================================
-   v0.4.22.14 application visual normalization
+   Application visual normalization
    ========================================================================== */
 :root {
     --ttl-app-bg: #10171b;
@@ -4548,7 +4561,7 @@ body:not(.ttl-character-ui) .inline-admin-form {
 
 
 /* ==========================================================================
-   v0.4.22.15 unified light application theme
+   Unified light application theme
    The character-sheet palette is the visual source of truth for all TTL pages.
    ========================================================================== */
 
@@ -4822,7 +4835,7 @@ body:not(.ttl-character-ui) dialog::backdrop {
 
 
 /* ==========================================================================
-   v0.4.22.16 contrast correction pass
+   Application contrast rules
    Readability takes precedence over decorative tinting.
    ========================================================================== */
 
@@ -4995,7 +5008,7 @@ body:not(.ttl-character-ui) textarea::placeholder {
 }
 
 
-/* v0.4.22.17 incoming upload contrast + GM staging actions */
+/* Incoming upload contrast and GM staging actions. */
 body:not(.ttl-character-ui) .upload-row {
     border: 1px solid #82949d !important;
     border-radius: 2px !important;
@@ -5045,7 +5058,7 @@ body:not(.ttl-character-ui) .upload-delete-form {
 }
 
 
-/* v0.4.22.18 embedded Ask cleanup */
+/* Embedded Ask presentation. */
 body.ttl-embedded-page {
     min-height: 100vh;
     margin: 0;
@@ -5167,8 +5180,7 @@ body.ttl-embedded-page .subpanel {
 }
 
 
-/* v0.4.22.19: reader workspaces use available browser width.
-   This intentionally overrides the normal centered application shell. */
+/* Reader workspaces use available browser width instead of the centered application shell. */
 body:not(.ttl-character-ui) > .shell:has(.reader-shell) {
     width: calc(100vw - 16px) !important;
     max-width: none !important;
@@ -5189,8 +5201,7 @@ body:not(.ttl-character-ui) > .shell:has(.reader-shell) .reader-split {
     max-width: none;
 }
 
-/* Give both panes useful space on large displays instead of preserving
-   the old fixed reader width. */
+/* Give both reader panes useful space on large displays. */
 @media (min-width: 1500px) {
     .reader-split.with-ai {
         grid-template-columns: minmax(0, 1.2fr) minmax(430px, .8fr);
@@ -5198,7 +5209,7 @@ body:not(.ttl-character-ui) > .shell:has(.reader-shell) .reader-split {
 }
 
 
-/* v0.4.22.20: Knowledgebase embedding progress contrast */
+/* Knowledgebase embedding progress contrast. */
 body:not(.ttl-character-ui) .embedding-progress,
 body:not(.ttl-character-ui) .embedding-build-progress,
 body:not(.ttl-character-ui) .progress-shell,
@@ -5241,7 +5252,7 @@ body:not(.ttl-character-ui) progress::-moz-progress-bar {
 }
 
 
-/* v0.4.22.21 character ownership + portability */
+/* Character ownership and portability. */
 .ttl-character-ui .ttl-character-row-actions {
     display: flex;
     gap: 10px;
@@ -5269,7 +5280,7 @@ body:not(.ttl-character-ui) progress::-moz-progress-bar {
 }
 
 
-/* v0.4.22.22 professional browser error pages */
+/* Browser error pages. */
 body:not(.ttl-character-ui) .ttl-error-page {
     width: min(760px, 100%);
     margin: 7vh auto 0;
@@ -5333,7 +5344,7 @@ body:not(.ttl-character-ui) .ttl-error-actions button {
 }
 
 
-/* v0.5.1 character-aware Ask foundation */
+/* Character-aware Ask. */
 body:not(.ttl-character-ui) .ask-character-context {
     display: grid;
     gap: 5px;
@@ -5365,7 +5376,7 @@ body.ttl-embedded-page .ask-character-context {
 }
 
 
-/* v0.5.2 AI backend preflight + cancellation */
+/* AI backend preflight and cancellation. */
 body:not(.ttl-character-ui) .ask-submit-row {
     display: flex;
     align-items: center;
@@ -5383,7 +5394,7 @@ body:not(.ttl-character-ui) #ask-client-error {
 
 
 /* ==========================================================================
-   v0.5.3 tri-pane play workspace foundation
+   Tri-pane play workspace
    ========================================================================== */
 body:not(.ttl-character-ui) > .shell:has(.ttl-workspace) {
     width: calc(100vw - 12px) !important;
@@ -5573,7 +5584,7 @@ body.ttl-embedded-page .reader-toolbar {
 }
 
 
-/* v0.5.3.1 workspace render/cache hardening */
+/* Workspace rendering constraints. */
 body.ttl-workspace-page {
     overflow: hidden;
 }
@@ -5617,7 +5628,7 @@ body.ttl-workspace-page .ttl-workspace-pane iframe {
 }
 
 
-/* v0.5.3.2 compact Ask presentation inside tri-pane workspace */
+/* Compact Ask presentation inside the tri-pane workspace. */
 body.ttl-embedded-page .ask-embedded-panel.ask-workspace-compact {
     padding: 7px 9px !important;
 }
@@ -5642,7 +5653,7 @@ body.ttl-embedded-page .ask-workspace-compact .ask-sources {
 }
 
 
-/* v0.5.4 character-aware rules analysis */
+/* Character-aware rules analysis. */
 body:not(.ttl-character-ui) .ask-analysis-mode {
     margin: 5px 0 6px;
     color: #365b6d;
@@ -5657,7 +5668,7 @@ body.ttl-embedded-page .ask-workspace-compact .ask-analysis-mode {
 }
 
 
-/* v0.5.5 selectable Basic / Advanced reasoning */
+/* Selectable Basic and Advanced reasoning. */
 body:not(.ttl-character-ui) .ask-reasoning-mode {
     display: flex;
     align-items: center;
@@ -5713,10 +5724,10 @@ body.ttl-embedded-page .ask-workspace-compact .ask-reasoning-mode {
     margin-bottom: 5px;
 }
 
-/* v0.5.11 GM-managed Advanced Ask pipeline preset */
+/* GM-managed Advanced Ask pipeline preset. */
 .ai-pipeline-description { margin: 0.35rem 0 0; }
 
-/* v0.5.12 persistent local OCR workflow */
+/* Persistent local OCR workflow. */
 .ocr-admin-panel {
     margin-top: 1rem;
 }
@@ -5777,7 +5788,7 @@ body.ttl-embedded-page .ask-workspace-compact .ask-reasoning-mode {
     font-size: 0.85rem;
 }
 
-/* v0.5.16 sticky navigation and Settings/About dialog */
+/* Sticky navigation and Settings/About dialog. */
 .ttl-global-nav {
     position: sticky;
     top: 0;
@@ -5868,7 +5879,7 @@ button.ttl-global-nav-brand:focus-visible {
     margin: 0;
 }
 
-/* v0.5.17 subtle TTL brand button and System Pack import report */
+/* TTL brand button and System Pack import report. */
 button.ttl-global-nav-brand,
 body:not(.ttl-character-ui) button.ttl-global-nav-brand,
 .ttl-character-ui button.ttl-global-nav-brand {
@@ -5907,3 +5918,91 @@ button.ttl-global-nav-brand:focus-visible {
 
 .ttl-system-pack-report details { margin-top: .45rem; }
 .ttl-system-pack-report ul { margin: .4rem 0 0 1.25rem; padding: 0; }
+
+/* Character default workspace book. */
+.ttl-default-book-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  white-space: nowrap;
+}
+.ttl-default-book-form label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.ttl-default-book-form select {
+  max-width: 300px;
+  min-width: 170px;
+  height: 28px;
+  padding: 2px 5px;
+}
+.ttl-default-book-form button {
+  min-height: 28px;
+  padding: 3px 8px;
+}
+
+/* System Pack framework widgets. */
+.ttl-default-book-form select {
+  background: #f7f9fa;
+  color: #14232d;
+  border: 1px solid #58717f;
+}
+.ttl-default-book-form select option {
+  background: #f7f9fa;
+  color: #14232d;
+}
+.ttl-pack-widget { grid-column: 1 / -1; min-width: 0; }
+.ttl-pack-static-image { display:block; max-width:100%; height:auto; margin:0 auto; }
+.ttl-pack-icon { width:32px; height:32px; object-fit:contain; vertical-align:middle; }
+.ttl-pack-widget-label { margin-top:4px; font-size:11px; font-weight:700; text-align:center; }
+.ttl-pack-field { min-width:0; }
+.ttl-track, .ttl-grid { display:flex; flex-wrap:wrap; gap:3px; align-items:center; }
+.ttl-grid { display:grid; grid-template-columns:repeat(var(--ttl-grid-columns, 5), minmax(12px, 1fr)); }
+.ttl-clock { display:flex; flex-wrap:wrap; gap:4px; }
+.ttl-track-cell { width:15px; height:15px; min-width:15px; min-height:15px; padding:0; border:1px solid #3b6174; background:#eef3f5; }
+.ttl-track-cell.is-filled { background:#2a718e; }
+.ttl-track-cell:disabled { opacity:1; cursor:default; }
+.ttl-clock .ttl-track-cell { border-radius:50%; }
+.ttl-widget-number { margin-top:3px; font-size:11px; }
+.ttl-counter { display:inline-flex; align-items:center; gap:8px; }
+.ttl-counter button { width:28px; height:26px; padding:0; }
+.ttl-counter strong { min-width:2.5em; text-align:center; font-size:16px; }
+.ttl-image-overlay { position:relative; width:100%; aspect-ratio:var(--ttl-overlay-aspect, 1 / 1); overflow:hidden; }
+.ttl-image-overlay > img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; }
+.ttl-overlay-region { position:absolute; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:2px; padding:2px; box-sizing:border-box; background:rgba(247,249,250,.88); border:1px solid rgba(59,97,116,.6); overflow:hidden; }
+.ttl-overlay-label { font-size:9px; font-weight:700; text-align:center; line-height:1.05; }
+.ttl-overlay-region input[type=number] { width:100%; min-width:0; height:24px; text-align:center; }
+.ttl-overlay-track { justify-content:center; }
+.ttl-overlay-track .ttl-track-cell { width:10px; height:10px; min-width:10px; min-height:10px; }
+[data-ttl-visible-when][hidden] { display:none !important; }
+
+/* System Pack state widgets. */
+.ttl-state-cells { display:flex; flex-wrap:wrap; gap:3px; align-items:center; }
+.ttl-state-cells.ttl-grid { display:grid; grid-template-columns:repeat(var(--ttl-grid-columns, 5), max-content); }
+.ttl-state-cell { transition:background .08s ease, border-color .08s ease, box-shadow .08s ease; }
+.ttl-state-cell.is-state-empty,
+.ttl-state-swatch.is-state-empty { background:#eef3f5; border-color:#3b6174; }
+.ttl-state-cell.is-state-marked,
+.ttl-state-cell.is-state-filled,
+.ttl-state-swatch.is-state-marked,
+.ttl-state-swatch.is-state-filled { background:#2a718e; border-color:#1f5368; }
+.ttl-state-cell.is-state-temporary,
+.ttl-state-swatch.is-state-temporary { background:#d5a23c; border-color:#8c671d; }
+.ttl-state-cell.is-state-permanent,
+.ttl-state-cell.is-state-damaged,
+.ttl-state-swatch.is-state-permanent,
+.ttl-state-swatch.is-state-damaged { background:#a94a43; border-color:#73312d; }
+.ttl-state-cell.is-state-destroyed,
+.ttl-state-swatch.is-state-destroyed { background:#30383d; border-color:#11171a; box-shadow:inset 0 0 0 2px #dbe2e5; }
+.ttl-state-cell.is-state-warning,
+.ttl-state-swatch.is-state-warning { background:#e4c75d; border-color:#907b2e; }
+.ttl-state-cell.is-state-critical,
+.ttl-state-swatch.is-state-critical { background:#8e3f72; border-color:#5b2548; }
+.ttl-state-legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; font-size:11px; color:#33444d; }
+.ttl-state-legend > span { display:inline-flex; align-items:center; gap:3px; }
+.ttl-state-swatch { width:10px; height:10px; display:inline-block; border:1px solid #3b6174; }
+.ttl-state-map { position:relative; display:block; min-height:140px; width:100%; }
+.ttl-state-map .ttl-state-cell { transform:translate(-50%, -50%); }

@@ -1,0 +1,176 @@
+entity: character_arc
+entries:
+- id: become_a_parent
+  name: Become a Parent
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 167
+- id: build
+  name: Build
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 167
+- id: cleanse
+  name: Cleanse
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 168
+- id: creation
+  name: Creation
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 167
+- id: develop_a_bond
+  name: Develop a Bond
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 169
+- id: enterprise
+  name: Enterprise
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 169
+- id: explore
+  name: Explore
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 169
+- id: fall_from_grace
+  name: Fall From Grace
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 170
+- id: finish_a_great_work
+  name: Finish a Great Work
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 171
+- id: give_your_word
+  name: Give Your Word
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 171
+- id: grow
+  name: Grow
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 171
+- id: join_an_organization
+  name: Join an Organization
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 172
+- id: justice
+  name: Justice
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 172
+- id: learn
+  name: Learn
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 172
+- id: raise_a_child
+  name: Raise a Child
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 167
+- id: recover
+  name: Recover
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 174
+- id: redemption
+  name: Redemption
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 170
+- id: rescue
+  name: Rescue
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 174
+- id: restore
+  name: Restore
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 167
+- id: revenge
+  name: Revenge
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 167
+- id: romance
+  name: Romance
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 167
+- id: safeguard
+  name: Safeguard
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 176
+- id: serve_the_community
+  name: Serve the Community
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 170
+- id: solve_a_mystery
+  name: Solve a Mystery
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 176
+- id: teach
+  name: Teach
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 177
+- id: theft
+  name: Theft
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 177
+- id: train_a_creature
+  name: Train a Creature
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 178
+- id: uncover_a_secret
+  name: Uncover a Secret
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 172
+- id: whoop_your_enemy
+  name: Whoop Your Enemy
+  description: Character arc. Track opening, steps, climax, and resolution as appropriate.
+  source:
+    book: ogoa_corebook
+    page: 178

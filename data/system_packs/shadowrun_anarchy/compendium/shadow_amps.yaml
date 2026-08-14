@@ -1,0 +1,11 @@
+entity: shadow_amp
+entries:
+- {id: cyberware_base, name: "Custom Cyberware", tags: [cyberware], base_cost: 1, essence_cost: 1, description: "Cyberware base slot; add effects and costs using the creation rules.", source: {book: shadowrun_anarchy_core, page: 65}}
+- {id: bioware_base, name: "Custom Bioware", tags: [bioware], base_cost: 2, essence_cost: 0.5, description: "Bioware base slot; add effects and costs using the creation rules.", source: {book: shadowrun_anarchy_core, page: 65}}
+- {id: adept_power_base, name: "Custom Adept Power", tags: [adept, magic], base_cost: 1, eligibility: {rule: "awakened == True", message: "Adept powers require an Awakened character."}, description: "Adept Power base slot.", source: {book: shadowrun_anarchy_core, page: 65}}
+- {id: spell_base, name: "Custom Spell", tags: [spell, magic], base_cost: 1, eligibility: {rule: "awakened == True", message: "Spells require an Awakened character."}, description: "Spell base slot.", source: {book: shadowrun_anarchy_core, page: 65}}
+- {id: cyberdeck_base, name: "Cyberdeck 1", tags: [cyberdeck, matrix], base_cost: 2, description: "Firewall 1; Matrix CM 6; reroll 1 Matrix die; run 1 program. Limit one cyberdeck.", source: {book: shadowrun_anarchy_core, page: 65}}
+- {id: program_base, name: "Custom Program", tags: [program, matrix], base_cost: 1, description: "Program base slot.", source: {book: shadowrun_anarchy_core, page: 65}}
+- {id: complex_form_base, name: "Custom Complex Form", tags: [complex_form, resonance, matrix], base_cost: 1, eligibility: {rule: "emerged == True", message: "Complex Forms require an Emerged character."}, description: "Complex Form base slot.", source: {book: shadowrun_anarchy_core, page: 65}}
+- {id: talisman_base, name: "Custom Talisman", tags: [talisman, magic], base_cost: 1, description: "Talisman base slot.", source: {book: shadowrun_anarchy_core, page: 65}}
+- {id: gear_amp_base, name: "Specialized Gear Amp", tags: [gear], base_cost: 0, description: "Gear Shadow Amp base slot.", source: {book: shadowrun_anarchy_core, page: 65}}

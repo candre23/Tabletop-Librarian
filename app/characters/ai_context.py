@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from app.characters.schema import CharacterField, load_character_schema
-from app.characters.storage import CharacterRecord, CharacterStorageError, load_character
+from app.characters.storage import CharacterStorageError, load_character
 from app.characters.temporary_effects import (
     build_effective_character_values,
     normalize_temporary_effects,

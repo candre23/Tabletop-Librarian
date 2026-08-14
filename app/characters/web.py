@@ -7,7 +7,7 @@ import re
 
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response, FileResponse
 from fastapi.templating import Jinja2Templates
 
 from app.characters.schema import default_collection_item, load_character_schema, validate_character_data
@@ -19,7 +19,14 @@ from app.characters.temporary_effects import (
     temporary_influence_map,
 )
 from app.compendium import load_compendium
-from app.config import APP_VERSION
+from app.config import (
+    ADVANCEMENT_DRAFT_DIR,
+    APP_VERSION,
+    CHARACTER_DIR,
+    CHARACTER_DRAFT_DIR,
+    SYSTEM_PACKS_DIR,
+    TEMPLATE_DIR,
+)
 from app.auth import get_user, list_users
 from app.characters.portability import (
     CharacterPackageError,
@@ -55,6 +62,7 @@ from app.system_packs import (
     import_system_pack_package,
     load_system_pack,
 )
+from app.rag.retrieve import available_rag_scope
 from app.rules import (
     evaluate_limits,
     load_rule_engine,
@@ -66,14 +74,35 @@ from app.rules import (
 
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 templates.env.globals["app_version"] = APP_VERSION
 
-PACK_ROOT = Path("data/system_packs")
-CHARACTER_ROOT = Path("data/characters")
-DRAFT_ROOT = Path("data/character_drafts")
-ADVANCEMENT_DRAFT_ROOT = Path("data/advancement_drafts")
+PACK_ROOT = SYSTEM_PACKS_DIR
+CHARACTER_ROOT = CHARACTER_DIR
+DRAFT_ROOT = CHARACTER_DRAFT_DIR
+ADVANCEMENT_DRAFT_ROOT = ADVANCEMENT_DRAFT_DIR
 
+
+
+ASSET_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"}
+
+@router.get("/characters/system-packs/{system_id}/assets/{asset_path:path}")
+async def system_pack_asset(system_id: str, asset_path: str):
+    pack = load_system_pack(PACK_ROOT / system_id)
+    if pack.manifest is None or not pack.valid:
+        raise HTTPException(status_code=404, detail="System Pack not found.")
+    assets_dir = str(pack.manifest.raw.get("assets") or "assets")
+    if not asset_path or Path(asset_path).is_absolute() or ".." in Path(asset_path).parts:
+        raise HTTPException(status_code=404, detail="Asset not found.")
+    asset_root = (pack.root / assets_dir).resolve()
+    target = (asset_root / asset_path).resolve()
+    try:
+        target.relative_to(asset_root)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Asset not found.")
+    if not target.is_file() or target.suffix.lower() not in ASSET_EXTENSIONS:
+        raise HTTPException(status_code=404, detail="Asset not found.")
+    return FileResponse(target)
 
 def _identity_from_request(request: Request) -> tuple[str, str]:
     """
@@ -1143,6 +1172,17 @@ def _display_collection_item_value(
 
 
 
+def _character_workspace_documents(role: str) -> list[dict[str, str]]:
+    scope = available_rag_scope(role)
+    return [
+        {
+            "value": f"{item['folder_name']}\t{item['doc_key']}",
+            "label": f"{item['folder_name']} — {item['display_name']}",
+        }
+        for item in scope["documents"]
+    ]
+
+
 def _render_character_edit_page(
     request: Request,
     *,
@@ -1165,6 +1205,13 @@ def _render_character_edit_page(
     temp_state = _temporary_effect_state(pack, schema, record)
     character_layout = _load_character_layout_for_pack(pack, schema)
     core_fields = _core_fields_for_pack(pack, schema)
+    normalized_mode = mode if mode in {"play", "configure"} else "play"
+    workspace_documents = (
+        _character_workspace_documents(role) if normalized_mode == "configure" else []
+    )
+    default_workspace_document = str(
+        (record.preferences or {}).get("default_workspace_document") or ""
+    )
     return templates.TemplateResponse(
         request=request,
         name="characters/edit.html",
@@ -1194,7 +1241,9 @@ def _render_character_edit_page(
             "display_collection_item_value": _display_collection_item_value,
             "error": error,
             "advancement_actions": _available_advancement_actions(pack, schema, record.data),
-            "mode": mode if mode in {"play", "configure"} else "play",
+            "mode": normalized_mode,
+            "workspace_documents": workspace_documents,
+            "default_workspace_document": default_workspace_document,
             "temporary_effects": temp_state["effects"],
             "temporary_effective_values": temp_state["effective_values"],
             "temporary_modified_fields": temp_state["modified_fields"],
@@ -1592,12 +1641,30 @@ async def character_creation_step(request: Request, draft_id: str):
                         f"System rules are invalid. {detail}"
                     )
 
-                finalized = dict(draft.data)
+                finalized, _pre_final_rule_issues = _evaluate_character_values(
+                    pack,
+                    schema,
+                    dict(draft.data),
+                    {},
+                )
+                compendium = _load_compendium_for_pack(pack)
+                final_modifiers = resolve_compendium_modifiers(
+                    schema, compendium, finalized, engine
+                )
                 for field_id, expression in workflow.final_changes.items():
-                    finalized[field_id] = engine.evaluate_expression(
-                        expression,
-                        finalized,
+                    value = engine.evaluate_expression(
+                        expression, finalized, modifiers=final_modifiers
                     )
+                    target_field = schema.fields.get(field_id)
+                    if (
+                        target_field is not None
+                        and target_field.type == "integer"
+                        and isinstance(value, (int, float))
+                        and not isinstance(value, bool)
+                        and float(value).is_integer()
+                    ):
+                        value = int(value)
+                    finalized[field_id] = value
 
                 finalized, _final_rule_issues = _evaluate_character_values(
                     pack,
@@ -2030,6 +2097,38 @@ async def character_temporary_effects(request: Request, character_id: str):
 
     return RedirectResponse(
         url=_character_url(character_id, viewer=username, role=role, owner=owner),
+        status_code=303,
+    )
+
+
+@router.post("/characters/{character_id}/default-book")
+async def character_default_book(request: Request, character_id: str):
+    username, role = _identity_from_request(request)
+    owner = _target_owner(request, username, role)
+    try:
+        record = load_character(
+            owner, character_id, character_root=CHARACTER_ROOT, pack_root=PACK_ROOT
+        )
+    except CharacterStorageError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    form = await request.form()
+    selection = str(form.get("default_workspace_document") or "").strip()
+    valid = {item["value"] for item in _character_workspace_documents(role)}
+    if selection and selection not in valid:
+        raise HTTPException(status_code=400, detail="Selected default book is not available.")
+
+    preferences = dict(record.preferences or {})
+    if selection:
+        preferences["default_workspace_document"] = selection
+    else:
+        preferences.pop("default_workspace_document", None)
+    record.preferences = preferences
+    save_character(record, character_root=CHARACTER_ROOT, pack_root=PACK_ROOT)
+    return RedirectResponse(
+        url=_character_url(
+            character_id, viewer=username, role=role, owner=owner, extra="mode=configure"
+        ),
         status_code=303,
     )
 

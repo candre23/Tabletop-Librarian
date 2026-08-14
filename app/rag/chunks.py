@@ -4,8 +4,6 @@ import hashlib
 import json
 import re
 from pathlib import Path
-from threading import Lock, Thread
-from time import time
 from typing import Any
 
 from app.config import CACHE_DIR
@@ -22,33 +20,9 @@ OVERLAP_CHARS = 250
 MIN_CHARS = 120
 PARAGRAPH_SPLIT_RE = re.compile(r"\n\s*\n+")
 
-_build_lock = Lock()
-_build_state: dict[str, Any] = {
-    "running": False,
-    "stage": "idle",
-    "message": "Ready",
-    "current": 0,
-    "total": 0,
-    "percent": 0.0,
-    "started_at": None,
-    "finished_at": None,
-    "error": None,
-}
-
-
-def _set_build_state(**updates: Any) -> None:
-    with _build_lock:
-        _build_state.update(updates)
-
-
-def chunk_build_status() -> dict[str, Any]:
-    with _build_lock:
-        return dict(_build_state)
-
 
 def _chunk_id(path: str, page: int, ordinal: int, text: str) -> str:
-    # Preserve the established ID format so existing embeddings for unchanged
-    # documents remain reusable across the incremental-indexing upgrade.
+    # Keep chunk IDs stable so embeddings for unchanged documents remain reusable.
     raw = f"{path}\0{page}\0{ordinal}\0{text[:200]}".encode(
         "utf-8",
         errors="surrogatepass",
@@ -236,24 +210,10 @@ def build_chunk_cache(
     affected = changed | removed
 
     if full_rebuild:
-        _set_build_state(
-            stage="scanning",
-            message="Scanning indexed documents and counting pages...",
-            current=0,
-            total=0,
-            percent=0.0,
-        )
         planned = _current_cached_documents()
         total_pages = sum(
             sum(1 for page in cached.get("pages", []) if str(page.get("text", "")).strip())
             for _, cached in planned
-        )
-        _set_build_state(
-            stage="chunking",
-            message=f"Building context chunks from {total_pages:,} pages...",
-            current=0,
-            total=total_pages,
-            percent=0.0,
         )
         chunks: list[dict[str, Any]] = []
         pages_done = 0
@@ -261,13 +221,6 @@ def build_chunk_cache(
             document_chunks, document_pages, _ = _document_chunks(path_text, cached)
             chunks.extend(document_chunks)
             pages_done += document_pages
-            _set_build_state(
-                stage="chunking",
-                message=f"Processed {pages_done:,} of {total_pages:,} pages",
-                current=pages_done,
-                total=total_pages,
-                percent=(pages_done / total_pages * 100.0) if total_pages else 100.0,
-            )
         removed_chunk_ids: list[str] = []
         new_chunk_ids = [chunk["id"] for chunk in chunks]
         updated_documents = len({chunk["path"] for chunk in chunks})
@@ -296,16 +249,6 @@ def build_chunk_cache(
                 1 for page in cached.get("pages", []) if str(page.get("text", "")).strip()
             )
 
-        _set_build_state(
-            stage="chunking",
-            message=(
-                f"Updating context chunks for {len(changed):,} changed document"
-                f"{'s' if len(changed) != 1 else ''}..."
-            ),
-            current=0,
-            total=total_pages,
-            percent=0.0,
-        )
 
         pages_done = 0
         new_chunk_ids: list[str] = []
@@ -317,13 +260,6 @@ def build_chunk_cache(
             chunks.extend(document_chunks)
             new_chunk_ids.extend(chunk["id"] for chunk in document_chunks)
             pages_done += document_pages
-            _set_build_state(
-                stage="chunking",
-                message=f"Processed {pages_done:,} of {total_pages:,} changed pages",
-                current=pages_done,
-                total=total_pages,
-                percent=(pages_done / total_pages * 100.0) if total_pages else 100.0,
-            )
 
         updated_documents = len(changed)
         removed_documents = len(removed)
@@ -337,13 +273,6 @@ def build_chunk_cache(
         )
     )
 
-    _set_build_state(
-        stage="saving",
-        message="Saving context chunk cache...",
-        current=pages_done,
-        total=total_pages,
-        percent=100.0,
-    )
     payload = _payload_from_chunks(chunks)
     CHUNK_CACHE_FILE.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
@@ -365,52 +294,6 @@ def build_chunk_cache(
         "full_rebuild": full_rebuild,
     }
 
-
-def _background_build_worker() -> None:
-    try:
-        result = build_chunk_cache(force=True)
-        _set_build_state(
-            running=False,
-            stage="complete",
-            message=(
-                f"Complete: {result['documents']:,} documents, "
-                f"{result['pages']:,} pages, {result['chunks']:,} chunks"
-            ),
-            current=result["pages"],
-            total=result["pages"],
-            percent=100.0,
-            finished_at=time(),
-            error=None,
-        )
-    except Exception as exc:
-        _set_build_state(
-            running=False,
-            stage="error",
-            message=f"Context chunk build failed: {exc}",
-            finished_at=time(),
-            error=str(exc),
-        )
-
-
-def start_chunk_build() -> dict[str, Any]:
-    with _build_lock:
-        if _build_state["running"]:
-            return dict(_build_state)
-        _build_state.update(
-            {
-                "running": True,
-                "stage": "starting",
-                "message": "Starting context chunk build...",
-                "current": 0,
-                "total": 0,
-                "percent": 0.0,
-                "started_at": time(),
-                "finished_at": None,
-                "error": None,
-            }
-        )
-    Thread(target=_background_build_worker, name="ttlibrarian-chunk-build", daemon=True).start()
-    return chunk_build_status()
 
 
 def load_chunks() -> list[dict]:
@@ -438,7 +321,5 @@ def chunk_cache_status() -> dict[str, int]:
 
 
 def clear_chunk_cache() -> None:
-    if chunk_build_status()["running"]:
-        raise RuntimeError("Cannot clear context chunks while a build is running.")
     CHUNK_CACHE_FILE.unlink(missing_ok=True)
     invalidate_chunks()

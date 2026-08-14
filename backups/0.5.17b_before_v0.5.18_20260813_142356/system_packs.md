@@ -1,0 +1,720 @@
+# Tabletop Librarian System Pack Specification
+
+System Packs define game-system-specific character data, rules, catalog content,
+creation workflows, and layouts while keeping Tabletop Librarian's core engine
+system-neutral.
+
+This document is the authoritative project reference for the pack format as it
+evolves through v0.4.
+
+## Core principles
+
+- System Packs are data, not executable plugins.
+- No arbitrary Python, JavaScript, shell commands, filesystem access, or network
+  access may be supplied by a pack.
+- Character mechanics that affect legality, calculation, validation, selectable
+  options, or automatic sheet behavior must ultimately be structured data.
+- RAG/LLM features may discover, explain, or propose structured content, but are
+  not the authoritative runtime rules engine.
+- Stable IDs are used for character and compendium references.
+- Human-readable YAML/JSON is authoritative; generated caches are disposable.
+- Pack validation should fail clearly rather than silently merge incompatible
+  definitions.
+
+## Pack directory
+
+A pack currently lives under `data/system_packs/<pack_id>/`.
+
+Typical layout:
+
+```text
+data/system_packs/
+  eldritch/
+    manifest.yaml
+    character.yaml
+    rules.yaml
+    creation.yaml
+    compendium/
+      abilities.yaml
+      skills.yaml
+      races.yaml
+      occupations.yaml
+      advantages.yaml
+      equipment.yaml
+      spells.yaml
+    layouts/
+      editor.yaml
+      print.html
+      print.css
+    assets/
+    sources/
+      source_map.yaml
+    modules/
+    migrations/
+```
+
+Only `manifest.yaml` and the declared character schema are required by the
+current implementation. Other sections are optional.
+
+## Manifest
+
+Minimum example:
+
+```yaml
+id: eldritch
+name: Eldritch
+version: 0.1.0
+pack_format: 1
+character_schema: character.yaml
+rules: rules.yaml
+compendium:
+  - compendium/skills.yaml
+  - compendium/equipment.yaml
+```
+
+`pack_format` identifies compatibility with TTL's System Pack schema.
+`version` identifies the revision of the individual game-system pack.
+
+All declared files must use safe paths relative to the pack root.
+
+## Character schema
+
+`character.yaml` declares fields. Initial field types are:
+
+- `text`
+- `integer`
+- `decimal`
+- `boolean`
+- `enum`
+- `reference`
+- `multi_reference`
+- `collection`
+- `object`
+- `calculated`
+- `resource`
+- `notes`
+
+Example:
+
+```yaml
+schema_version: 1
+fields:
+  name:
+    type: text
+    label: Character Name
+    required: true
+
+  occupation:
+    type: reference
+    label: Occupation
+    entity: occupation
+
+  level:
+    type: integer
+    default: 1
+    min: 1
+    max: 20
+```
+
+A saved character records the System Pack and schema version separately from
+its character-specific data.
+
+## Rules
+
+`rules.yaml` currently supports safe calculated and validation expressions.
+Expressions are parsed and interpreted by TTL; Python `eval` is not used.
+
+Current expression features include arithmetic, comparisons, boolean logic,
+conditional expressions, and a small allowlist of numeric functions.
+Calculated fields are dependency-ordered and circular dependencies are errors.
+
+The editor reevaluates rules live when editable character values change. Saving
+runs the authoritative calculation and validation again before writing data.
+
+### Modifier channels and compendium effects
+
+`rules.yaml` may declare numeric modifier channels:
+
+```yaml
+modifiers:
+  strength_bonus:
+    default: 0
+    aggregate: sum
+```
+
+Supported aggregation methods are currently `sum`, `max`, and `min`.
+
+Compendium entries can contribute numeric values to those declared channels:
+
+```yaml
+effects:
+  strength_bonus: 1
+```
+
+Effects may also be conditional while retaining the simple numeric shorthand:
+
+```yaml
+effects:
+  strength_bonus:
+    value: 2
+    when: level >= 5
+```
+
+Multiple contributions to the same modifier are supported:
+
+```yaml
+effects:
+  strength_bonus:
+    - value: 1
+    - value: 2
+      when: level >= 5
+      label: Veteran training
+```
+
+Conditional effects currently reference non-calculated character fields only.
+This prevents an effect from qualifying itself through a calculated value or
+modifier feedback loop.
+
+Only selected entities referenced by the character contribute effects. The
+resolved modifier values are virtual rule inputs: they are available to
+calculated and validation expressions but are not written into character JSON.
+
+For example:
+
+```yaml
+calculated:
+  effective_strength:
+    formula: strength + strength_bonus
+
+  fortitude_save:
+    formula: effective_strength + level
+```
+
+This supports deterministic chains such as a selected skill modifying a stat,
+with that calculated stat then affecting a saving throw.
+
+### Calculation provenance
+
+TTL also retains a runtime explanation trace for calculated fields. The trace is
+derived from the same rule evaluation that produces the value and is not stored
+as separate character state. It includes:
+
+- the calculated field's current value
+- a human-readable version of its formula
+- additive/subtractive term values when the expression can be decomposed that way
+- direct field and calculated-field inputs
+- resolved modifier values
+- the named compendium entities that contributed each modifier value
+
+Modifier channels may include an optional display label:
+
+```yaml
+modifiers:
+  strength_bonus:
+    label: Strength Bonus
+    default: 0
+    aggregate: sum
+```
+
+The character UI can expose this trace through an information control beside a
+calculated value. Chained calculated fields retain their immediate dependency
+information, so a derived saving throw can identify the effective stat it used,
+while that effective stat has its own explanation.
+
+### Compendium eligibility
+
+Compendium entries may declare deterministic selection requirements:
+
+```yaml
+eligibility:
+  rule: archetype == "Warrior" and level >= 3
+  message: Requires Warrior archetype and level 3.
+```
+
+A string shorthand is also accepted:
+
+```yaml
+eligibility: level >= 3
+```
+
+Eligibility currently references non-calculated character fields only. This
+keeps option legality independent from the bonuses granted by the option being
+checked and prevents self-qualifying circular rules.
+
+The character editor and creation workflow reevaluate eligibility live.
+Ineligible unselected options are unavailable, existing illegal selections are
+shown as errors, and authoritative character storage rejects illegal
+selections.
+
+
+### Dynamic collection limits
+
+`rules.yaml` may cap the number of selections in a `multi_reference` or
+`collection` field. The maximum is a safe expression and can change with level,
+stats, modifiers, or calculated fields:
+
+```yaml
+limits:
+  skill_count:
+    field: skills
+    label: Skills
+    maximum: 3 + floor(level / 3)
+    message: Skills: {count} selected, but only {maximum} are allowed.
+```
+
+The UI reevaluates limits live and displays the current count beside the field
+(e.g. `4 / 5`). Exceeding a limit produces an error but never silently removes
+selections. Creation step advancement and authoritative character saves both
+reject over-cap characters.
+
+Limits may optionally warn when close to capacity:
+
+```yaml
+    warn_at_remaining: 1
+    warning_message: Only {remaining} {label} slot remains.
+```
+
+A limit may count only compendium entries matching tags and/or exact metadata:
+
+```yaml
+limits:
+  level_one_spell_slots:
+    field: spells
+    label: Level 1 spells
+    maximum: level_one_spell_slots
+    where:
+      tags: spell
+      metadata:
+        spell_level: 1
+```
+
+`where.tags` requires all listed tags. `where.metadata` performs exact matching
+against compendium entry metadata. Filtered limits currently require a
+`multi_reference` field backed by a compendium entity type.
+
+Limit results retain the maximum expression and its current input values so the
+UI can explain why the current capacity is what it is.
+
+Future rule categories may include derived collections and richer prerequisite relationships.
+
+### Core-field locking
+
+Creation steps may soft-lock selected fields after that step is successfully completed:
+
+```yaml
+steps:
+  - id: identity
+    fields: [name, background]
+    lock_after: [background]
+```
+
+A `lock_after` field must be an input in that same step. Locked fields remain visible but are not normally editable when revisiting earlier creation steps. The union of all `lock_after` fields becomes the character's **core aspects** after creation. The character editor protects those fields by default. Each protected field has its own padlock control; confirming an unlock affects only that field for the current page session. Saving or leaving the page returns it to the locked state.
+
+This is a soft safety mechanism rather than an assertion that the game can never change the value. It is intended for ancestry/race, initial class/archetype, background/history, and similar choices where changes should be deliberate.
+
+## Compendium
+
+The compendium stores structured system entities such as skills, occupations,
+races, classes, spells, weapons, gear, advantages, and other game-specific
+content. Entity types are intentionally generic rather than hard-coded into
+TTL.
+
+Each declared compendium file contains one entity type:
+
+```yaml
+entity: skill
+entries:
+  - id: stealth
+    name: Stealth
+    tags: [physical]
+```
+
+Every entry requires:
+
+- a stable `id`
+- a display `name`
+
+Entries may contain arbitrary system-specific metadata. TTL currently treats
+that metadata as opaque except for reserved generic structures such as `tags`
+and `references`.
+
+IDs must be unique within an entity type across all active files in the pack.
+
+### Explicit cross-file references
+
+Generic references that TTL itself should validate use:
+
+```yaml
+references:
+  - entity: skill
+    id: stealth
+```
+
+The loader verifies that the target entity exists.
+
+Character fields of type `reference` may declare an entity type:
+
+```yaml
+background:
+  type: reference
+  entity: background
+```
+
+The character editor can populate those fields from the matching compendium
+entries, and character storage verifies that saved IDs actually exist.
+
+`multi_reference` uses the same entity-type concept; dedicated multi-selection
+UI will be added later.
+
+## Creation workflow
+
+`creation.yaml` is reserved for a declarative, system-specific character
+creation sequence. TTL must not assume universal concepts such as race, class,
+level, or attributes.
+
+Creation steps may eventually include conditions, selection limits, eligibility
+rules, and compendium-backed choices. Normal character editing remains separate
+from the creation workflow.
+
+## Provenance
+
+Structured entities may carry source information, for example:
+
+```yaml
+source:
+  document_key: eldritch_core
+  page: 17
+  section: Abilities
+```
+
+Multiple sources, priorities, and revision/conflict handling will be formalized
+later. Conflicting authoritative rules must never be silently merged.
+
+## Modules
+
+Large systems may eventually split optional books or supplements into modules.
+Modules may contribute entities, rules, creation steps, layouts, assets, and
+source mappings. Dependency and override precedence are not yet finalized.
+
+## Packaging
+
+The planned `.ttlpack` format is a ZIP-compatible archive containing the pack
+with `manifest.yaml` at its root. Installation must validate paths and content
+before atomically activating the pack.
+
+## Current implementation status
+
+Implemented through TTL v0.4.21.5:
+
+- manifest discovery and validation
+- safe declared paths
+- character schema and storage
+- safe calculated/validation rule engine
+- live character-rule recalculation
+- generic compendium loading
+- stable entity IDs
+- tags
+- duplicate-ID detection
+- explicit cross-file reference validation
+- character reference-field validation
+- compendium-backed single-reference editor choices
+- declarative creation workflow loading and validation
+- ordered creation steps with schema-field references
+- required-field coverage validation for creation workflows
+- persistent per-user character-creation drafts
+- resumable multi-step creation wizard
+- compendium-backed choices during creation
+- live rule/calculated-field updates during creation
+- final creation through the normal authoritative character validator
+- multi-reference compendium fields in the editor and creation wizard
+- navigation from the home page to the character manager
+- cancellation of stale live-evaluation requests during navigation
+- app-wide compact navigation and safer multi-reference editing
+- declared numeric modifier channels (`sum`, `max`, `min`)
+- compendium entities contributing numeric effects to modifier channels
+- live and saved character calculations using selected-entity effects
+- calculation provenance with named modifier sources and UI explanations
+- conditional compendium effects with multiple contributions per modifier
+- dynamic collection limits with live count/maximum display
+- filtered capacities by compendium tags/metadata
+- authoritative over-cap validation without silent selection removal
+
+Still intentionally unresolved or future work:
+
+- searchable/paginated UX for very large compendium selection lists
+- richer prerequisite relationships and calculated-condition support
+- module activation/dependencies/overrides
+- rule precedence across modules/books
+- namespaces beyond current entity-type + ID lookup
+- migration syntax
+- localization
+- editor/print layout schema
+- staged LLM-proposed compendium entries
+- `.ttlpack` installation and sharing
+
+
+### Collection-row effect activation
+
+Conditional effects on compendium entities referenced from a structured collection may use fields from that collection row as well as normal character fields. This distinguishes possession from active use.
+
+```yaml
+effects:
+  strength_bonus:
+    value: 2
+    when: equipped == True
+```
+
+An unconditional effect applies merely because the referenced entity is present. Conditions may combine row and character state, such as `equipped == True and level >= 5`.
+
+
+## Character-sheet layout
+
+System Packs may define a presentation layout without changing the character
+data schema. `manifest.yaml` declares it through the existing layouts map:
+
+```yaml
+layouts:
+  character: layout.yaml
+```
+
+A character layout contains tabs and titled sections:
+
+```yaml
+tabs:
+  - id: overview
+    title: Overview
+    sections:
+      - id: identity
+        title: Identity
+        columns: 2
+        fields:
+          - name
+          - ancestry
+          - class
+          - level
+```
+
+Sections support one through four columns and an optional description. A field
+may appear only once. Fields omitted from a valid layout are placed into an
+automatic `Other` tab so data cannot become inaccessible because of a layout
+omission.
+
+If a System Pack does not provide a character layout, TTL generates the same
+generic field layout automatically.
+
+
+## Scalable compendium selection
+
+Character `reference` and `multi_reference` fields use a searchable compendium
+picker rather than exposing a large dropdown. Search matches names, stable
+ids, tags, and descriptions, and results can be filtered by tag.
+
+Eligibility remains authoritative. Ineligible entries remain visible with
+their requirement information; selected entries remain removable if later
+changes make them invalid.
+
+The browser renders at most 250 matching entries at once and asks for a more
+specific search when more matches remain. Character data continues to store
+stable compendium ids.
+
+
+## Character advancement
+
+A System Pack may declare `advancement: advancement.yaml`. Advancement actions define availability, automatic field changes, and ordered choice steps. Changes use the safe rules expression engine and are applied to an isolated advancement draft. The source character is not modified until the final Apply Advancement action succeeds full character validation. TTL also records the source character's update timestamp and refuses to apply a stale advancement draft over newer character edits.
+
+Example:
+```yaml
+version: 1
+actions:
+  - id: advance_level
+    title: Advance Level
+    available_when: level < 20
+    changes:
+      level: level + 1
+    steps:
+      - id: choices
+        fields: [skills, spells]
+```
+
+
+## Dense character-sheet presentation
+
+TTL v0.4.21.5 establishes the default visual language for character-facing
+pages. This is presentation-only; System Pack data and rule semantics are
+unchanged.
+
+The default sheet is desktop-first and optimized for high information density:
+
+- nearly full browser width
+- compact typography and form controls
+- minimal section gaps and padding
+- high-contrast dark text on light surfaces
+- alternating colored section bands and border accents
+- compact calculated/read-only values
+- reduced-radius controls and action buttons
+- compact creation/advancement progress and navigation
+
+Section colors in v0.4.21.5 are automatically alternated by the generic sheet
+renderer. Explicit semantic colors, table renderers, resource tracks, field
+display modes, and page/grid regions belong to the advanced layout layer.
+
+
+### Dense sheet cleanup
+
+v0.4.21.5 condenses the character header, places advancement actions inside
+the section containing their changed fields, suppresses premature required-field
+errors during live creation evaluation, uses compact side title tabs instead of
+full-width section bars, and renders skill multi-references as dense rows with
+short compendium descriptions.
+
+
+## Play mode and advanced sheet presentation
+
+Finished character sheets default to Play mode. Character schema fields are
+read-only in Play mode unless they explicitly declare:
+
+```yaml
+play_editable: true
+```
+
+Configuration mode remains available for deliberate character maintenance.
+Creation and advancement retain their existing controlled workflows.
+
+`resource` fields use `{current, max}` values. In Play mode, `current` may be
+edited when the resource is play-editable while `max` remains fixed. This
+supports HP, magic points, sanity, stress, ammunition pools, and similar
+session resources.
+
+Structured collections may declare:
+
+```yaml
+allow_custom: true
+custom_name_field: custom_name
+play_editable: true
+```
+
+This allows players to add campaign-specific items alongside structured
+compendium references without granting arbitrary mechanical effects to those
+custom entries.
+
+Character layouts now accept semantic section colors, 12-column section spans,
+and per-field display hints (`default`, `inline`, `stat`, `value`, `resource`,
+`table`, `block`). These presentation hints do not alter stored character
+data or rule semantics.
+
+
+## Temporary effects and effective values
+
+Temporary effects are stored separately from permanent character data. They
+may alter numeric play metrics without rewriting the authoritative base value.
+
+Supported temporary modifier operations are `add`, `subtract`, `multiply`,
+and `override`. Each modifier may also carry a label and free-text duration or
+reminder. TTL does not track turns, rounds, scenes, or game time; the player
+removes the effect when appropriate.
+
+In Play mode, supported metrics can be clicked to view the base value,
+effective value, and active temporary modifiers. Any metric with at least one
+temporary modifier is displayed in red so the altered state remains visible.
+
+
+Temporary effects participate in the effective calculation pass. Temporary
+modifiers on base inputs are applied before normal calculated-field rules are
+evaluated, and temporary modifiers on calculated fields are applied in
+calculation dependency order. Dependent calculated values therefore reflect
+temporary changes automatically while permanent character data remains
+unchanged.
+
+Compendium conditional effects are resolved against temporary-adjusted base
+inputs during Play mode, so a temporary change such as reduced level can also
+change level-gated permanent effects in the effective play calculation.
+
+
+### Play-mode autosave
+
+Finished characters in Play mode save play-editable state automatically.
+The browser tracks whether the sheet differs from its last successful save
+and checks every 120 seconds. No write occurs when nothing has changed.
+
+Configure mode retains explicit Save and Cancel controls. Temporary effects
+remain separate play-state actions and are persisted when they are added or
+removed.
+
+
+### Manual Play-mode save and renaming
+
+When Play mode has unsaved changes, the autosave indicator reads
+`Unsaved changes - click to save manually` and becomes clickable. Clicking it
+runs the same dirty-state save used by the normal 120-second autosave.
+
+Configure-mode changes to the schema `name` field are persisted directly to
+the authoritative character data used by both Play mode and the Characters
+list, allowing names, titles, and honorifics to change during a campaign.
+
+
+### Character editor form integrity
+
+The finished-character editor uses one main character form. Advancement
+actions are associated with separate standalone forms rather than nesting
+forms inside the character editor. This is required because nested HTML forms
+are invalid and can cause browsers to terminate the character form early,
+leaving Configure-mode Save controls detached from the data they are meant to
+submit.
+
+## Shadowrun: Anarchy Phase 1 reference pack
+
+The first production-oriented framework test pack is `shadowrun_anarchy`.
+Phase 1 establishes the complete broad character-sheet data model and a dense,
+single-tab sheet layout derived from the published Shadowrun: Anarchy sheet.
+It intentionally does not yet implement creation budgets, compendium content,
+metatype effects, advancement, or source provenance.
+
+Character layouts are now container-responsive. `.ttl-char-wrap` and
+`.ttl-create-wrap` establish inline-size containers, and the generic field-grid
+and section-span layouts collapse based on the character container width. This
+allows the same System Pack layout to remain usable when character sheets are
+later embedded in the narrower tri-pane player workspace.
+
+
+## Calculated usage limits
+
+A limit may define `usage:` to measure a numeric expression instead of counting selected entries. Safe helper functions are available for common structured data:
+
+- `count(value)`
+- `rowsum(collection, "field")`
+- `rowsum_where(collection, "value_field", "match_field", value)`
+- `rowcount(collection, "field", value)`
+- `nonempty_count(collection, "field")`
+- `resource_max(resource)`
+
+This supports generic point-buy budgets while preserving the existing limit badge and validation UI.
+
+## Portable `.ttlsys` packages
+
+A System Pack can be distributed as a normal ZIP archive renamed to `.ttlsys`.
+The archive must contain `manifest.yaml` at its root, or contain one top-level
+directory whose root contains `manifest.yaml`. All paths declared by the
+manifest must remain inside the package.
+
+GMs can install a package from **Characters → Import System Pack**. The package
+is validated before it replaces anything in `data/system_packs/<system-id>`.
+Importing a package with an ID that is already installed is treated as a System
+Pack revision: the new pack replaces the old revision and a backup of the old
+pack is retained under `data/system_pack_backups/<system-id>/`.
+
+### Character migration on System Pack updates
+
+When a revised pack is imported, TTL performs a best-effort migration of every
+stored character that uses that System Pack. Character fields are matched by
+stable field ID. Values are retained when the new field has a compatible type;
+integer-to-decimal and lossless decimal-to-integer changes are also supported.
+Collection rows are migrated by their nested field IDs. Newly added fields use
+the new schema defaults. Removed fields are discarded. Values that no longer
+fit an enum, reference values that no longer exist in the new compendium, and
+incompatible field-type changes are reset and reported as migration warnings.
+
+System Pack authors should therefore treat field IDs as persistent data keys.
+Changing a label is safe; changing a field ID is equivalent to removing one
+field and adding another. New required fields should provide a sensible default
+or be derived by rules so existing characters remain usable after migration.
+TTL reports any data it could not safely carry forward after the import.

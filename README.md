@@ -538,3 +538,12 @@ when the supplied evidence is insufficient.
 - `.ttlsys` packages are ZIP archives containing a validated System Pack.
 - Importing a revision with the same System Pack ID replaces the installed pack, backs up the old revision, and best-effort migrates existing characters by stable field ID.
 - Incompatible, removed, or obsolete values are reported to the GM as migration warnings.
+
+
+### v0.5.23 hosted AI providers
+
+- Adds an explicit AI provider selector for Custom/OpenAI-compatible servers, OpenAI, and Google Gemini.
+- OpenAI defaults to `https://api.openai.com/v1`; Gemini defaults to Google's OpenAI-compatible `v1beta/openai` endpoint.
+- Keeps the existing OpenAI-compatible Chat Completions and streaming implementation, so local llama.cpp-style servers remain supported without a separate SDK.
+- Hosted-provider API keys remain stored only in `data/ai_provider.json` with restrictive file permissions and are never redisplayed in the UI.
+- Switching between hosted providers requires entering the new provider's API key instead of silently reusing a key belonging to another service.

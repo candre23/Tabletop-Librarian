@@ -14,6 +14,7 @@ import zipfile
 
 from app.characters.schema import CharacterField, CharacterSchema, default_collection_item, load_character_schema, validate_character_data
 from app.compendium import load_compendium
+from app.config import CHARACTER_DIR, SYSTEM_PACKS_DIR, SYSTEM_PACK_BACKUP_DIR
 from app.system_packs.loader import validate_system_pack
 
 MAX_PACKAGE_BYTES = 128 * 1024 * 1024
@@ -191,7 +192,7 @@ def _character_files(character_root: Path, system_id: str) -> list[tuple[Path, d
     return rows
 
 
-def import_system_pack_package(content: bytes, *, pack_root: Path | str = Path("data/system_packs"), character_root: Path | str = Path("data/characters")) -> SystemPackImportResult:
+def import_system_pack_package(content: bytes, *, pack_root: Path | str = SYSTEM_PACKS_DIR, character_root: Path | str = CHARACTER_DIR) -> SystemPackImportResult:
     if not content:
         raise SystemPackPackageError("System Pack package is empty.")
     if len(content) > MAX_PACKAGE_BYTES:
@@ -256,13 +257,17 @@ def import_system_pack_package(content: bytes, *, pack_root: Path | str = Path("
                 label = str(payload.get("data", {}).get("name") or payload.get("character_id") or path.stem)
                 all_warnings.extend(f"{label}: {warning}" for warning in warnings)
 
-        backup_root = Path("data/system_pack_backups") / manifest.id / _utc_stamp()
+        backup_root = SYSTEM_PACK_BACKUP_DIR / manifest.id / _utc_stamp()
         if destination.exists():
             backup_root.parent.mkdir(parents=True, exist_ok=True)
             shutil.copytree(destination, backup_root)
 
-        replacement = Path(temp_name) / "replacement"
-        shutil.copytree(staged_root, replacement)
+        # Stage the final replacement on the same filesystem as pack_root.
+        # os.replace() is atomic only within one filesystem; using the default
+        # system temporary directory can fail with EXDEV when /tmp and the TTL
+        # project/data directory are different mounts.
+        replacement = Path(tempfile.mkdtemp(prefix=f".{manifest.id}.new-", dir=pack_root))
+        shutil.copytree(staged_root, replacement, dirs_exist_ok=True)
         old_temp = None
         try:
             if destination.exists():
@@ -278,6 +283,8 @@ def import_system_pack_package(content: bytes, *, pack_root: Path | str = Path("
             if old_temp and old_temp.exists():
                 shutil.rmtree(old_temp)
         except Exception:
+            if replacement.exists():
+                shutil.rmtree(replacement, ignore_errors=True)
             if destination.exists():
                 shutil.rmtree(destination, ignore_errors=True)
             if old_temp and old_temp.exists():

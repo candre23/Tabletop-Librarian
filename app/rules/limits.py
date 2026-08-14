@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from app.rules.engine import LimitDefinition, RuleEngine, RuleIssue
+from app.rules.engine import RuleEngine, RuleIssue
 from app.rules.modifiers import resolve_compendium_modifiers
 
 

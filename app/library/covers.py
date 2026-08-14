@@ -3,9 +3,6 @@ from __future__ import annotations
 import hashlib
 import io
 import logging
-import shutil
-import subprocess
-import tempfile
 import zipfile
 from pathlib import Path
 
@@ -97,14 +94,6 @@ def ensure_cover(folder_path: str, filename: str, doc_type: str) -> Path | None:
         return None
 
 
-def invalidate_cover(folder_path: str, filename: str) -> None:
-    path = cached_cover_path(folder_path, filename)
-    try:
-        path.unlink(missing_ok=True)
-    except OSError:
-        logger.exception("Unable to remove cached cover %s", path)
-
-
 def _pdf_cover(path: Path) -> Image.Image:
     document = fitz.open(path)
     try:
@@ -143,16 +132,9 @@ def _cbz_cover(path: Path) -> Image.Image:
             return source.convert("RGB").copy()
 
 
-def _find_7zip() -> str:
-    executable = shutil.which("7zz") or shutil.which("7z")
-    if not executable:
-        raise RuntimeError("7-Zip command-line executable not found")
-    return executable
-
-
 def _cbr_cover(path: Path) -> Image.Image:
-    # Once OCR has produced a persistent PDF derivative, do not recreate the
-    # otherwise-redundant extracted CBR image cache merely to generate a cover.
+    # Prefer the persistent OCR derivative so cover generation does not recreate
+    # an otherwise unnecessary CBR extraction cache.
     from app.ocr import current_ocr_pdf
 
     derivative = current_ocr_pdf(path)
@@ -166,6 +148,7 @@ def _cbr_cover(path: Path) -> Image.Image:
 
     with Image.open(pages[0]) as source:
         return source.convert("RGB").copy()
+
 
 def _text_cover(title: str) -> Image.Image:
     image = Image.new("RGB", (COVER_WIDTH, COVER_HEIGHT), (36, 40, 44))

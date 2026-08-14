@@ -1,0 +1,9 @@
+id: shadowrun_anarchy
+name: "Shadowrun: Anarchy"
+version: 0.1.0
+pack_format: 1
+description: "Phase 1 character-sheet System Pack for Shadowrun: Anarchy."
+character_schema: character.yaml
+rules: rules.yaml
+layouts:
+  character: layout.yaml

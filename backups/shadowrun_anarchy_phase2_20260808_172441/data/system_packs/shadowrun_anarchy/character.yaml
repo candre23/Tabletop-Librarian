@@ -1,0 +1,320 @@
+schema_version: 1
+fields:
+  name:
+    type: text
+    label: Name
+    required: true
+
+  tags:
+    type: text
+    label: Tags
+    default: ''
+
+  game_level:
+    type: enum
+    label: Game Level
+    options:
+      - Gang
+      - Street Runner
+      - Prime Runner
+    default: Street Runner
+
+  metatype:
+    type: text
+    label: Metatype
+    default: Human
+
+  awakened:
+    type: boolean
+    label: Awakened
+    default: false
+
+  emerged:
+    type: boolean
+    label: Emerged
+    default: false
+
+  total_karma:
+    type: integer
+    label: Total Karma
+    default: 0
+    min: 0
+
+  karma_spent:
+    type: integer
+    label: Karma Spent
+    default: 0
+    min: 0
+
+  strength:
+    type: integer
+    label: Strength
+    default: 1
+    min: 0
+    max: 20
+
+  agility:
+    type: integer
+    label: Agility
+    default: 1
+    min: 0
+    max: 20
+
+  willpower:
+    type: integer
+    label: Willpower
+    default: 1
+    min: 0
+    max: 20
+
+  logic:
+    type: integer
+    label: Logic
+    default: 1
+    min: 0
+    max: 20
+
+  charisma:
+    type: integer
+    label: Charisma
+    default: 1
+    min: 0
+    max: 20
+
+  edge:
+    type: integer
+    label: Edge
+    default: 1
+    min: 0
+    max: 20
+
+  essence:
+    type: decimal
+    label: Essence
+    default: 6
+    min: 0
+    max: 6
+
+  unarmed_damage:
+    type: calculated
+    label: Unarmed Damage
+
+  physical_capacity:
+    type: calculated
+    label: Physical Capacity
+
+  stun_capacity:
+    type: calculated
+    label: Stun Capacity
+
+  skills:
+    type: collection
+    label: Skills
+    item_schema:
+      name:
+        type: text
+        label: Skill
+        required: true
+      rating:
+        type: integer
+        label: Rating
+        default: 1
+        min: 0
+        max: 20
+      specialization:
+        type: text
+        label: Specialization
+        default: ''
+      knowledge:
+        type: boolean
+        label: Knowledge
+        default: false
+    default: []
+
+  shadow_amps:
+    type: collection
+    label: Shadow Amps
+    item_schema:
+      name:
+        type: text
+        label: Shadow Amp
+        required: true
+      category:
+        type: text
+        label: Type
+        default: ''
+      amp_level:
+        type: integer
+        label: Level
+        default: 1
+        min: 0
+        max: 20
+      amp_cost:
+        type: integer
+        label: Cost
+        default: 1
+        min: 0
+        max: 20
+      description:
+        type: text
+        label: Effect
+        default: ''
+    default: []
+
+  qualities:
+    type: collection
+    label: Qualities
+    item_schema:
+      name:
+        type: text
+        label: Quality
+        required: true
+      polarity:
+        type: enum
+        label: Type
+        options:
+          - Positive
+          - Negative
+        default: Positive
+      description:
+        type: text
+        label: Effect / Notes
+        default: ''
+    default: []
+
+  dispositions:
+    type: collection
+    label: Dispositions
+    item_schema:
+      text:
+        type: text
+        label: Disposition
+        required: true
+    default: []
+
+  cues:
+    type: collection
+    label: Cues
+    item_schema:
+      text:
+        type: text
+        label: Cue
+        required: true
+    default: []
+
+  weapons:
+    type: collection
+    label: Weapons
+    item_schema:
+      name:
+        type: text
+        label: Weapon
+        required: true
+      damage:
+        type: text
+        label: Damage
+        default: ''
+      close:
+        type: text
+        label: Close
+        default: ''
+      near:
+        type: text
+        label: Near
+        default: ''
+      far:
+        type: text
+        label: Far
+        default: ''
+      notes:
+        type: text
+        label: Notes
+        default: ''
+    default: []
+
+  armor_name:
+    type: text
+    label: Armor
+    default: ''
+
+  armor:
+    type: resource
+    label: Armor Track
+    default:
+      current: 0
+      max: 0
+    play_editable: true
+
+  physical_condition:
+    type: resource
+    label: Physical
+    default:
+      current: 9
+      max: 9
+    play_editable: true
+
+  stun_condition:
+    type: resource
+    label: Stun
+    default:
+      current: 9
+      max: 9
+    play_editable: true
+
+  matrix_condition:
+    type: resource
+    label: Matrix
+    default:
+      current: 0
+      max: 0
+    play_editable: true
+
+  plot_points:
+    type: integer
+    label: Plot Points
+    default: 0
+    min: 0
+    play_editable: true
+
+  gear:
+    type: collection
+    label: Gear
+    item_schema:
+      name:
+        type: text
+        label: Item
+        required: true
+      notes:
+        type: text
+        label: Notes
+        default: ''
+    default: []
+
+  contacts:
+    type: collection
+    label: Contacts
+    item_schema:
+      name:
+        type: text
+        label: Contact
+        required: true
+      role:
+        type: text
+        label: Role / Connection
+        default: ''
+      notes:
+        type: text
+        label: Notes
+        default: ''
+    default: []
+
+  street_cred:
+    type: integer
+    label: Street Cred
+    default: 0
+    min: 0
+
+  background:
+    type: notes
+    label: Background
+    default: ''

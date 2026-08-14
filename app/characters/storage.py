@@ -10,7 +10,7 @@ import re
 import tempfile
 import uuid
 
-from app.characters.schema import CharacterSchema, load_character_schema, validate_character_data
+from app.characters.schema import load_character_schema, validate_character_data
 from app.characters.temporary_effects import normalize_temporary_effects
 from app.compendium import load_compendium
 from app.rules import (
@@ -20,12 +20,13 @@ from app.rules import (
     selected_eligibility_issues,
 )
 from app.system_packs import load_system_pack
+from app.config import CHARACTER_DIR, SYSTEM_PACKS_DIR
 
 
 CHARACTER_ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 USER_ID_RE = re.compile(r"[^A-Za-z0-9_.@-]+")
-DEFAULT_CHARACTER_ROOT = Path("data/characters")
-DEFAULT_PACK_ROOT = Path("data/system_packs")
+DEFAULT_CHARACTER_ROOT = CHARACTER_DIR
+DEFAULT_PACK_ROOT = SYSTEM_PACKS_DIR
 
 
 class CharacterStorageError(RuntimeError):
@@ -44,6 +45,7 @@ class CharacterRecord:
     updated_at: str
     path: Path
     temporary_effects: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+    preferences: dict[str, Any] = field(default_factory=dict)
 
 
 def _utc_now() -> str:
@@ -268,6 +270,7 @@ def create_character(
         "updated_at": now,
         "data": data,
         "temporary_effects": {},
+        "preferences": {},
     }
     _atomic_write_json(path, payload)
 
@@ -334,6 +337,7 @@ def load_character_raw(
         payload["updated_at"],
         path,
         normalize_temporary_effects(payload.get("temporary_effects")),
+        dict(payload.get("preferences") or {}),
     )
 
 
@@ -359,6 +363,7 @@ def load_character(
         "updated_at": raw.updated_at,
         "data": raw.data,
         "temporary_effects": raw.temporary_effects,
+        "preferences": raw.preferences,
     }
 
     pack, schema, engine, compendium = _load_system(
@@ -397,6 +402,7 @@ def load_character(
         payload["updated_at"],
         raw.path,
         normalize_temporary_effects(payload.get("temporary_effects")),
+        dict(payload.get("preferences") or {}),
     )
 
 
@@ -444,6 +450,7 @@ def save_character(
             "temporary_effects": normalize_temporary_effects(
                 record.temporary_effects
             ),
+            "preferences": dict(record.preferences or {}),
         },
     )
 

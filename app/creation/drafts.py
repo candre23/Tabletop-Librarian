@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+
+from app.config import CHARACTER_DRAFT_DIR
 from typing import Any
 import json
 import os
@@ -13,7 +15,7 @@ import uuid
 
 DRAFT_ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 USER_ID_RE = re.compile(r"[^A-Za-z0-9_.@-]+")
-DEFAULT_DRAFT_ROOT = Path("data/character_drafts")
+DEFAULT_DRAFT_ROOT = CHARACTER_DRAFT_DIR
 
 
 class DraftStorageError(RuntimeError):

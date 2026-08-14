@@ -1,0 +1,22 @@
+id: old_gods_appalachia
+name: Old Gods of Appalachia
+version: 1.0.4
+pack_format: 1
+description: Old Gods of Appalachia RPG character sheet and first-tier character creation
+  pack for Tabletop Librarian.
+requires_ttl: 0.5.20
+character_schema: character.yaml
+rules: rules.yaml
+creation: creation.yaml
+advancement: advancement.yaml
+compendium:
+- compendium/types.yaml
+- compendium/descriptors.yaml
+- compendium/foci.yaml
+- compendium/skills.yaml
+- compendium/abilities.yaml
+- compendium/arcs.yaml
+- compendium/weapons.yaml
+- compendium/armor.yaml
+layouts:
+  character: layout.yaml

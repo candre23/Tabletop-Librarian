@@ -11,6 +11,18 @@ from app.config import DATA_DIR
 
 SETTINGS_FILE = DATA_DIR / "ai_provider.json"
 
+PROVIDER_DEFAULT_URLS = {
+    "openai": "https://api.openai.com/v1",
+    "google_gemini": "https://generativelanguage.googleapis.com/v1beta/openai",
+    "openai_compatible": "",
+}
+PROVIDER_LABELS = {
+    "openai": "OpenAI",
+    "google_gemini": "Google Gemini",
+    "openai_compatible": "Custom / OpenAI-compatible",
+}
+SUPPORTED_PROVIDERS = frozenset(PROVIDER_DEFAULT_URLS)
+
 class AIRequestCancelled(RuntimeError):
     pass
 
@@ -37,7 +49,11 @@ def load_provider_settings() -> dict[str, Any]:
         except Exception:
             pass
 
-    settings["base_url"] = str(settings.get("base_url", "")).rstrip("/")
+    provider = str(settings.get("provider", "openai_compatible") or "openai_compatible").strip()
+    if provider not in SUPPORTED_PROVIDERS:
+        provider = "openai_compatible"
+    settings["provider"] = provider
+    settings["base_url"] = str(settings.get("base_url", "") or PROVIDER_DEFAULT_URLS[provider]).rstrip("/")
     settings["model"] = str(settings.get("model", DEFAULT_SETTINGS["model"])).strip()
     settings["api_key"] = str(settings.get("api_key", "")).strip()
     settings["pipeline_preset"] = str(settings.get("pipeline_preset", DEFAULT_SETTINGS["pipeline_preset"]) or DEFAULT_SETTINGS["pipeline_preset"]).strip()
@@ -72,16 +88,25 @@ def provider_settings_for_ui() -> dict[str, Any]:
         "pipeline_preset": settings["pipeline_preset"],
         "has_api_key": bool(settings["api_key"]),
         "configured": bool(settings["base_url"] and settings["model"]),
+        "provider_label": PROVIDER_LABELS.get(settings["provider"], settings["provider"]),
+        "provider_options": [
+            {"id": key, "name": PROVIDER_LABELS[key], "default_base_url": PROVIDER_DEFAULT_URLS[key]}
+            for key in ("openai_compatible", "openai", "google_gemini")
+        ],
     }
 
 
-def save_provider_settings(*, base_url: str, model: str, api_key: str = "", timeout: int | str = 120, temperature: float | str = 0.2, max_tokens: int | str = 1200, pipeline_preset: str | None = None) -> dict[str, Any]:
+def save_provider_settings(*, provider: str = "openai_compatible", base_url: str = "", model: str, api_key: str = "", timeout: int | str = 120, temperature: float | str = 0.2, max_tokens: int | str = 1200, pipeline_preset: str | None = None) -> dict[str, Any]:
     current = load_provider_settings()
-    base_url = str(base_url or "").strip().rstrip("/")
+    provider = str(provider or "openai_compatible").strip()
+    if provider not in SUPPORTED_PROVIDERS:
+        raise ValueError("Unsupported AI provider.")
+
+    base_url = str(base_url or "").strip().rstrip("/") or PROVIDER_DEFAULT_URLS[provider]
     model = str(model or "").strip()
 
     if not base_url:
-        raise ValueError("Base URL is required.")
+        raise ValueError("Base URL is required for a custom/OpenAI-compatible provider.")
     if not (base_url.startswith("http://") or base_url.startswith("https://")):
         raise ValueError("Base URL must begin with http:// or https://.")
     if not model:
@@ -103,12 +128,16 @@ def save_provider_settings(*, base_url: str, model: str, api_key: str = "", time
         raise ValueError("Maximum output tokens must be a whole number.") from exc
 
     submitted_key = str(api_key or "").strip()
+    provider_changed = provider != current.get("provider", "openai_compatible")
+    if provider in {"openai", "google_gemini"} and provider_changed and not submitted_key:
+        raise ValueError(f"An API key is required when switching to {PROVIDER_LABELS[provider]}.")
+
     submitted_pipeline = str(pipeline_preset or "").strip()
     settings = {
-        "provider": "openai_compatible",
+        "provider": provider,
         "base_url": base_url,
         "model": model,
-        "api_key": submitted_key or current.get("api_key", ""),
+        "api_key": submitted_key or ("" if provider_changed else current.get("api_key", "")),
         "timeout": timeout_value,
         "temperature": temperature_value,
         "max_tokens": max_tokens_value,

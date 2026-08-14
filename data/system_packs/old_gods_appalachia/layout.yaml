@@ -1,0 +1,173 @@
+tabs:
+- id: sheet
+  title: Character Sheet
+  sections:
+  - id: identity
+    title: Character
+    columns: 4
+    span: 12
+    color: teal
+    fields:
+    - name
+    - descriptor
+    - character_type
+    - identity
+    - focus
+    - character_arc
+    - tier
+    - xp
+
+  - id: pools
+    title: Pools & Effort
+    columns: 3
+    span: 8
+    color: amber
+    fields:
+    - id: might_current
+      display: stat
+    - id: might_max
+      display: stat
+    - id: might_edge
+      display: stat
+    - id: speed_current
+      display: stat
+    - id: speed_max
+      display: stat
+    - id: speed_edge
+      display: stat
+    - id: intellect_current
+      display: stat
+    - id: intellect_max
+      display: stat
+    - id: intellect_edge
+      display: stat
+    - id: effort
+      display: stat
+    - might_alloc
+    - speed_alloc
+    - intellect_alloc
+    - protector_edge
+
+  - id: condition
+    title: Condition & Recovery
+    columns: 2
+    span: 4
+    color: red
+    fields:
+    - id: armor
+      display: stat
+    - id: damage_track
+      display: inline
+    - recovery_bonus
+    - recovery_action_used
+    - recovery_10min_used
+    - recovery_1hour_used
+    - recovery_10hour_used
+
+  - id: typeabilities
+    title: Type Abilities
+    columns: 1
+    span: 6
+    color: blue
+    fields:
+    - type_abilities
+
+  - id: skills
+    title: Skills
+    columns: 1
+    span: 6
+    color: green
+    fields:
+    - id: skills
+      display: table
+
+  - id: focusabilities
+    title: Focus / Other Abilities
+    columns: 1
+    span: 12
+    color: plum
+    fields:
+    - id: focus_benefits
+      display: table
+
+  - id: weapons
+    title: Weapons
+    columns: 1
+    span: 8
+    color: teal
+    fields:
+    - id: weapons
+      display: table
+
+  - id: armoritems
+    title: Armor & Protection
+    columns: 1
+    span: 4
+    color: amber
+    fields:
+    - armor_worn
+    - id: armor_items
+      display: table
+
+  - id: equipment
+    title: Equipment
+    columns: 1
+    span: 6
+    color: green
+    fields:
+    - id: equipment
+      display: table
+
+  - id: cyphers
+    title: Cyphers
+    columns: 1
+    span: 6
+    color: plum
+    fields:
+    - id: cyphers
+      display: table
+
+  - id: artifacts
+    title: Artifacts
+    columns: 1
+    span: 6
+    color: teal
+    fields:
+    - id: artifacts
+      display: table
+
+  - id: arc
+    title: Character Arc Progress
+    columns: 1
+    span: 6
+    color: amber
+    fields:
+    - id: arc_progress
+      display: block
+
+  - id: background
+    title: Background
+    columns: 1
+    span: 4
+    color: blue
+    fields:
+    - id: background
+      display: block
+
+  - id: connections
+    title: Connections
+    columns: 1
+    span: 4
+    color: green
+    fields:
+    - id: connections
+      display: block
+
+  - id: notes
+    title: Notes
+    columns: 1
+    span: 4
+    color: plum
+    fields:
+    - id: notes
+      display: block

@@ -74,6 +74,7 @@ def export_character_package(record: CharacterRecord) -> tuple[bytes, str]:
         "updated_at": record.updated_at,
         "data": record.data,
         "temporary_effects": record.temporary_effects,
+        "preferences": record.preferences,
     }
 
     buffer = BytesIO()
@@ -192,6 +193,7 @@ def import_character_package(
                 pack_root=pack_root,
             )
             probe.temporary_effects = payload.get("temporary_effects") or {}
+            probe.preferences = dict(payload.get("preferences") or {})
             save_character(
                 probe,
                 character_root=Path(temp_dir),
@@ -240,6 +242,7 @@ def import_character_package(
             pack_root=pack_root,
         )
         record.temporary_effects = payload.get("temporary_effects") or {}
+        record.preferences = dict(payload.get("preferences") or {})
         record = save_character(
             record,
             character_root=character_root,

@@ -1,0 +1,1313 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ workflow.title }} - Tabletop Librarian</title>
+  <link rel="stylesheet" href="/static/css/main.css?v={{ app_version }}">
+</head>
+<body class="ttl-character-ui">
+  {% include "_global_nav.html" %}
+  <main class="ttl-create-wrap">
+    <div class="ttl-create-head">
+      <div>
+        <h1>{{ workflow.title }}</h1>
+        <div class="ttl-muted">{{ pack.manifest.name }} · draft saved automatically when you move between steps</div>
+      </div>
+      <a href="/characters">All Characters</a>
+    </div>
+
+    <div class="ttl-progress" aria-label="Creation progress">
+      {% for workflow_step in workflow.steps %}
+        {% set position = loop.index0 %}
+        {% if position == step_index %}
+          <div class="ttl-progress-step is-current" aria-current="step">
+            {{ loop.index }}. {{ workflow_step.title }}
+          </div>
+        {% elif position <= max_step_reached %}
+          <button
+            type="submit"
+            form="ttl-create-form"
+            name="action"
+            value="jump:{{ position }}"
+            class="ttl-progress-step is-done is-clickable"
+            formnovalidate
+            title="Return to {{ loop.index }}. {{ workflow_step.title }}"
+          >{{ loop.index }}. {{ workflow_step.title }}</button>
+        {% else %}
+          <div class="ttl-progress-step">
+            {{ loop.index }}. {{ workflow_step.title }}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if error %}
+      <div class="ttl-error" role="alert">{{ error }}</div>
+    {% endif %}
+
+
+    <section id="ttl-rule-panel" class="ttl-card">
+      <strong>Rules</strong>
+      <ul id="ttl-rule-list"></ul>
+    </section>
+
+    <section class="ttl-card">
+      <div class="ttl-step-head">
+        <div class="ttl-muted">Step {{ step_number }} of {{ step_count }}</div>
+        <h2>{{ step_number }}. {{ step.title }}</h2>
+        {% if step.description %}<div class="ttl-muted">{{ step.description }}</div>{% endif %}
+      </div>
+
+      <form id="ttl-create-form" method="post" action="/characters/create/{{ draft.draft_id }}/step">
+        {% if unlocked_field %}<input type="hidden" name="unlocked_field" value="{{ unlocked_field }}">{% endif %}
+
+        <div class="ttl-sheet-layout" data-sheet-layout>
+          <div class="ttl-sheet-tabs" role="tablist">
+            {% for tab in character_layout.tabs %}
+              {% set tab_ns = namespace(show=false) %}
+              {% for section in tab.sections %}
+                {% for candidate_id in section.fields %}
+                  {% if candidate_id in step.fields %}
+                    {% set tab_ns.show = true %}
+                  {% endif %}
+                {% endfor %}
+              {% endfor %}
+              {% if tab_ns.show %}
+                <button
+                  type="button"
+                  class="ttl-sheet-tab"
+                  data-sheet-tab="{{ tab.id }}"
+                >{{ tab.title }}</button>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+          {% for tab in character_layout.tabs %}
+            {% set tab_ns = namespace(show=false) %}
+            {% for section in tab.sections %}
+              {% for candidate_id in section.fields %}
+                {% if candidate_id in step.fields %}
+                  {% set tab_ns.show = true %}
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+
+            {% if tab_ns.show %}
+              <div class="ttl-sheet-tab-panel" data-sheet-panel="{{ tab.id }}">
+                {% for section in tab.sections %}
+                  {% set section_ns = namespace(show=false) %}
+                  {% for candidate_id in section.fields %}
+                    {% if candidate_id in step.fields %}
+                      {% set section_ns.show = true %}
+                    {% endif %}
+                  {% endfor %}
+
+                  {% if section_ns.show %}
+                    <section class="ttl-sheet-section">
+                      <div class="ttl-sheet-section-heading">
+                        <h3>{{ section.title }}</h3>
+                        {% if section.description %}<p>{{ section.description }}</p>{% endif %}
+                      </div>
+                      <div class="ttl-field-grid ttl-layout-columns-{{ section.columns }}">
+                        {% for field_id in section.fields %}
+                          {% if field_id in step.fields %}
+                            {% set field = schema.fields[field_id] %}
+
+            {% set value = draft.data.get(field_id) %}
+            {% set field_locked = field_id in locked_fields and field_id != unlocked_field %}
+
+            {% if field_locked %}
+              <div class="ttl-field {% if field.type in ["notes", "multi_reference"] %}ttl-field-wide{% endif %}">
+                <div class="ttl-lockable-label">
+                  <label>{{ field.label }}</label>
+                  <a
+                    class="ttl-lock-icon"
+                    href="/characters/create/{{ draft.draft_id }}?unlock_field={{ field_id }}"
+                    title="Unlock {{ field.label }}"
+                    aria-label="Unlock {{ field.label }}"
+                    onclick="return confirm('Unlock {{ field.label|e }} for editing? It will lock again after saving or leaving this page.');"
+                  >&#128274;</a>
+                </div>
+                <div class="ttl-readonly ttl-core-readonly">{{ display_field_value(field, value, reference_options) }}</div>
+              </div>
+            {% elif field.type == "notes" %}
+              <div class="ttl-field ttl-field-wide">
+                <div class="ttl-lockable-label">
+                  <label for="field__{{ field_id }}">{{ field.label }}</label>
+                  {% if field_id in locked_fields and field_id == unlocked_field %}
+                    <a class="ttl-lock-icon is-unlocked" href="/characters/create/{{ draft.draft_id }}" title="Relock {{ field.label }}" aria-label="Relock {{ field.label }}">&#128275;</a>
+                  {% endif %}
+                </div>
+                <textarea id="field__{{ field_id }}" name="field__{{ field_id }}" {% if field.required %}required{% endif %}>{{ value or "" }}</textarea>
+              </div>
+            {% elif field.type == "reference" and reference_options.get(field_id) %}
+
+              <div class="ttl-field">
+
+                <div class="ttl-lockable-label">
+
+                  <label for="field__{{ field_id }}">{{ field.label }}</label>
+
+                  {% if field_id in core_fields and field_id == unlocked_field %}
+
+                    <a class="ttl-lock-icon is-unlocked" href="{% if record is defined %}/characters/{{ record.character_id }}{% else %}/characters/create/{{ draft.draft_id }}{% endif %}" title="Relock {{ field.label }}" aria-label="Relock {{ field.label }}">&#128275;</a>
+
+                  {% endif %}
+
+                </div>
+
+                <div class="ttl-compendium-picker" data-compendium-picker data-picker-mode="single" data-picker-label="{{ field.label }}">
+
+                  <select id="field__{{ field_id }}" name="field__{{ field_id }}" class="ttl-picker-native" aria-hidden="true" tabindex="-1" {% if field.required %}required{% endif %}>
+
+                    {% if not field.required %}<option value="">None</option>{% endif %}
+
+                    {% for entity in reference_options.get(field_id, []) %}
+
+                      <option value="{{ entity.id }}" data-picker-name="{{ entity.name|e }}" data-picker-tags="{{ (entity.data.get('tags', []) if entity.data is mapping else [])|join(' ')|e }}" data-picker-description="{{ (entity.data.get('description') or entity.data.get('summary') or '')|e if entity.data is mapping else '' }}" {% if entity.id == value %}selected{% endif %}>{{ entity.name }}</option>
+
+                    {% endfor %}
+
+                  </select>
+
+                  <div class="ttl-picker-selected" data-picker-selected></div>
+
+                  <button type="button" class="secondary-button ttl-picker-open" data-picker-open>Choose {{ field.label }}</button>
+
+                  <dialog class="ttl-picker-dialog" data-picker-dialog>
+
+                    <div class="ttl-picker-dialog-card">
+
+                      <div class="ttl-picker-dialog-head">
+
+                        <strong>Select {{ field.label }}</strong>
+
+                        <button type="button" class="secondary-button" data-picker-close>Close</button>
+
+                      </div>
+
+                      <div class="ttl-picker-controls">
+
+                        <input type="search" placeholder="Search name, tag, or description" data-picker-search>
+
+                        <select data-picker-tag><option value="">All tags</option></select>
+
+                      </div>
+
+                      <div class="ttl-picker-results" data-picker-results></div>
+
+                    </div>
+
+                  </dialog>
+
+                </div>
+
+              </div>
+
+            {% elif field.type == "multi_reference" and reference_options.get(field_id) %}
+
+
+              <div class="ttl-field ttl-field-wide">
+
+
+                <div class="ttl-field-label-row">
+
+
+                  <label>{{ field.label }}</label>
+
+
+                  <div class="ttl-limit-status" data-limit-status="{{ field_id }}"></div>
+
+
+                </div>
+
+
+                <div class="ttl-compendium-picker" data-compendium-picker data-picker-mode="multi" data-picker-label="{{ field.label }}" data-picker-entity="{{ field.entity or '' }}">
+
+
+                  <select id="field__{{ field_id }}" name="field__{{ field_id }}" multiple class="ttl-picker-native ttl-multi-reference-native" aria-hidden="true" tabindex="-1">
+
+
+                    {% for entity in reference_options.get(field_id, []) %}
+
+
+                      <option value="{{ entity.id }}" data-picker-name="{{ entity.name|e }}" data-picker-tags="{{ (entity.data.get('tags', []) if entity.data is mapping else [])|join(' ')|e }}" data-picker-description="{{ (entity.data.get('description') or entity.data.get('summary') or '')|e if entity.data is mapping else '' }}" {% if value and entity.id in value %}selected{% endif %}>{{ entity.name }}</option>
+
+
+                    {% endfor %}
+
+
+                  </select>
+
+
+                  <div class="ttl-picker-selected" data-picker-selected></div>
+
+
+                  <button type="button" class="secondary-button ttl-picker-open" data-picker-open>Add {{ field.label }}</button>
+
+
+                  <dialog class="ttl-picker-dialog" data-picker-dialog>
+
+
+                    <div class="ttl-picker-dialog-card">
+
+
+                      <div class="ttl-picker-dialog-head">
+
+
+                        <strong>Select {{ field.label }}</strong>
+
+
+                        <button type="button" class="secondary-button" data-picker-close>Close</button>
+
+
+                      </div>
+
+
+                      <div class="ttl-picker-controls">
+
+
+                        <input type="search" placeholder="Search name, tag, or description" data-picker-search>
+
+
+                        <select data-picker-tag><option value="">All tags</option></select>
+
+
+                      </div>
+
+
+                      <div class="ttl-picker-results" data-picker-results></div>
+
+
+                    </div>
+
+
+                  </dialog>
+
+
+                </div>
+
+
+              </div>
+
+
+
+            {% elif field.type == "collection" and field.item_schema %}
+              <div class="ttl-field ttl-field-wide">
+                <div class="ttl-field-label-row">
+                  <label>{{ field.label }}</label>
+                  <span class="ttl-collection-count" data-collection-count="{{ field_id }}"></span>
+                </div>
+
+                <div
+                  class="ttl-structured-collection"
+                  data-structured-collection
+                  data-field-id="{{ field_id }}"
+                >
+                  <input
+                    type="hidden"
+                    id="field__{{ field_id }}"
+                    name="field__{{ field_id }}"
+                    value="{{ (value if value is iterable and value is not string else [])|tojson|forceescape }}"
+                    data-collection-json
+                  >
+
+                  <div class="ttl-collection-rows" data-collection-rows>
+                    {% for row in (value if value is iterable and value is not string else []) %}
+                      <div class="ttl-collection-row" data-collection-row>
+                        <div class="ttl-collection-row-fields">
+                          {% for item_id, item_field in field.item_schema.items() %}
+                            {% set item_value = row.get(item_id) if row is mapping else none %}
+                            <div class="ttl-collection-cell">
+                              <label>{{ item_field.label }}</label>
+                              {% if item_field.type == "reference" and collection_reference_options.get(field_id, {}).get(item_id) %}
+                                <select data-collection-subfield="{{ item_id }}" data-subfield-type="reference" {% if item_field.required %}required{% endif %}>
+                                  {% if not item_field.required %}<option value="">None</option>{% endif %}
+                                  {% for entity in collection_reference_options.get(field_id, {}).get(item_id, []) %}
+                                    <option value="{{ entity.id }}" {% if entity.id == item_value %}selected{% endif %}>{{ entity.name }}</option>
+                                  {% endfor %}
+                                </select>
+                              {% elif item_field.type == "enum" %}
+                                <select data-collection-subfield="{{ item_id }}" data-subfield-type="enum" {% if item_field.required %}required{% endif %}>
+                                  {% if not item_field.required %}<option value="">None</option>{% endif %}
+                                  {% for option in item_field.options %}
+                                    <option value="{{ option }}" {% if option == item_value %}selected{% endif %}>{{ option }}</option>
+                                  {% endfor %}
+                                </select>
+                              {% elif item_field.type == "integer" or item_field.type == "decimal" %}
+                                <input
+                                  type="number"
+                                  data-collection-subfield="{{ item_id }}"
+                                  data-subfield-type="{{ item_field.type }}"
+                                  value="{{ '' if item_value is none else item_value }}"
+                                  {% if item_field.type == "decimal" %}step="any"{% else %}step="1"{% endif %}
+                                  {% if item_field.minimum is not none %}min="{{ item_field.minimum }}"{% endif %}
+                                  {% if item_field.maximum is not none %}max="{{ item_field.maximum }}"{% endif %}
+                                  {% if item_field.required %}required{% endif %}
+                                >
+                              {% elif item_field.type == "boolean" %}
+                                <input
+                                  type="checkbox"
+                                  data-collection-subfield="{{ item_id }}"
+                                  data-subfield-type="boolean"
+                                  {% if item_value %}checked{% endif %}
+                                >
+                              {% elif item_field.type == "notes" %}
+                                <textarea data-collection-subfield="{{ item_id }}" data-subfield-type="notes">{{ item_value or '' }}</textarea>
+                              {% else %}
+                                <input
+                                  data-collection-subfield="{{ item_id }}"
+                                  data-subfield-type="{{ item_field.type }}"
+                                  value="{{ item_value or '' }}"
+                                  {% if item_field.required %}required{% endif %}
+                                >
+                              {% endif %}
+                            </div>
+                          {% endfor %}
+                        </div>
+                        <div class="ttl-collection-row-actions">
+                          <button type="button" class="secondary-button ttl-row-button" data-row-up title="Move up">&#8593;</button>
+                          <button type="button" class="secondary-button ttl-row-button" data-row-down title="Move down">&#8595;</button>
+                          <button type="button" class="secondary-button ttl-row-button" data-row-remove>Remove</button>
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+
+                  <template data-collection-template>
+                    <div class="ttl-collection-row" data-collection-row>
+                      <div class="ttl-collection-row-fields">
+                        {% set default_row = collection_item_default(field) %}
+                        {% for item_id, item_field in field.item_schema.items() %}
+                          {% set item_value = default_row.get(item_id) %}
+                          <div class="ttl-collection-cell">
+                            <label>{{ item_field.label }}</label>
+                            {% if item_field.type == "reference" and collection_reference_options.get(field_id, {}).get(item_id) %}
+                              <select data-collection-subfield="{{ item_id }}" data-subfield-type="reference" {% if item_field.required %}required{% endif %}>
+                                {% if not item_field.required %}<option value="">None</option>{% endif %}
+                                {% for entity in collection_reference_options.get(field_id, {}).get(item_id, []) %}
+                                  <option value="{{ entity.id }}">{{ entity.name }}</option>
+                                {% endfor %}
+                              </select>
+                            {% elif item_field.type == "enum" %}
+                              <select data-collection-subfield="{{ item_id }}" data-subfield-type="enum" {% if item_field.required %}required{% endif %}>
+                                {% if not item_field.required %}<option value="">None</option>{% endif %}
+                                {% for option in item_field.options %}
+                                  <option value="{{ option }}" {% if option == item_value %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                              </select>
+                            {% elif item_field.type == "integer" or item_field.type == "decimal" %}
+                              <input
+                                type="number"
+                                data-collection-subfield="{{ item_id }}"
+                                data-subfield-type="{{ item_field.type }}"
+                                value="{{ '' if item_value is none else item_value }}"
+                                {% if item_field.type == "decimal" %}step="any"{% else %}step="1"{% endif %}
+                                {% if item_field.minimum is not none %}min="{{ item_field.minimum }}"{% endif %}
+                                {% if item_field.maximum is not none %}max="{{ item_field.maximum }}"{% endif %}
+                                {% if item_field.required %}required{% endif %}
+                              >
+                            {% elif item_field.type == "boolean" %}
+                              <input type="checkbox" data-collection-subfield="{{ item_id }}" data-subfield-type="boolean" {% if item_value %}checked{% endif %}>
+                            {% elif item_field.type == "notes" %}
+                              <textarea data-collection-subfield="{{ item_id }}" data-subfield-type="notes">{{ item_value or '' }}</textarea>
+                            {% else %}
+                              <input data-collection-subfield="{{ item_id }}" data-subfield-type="{{ item_field.type }}" value="{{ item_value or '' }}" {% if item_field.required %}required{% endif %}>
+                            {% endif %}
+                          </div>
+                        {% endfor %}
+                      </div>
+                      <div class="ttl-collection-row-actions">
+                        <button type="button" class="secondary-button ttl-row-button" data-row-up title="Move up">&#8593;</button>
+                        <button type="button" class="secondary-button ttl-row-button" data-row-down title="Move down">&#8595;</button>
+                        <button type="button" class="secondary-button ttl-row-button" data-row-remove>Remove</button>
+                      </div>
+                    </div>
+                  </template>
+
+                  <button type="button" class="secondary-button ttl-collection-add" data-collection-add>Add {{ field.label }} entry</button>
+                </div>
+              </div>
+            {% elif field.type == "text" or field.type == "reference" %}
+              <div class="ttl-field">
+                <div class="ttl-lockable-label">
+                  <label for="field__{{ field_id }}">{{ field.label }}</label>
+                  {% if field_id in locked_fields and field_id == unlocked_field %}
+                    <a class="ttl-lock-icon is-unlocked" href="/characters/create/{{ draft.draft_id }}" title="Relock {{ field.label }}" aria-label="Relock {{ field.label }}">&#128275;</a>
+                  {% endif %}
+                </div>
+                <input id="field__{{ field_id }}" name="field__{{ field_id }}" value="{{ value or "" }}" {% if field.required %}required{% endif %}>
+              </div>
+            {% elif field.type == "integer" or field.type == "decimal" %}
+              <div class="ttl-field">
+                <div class="ttl-lockable-label">
+                  <label for="field__{{ field_id }}">{{ field.label }}</label>
+                  {% if field_id in locked_fields and field_id == unlocked_field %}
+                    <a class="ttl-lock-icon is-unlocked" href="/characters/create/{{ draft.draft_id }}" title="Relock {{ field.label }}" aria-label="Relock {{ field.label }}">&#128275;</a>
+                  {% endif %}
+                </div>
+                <input
+                  type="number"
+                  {% if field.type == "decimal" %}step="any"{% else %}step="1"{% endif %}
+                  id="field__{{ field_id }}"
+                  name="field__{{ field_id }}"
+                  value="{{ "" if value is none else value }}"
+                  {% if field.minimum is not none %}min="{{ field.minimum }}"{% endif %}
+                  {% if field.maximum is not none %}max="{{ field.maximum }}"{% endif %}
+                  {% if field.required %}required{% endif %}
+                >
+              </div>
+            {% elif field.type == "boolean" %}
+              <div class="ttl-field">
+                <label>
+                  <input type="checkbox" name="field__{{ field_id }}" {% if value %}checked{% endif %}>
+                  {{ field.label }}
+                </label>
+              </div>
+            {% elif field.type == "enum" %}
+              <div class="ttl-field">
+                <div class="ttl-lockable-label">
+                  <label for="field__{{ field_id }}">{{ field.label }}</label>
+                  {% if field_id in locked_fields and field_id == unlocked_field %}
+                    <a class="ttl-lock-icon is-unlocked" href="/characters/create/{{ draft.draft_id }}" title="Relock {{ field.label }}" aria-label="Relock {{ field.label }}">&#128275;</a>
+                  {% endif %}
+                </div>
+                <select id="field__{{ field_id }}" name="field__{{ field_id }}" {% if field.required %}required{% endif %}>
+                  {% for option in field.options %}
+                    <option value="{{ option }}" {% if option == value %}selected{% endif %}>{{ option }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            {% else %}
+              <div class="ttl-field">
+                <label>{{ field.label }}</label>
+                <div class="ttl-muted">This field type is not editable during creation yet: {{ field.type }}</div>
+              </div>
+            {% endif %}
+          
+                          {% endif %}
+                        {% endfor %}
+                      </div>
+                    </section>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+
+
+        {% if calculated_fields %}
+          <div class="ttl-derived">
+            <strong>Derived values</strong>
+            <div class="ttl-derived-grid">
+              {% for field_id, field in calculated_fields %}
+                <div class="ttl-derived-item">
+                  <div class="ttl-derived-label">
+                    <div class="ttl-muted">{{ field.label }}</div>
+                    <button type="button" class="ttl-info-button" data-explain-field="{{ field_id }}" data-explain-label="{{ field.label }}" aria-label="Explain {{ field.label }}" title="Show calculation">i</button>
+                  </div>
+                  <div class="ttl-derived-value" data-calculated-field="{{ field_id }}">{{ draft.data.get(field_id, "") }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="ttl-actions">
+          <div class="ttl-actions-left">
+            {% if not is_first %}
+              <button type="submit" name="action" value="back" formnovalidate>Back</button>
+            {% endif %}
+            {% if is_last %}
+              <button type="submit" name="action" value="finish">Finish Character</button>
+            {% else %}
+              <button type="submit" name="action" value="next">Next</button>
+            {% endif %}
+          </div>
+          <div class="ttl-actions-right">
+            <button type="submit" name="action" value="exit" formnovalidate>Save &amp; Exit</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section class="ttl-card" style="margin-top:20px;">
+      <strong>Discard Draft</strong>
+      <form method="post" action="/characters/create/{{ draft.draft_id }}/delete" style="margin-top:10px;" onsubmit="return confirm('Discard this character draft?');">
+        <button type="submit">Discard Draft</button>
+      </form>
+    </section>
+  </main>
+
+  <dialog id="ttl-calculation-dialog" class="ttl-calculation-dialog">
+    <div class="ttl-calculation-dialog-header">
+      <div>
+        <div class="ttl-muted">Calculation</div>
+        <strong id="ttl-calculation-title"></strong>
+      </div>
+      <button type="button" class="ttl-dialog-close" data-calculation-close aria-label="Close">×</button>
+    </div>
+    <div id="ttl-calculation-body"></div>
+  </dialog>
+
+  <script>
+    (() => {
+      const form = document.getElementById("ttl-create-form");
+      if (!form) return;
+
+      const endpoint = "/characters/create/{{ draft.draft_id }}/evaluate";
+      const rulePanel = document.getElementById("ttl-rule-panel");
+      const ruleList = document.getElementById("ttl-rule-list");
+      let timer = null;
+      let requestSerial = 0;
+      let leavingPage = false;
+      let activeController = null;
+
+      let calculationExplanations = {};
+
+      const calculationDialog = document.getElementById("ttl-calculation-dialog");
+      const calculationTitle = document.getElementById("ttl-calculation-title");
+      const calculationBody = document.getElementById("ttl-calculation-body");
+
+      function formatSigned(value) {
+        if (typeof value !== "number") return String(value ?? "");
+        return value > 0 ? `+${value}` : String(value);
+      }
+
+      function renderExplanations(explanations) {
+        calculationExplanations = explanations || {};
+        document.querySelectorAll("[data-explain-field]").forEach((button) => {
+          button.disabled = !calculationExplanations[button.dataset.explainField];
+        });
+      }
+
+      function openExplanation(fieldId, fallbackLabel) {
+        const explanation = calculationExplanations[fieldId];
+        if (!explanation || !calculationDialog) return;
+
+        calculationTitle.textContent = `${fallbackLabel}: ${explanation.value ?? ""}`;
+        calculationBody.innerHTML = "";
+
+        if (explanation.formula_display) {
+          const formula = document.createElement("div");
+          formula.className = "ttl-calculation-formula";
+          const caption = document.createElement("div");
+          caption.className = "ttl-muted";
+          caption.textContent = "Formula";
+          const value = document.createElement("div");
+          value.textContent = explanation.formula_display;
+          formula.append(caption, value);
+          calculationBody.appendChild(formula);
+        }
+
+        const terms = document.createElement("div");
+        terms.className = "ttl-calculation-terms";
+
+        (explanation.terms || []).forEach((term) => {
+          const row = document.createElement("div");
+          row.className = "ttl-calculation-term";
+
+          const main = document.createElement("div");
+          main.className = "ttl-calculation-term-main";
+          const label = document.createElement("span");
+          label.textContent = term.label;
+          const amount = document.createElement("strong");
+          amount.textContent = formatSigned(term.value);
+          main.append(label, amount);
+          row.appendChild(main);
+
+          if (term.sources && term.sources.length) {
+            const sourceList = document.createElement("div");
+            sourceList.className = "ttl-calculation-sources";
+            if (term.aggregate && term.aggregate !== "sum") {
+              const aggregateNote = document.createElement("div");
+              aggregateNote.className = "ttl-calculation-source-note";
+              aggregateNote.textContent = `Aggregation: ${term.aggregate}`;
+              sourceList.appendChild(aggregateNote);
+            }
+            term.sources.forEach((source) => {
+              const sourceRow = document.createElement("div");
+              const sourceName = document.createElement("span");
+              sourceName.textContent = source.source_name;
+              const sourceValue = document.createElement("span");
+              sourceValue.textContent = formatSigned(source.value);
+              sourceRow.append(sourceName, sourceValue);
+              sourceList.appendChild(sourceRow);
+            });
+            row.appendChild(sourceList);
+          }
+
+          terms.appendChild(row);
+        });
+
+        calculationBody.appendChild(terms);
+        calculationDialog.showModal();
+      }
+
+      document.addEventListener("click", (event) => {
+        const explainButton = event.target.closest("[data-explain-field]");
+        if (explainButton) {
+          openExplanation(
+            explainButton.dataset.explainField,
+            explainButton.dataset.explainLabel || "Calculated value"
+          );
+          return;
+        }
+
+        if (event.target.closest("[data-calculation-close]")) {
+          calculationDialog?.close();
+        }
+      });
+
+
+      function initMultiReferences() {
+        form.querySelectorAll("[data-multi-reference]").forEach((widget) => {
+          const nativeSelect = widget.querySelector(".ttl-multi-reference-native");
+          const selectedBox = widget.querySelector("[data-multi-selected]");
+          const addSelect = widget.querySelector("[data-multi-add]");
+          if (!nativeSelect || !selectedBox || !addSelect) return;
+
+          const label = widget.dataset.label || "item";
+
+          function emitChange() {
+            nativeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+
+          function render() {
+            selectedBox.innerHTML = "";
+            const selectedOptions = Array.from(nativeSelect.options).filter(
+              (option) => option.selected
+            );
+
+            if (!selectedOptions.length) {
+              const empty = document.createElement("span");
+              empty.className = "ttl-multi-empty";
+              empty.textContent = "None selected";
+              selectedBox.appendChild(empty);
+            } else {
+              selectedOptions.forEach((option) => {
+                const chip = document.createElement("span");
+                chip.className = "ttl-multi-chip";
+                if (option.dataset.eligible === "false") {
+                  chip.classList.add("ttl-multi-chip-ineligible");
+                  chip.title = option.dataset.eligibilityMessage || "Requirements are not met.";
+                }
+
+                const text = document.createElement("span");
+                text.textContent = option.dataset.baseLabel || option.textContent;
+                chip.appendChild(text);
+
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.className = "ttl-multi-remove";
+                remove.setAttribute("aria-label", `Remove ${option.textContent}`);
+                remove.textContent = "×";
+                remove.addEventListener("click", () => {
+                  option.selected = false;
+                  render();
+                  emitChange();
+                });
+
+                chip.appendChild(remove);
+                selectedBox.appendChild(chip);
+              });
+            }
+
+            addSelect.innerHTML = "";
+            const placeholder = document.createElement("option");
+            placeholder.value = "";
+            placeholder.textContent = `Add ${label}...`;
+            addSelect.appendChild(placeholder);
+
+            Array.from(nativeSelect.options)
+              .filter((option) => !option.selected && option.dataset.eligible !== "false")
+              .forEach((option) => {
+                const choice = document.createElement("option");
+                choice.value = option.value;
+                choice.textContent = option.dataset.baseLabel || option.textContent;
+                addSelect.appendChild(choice);
+              });
+
+            addSelect.disabled = addSelect.options.length === 1;
+            addSelect.value = "";
+          }
+
+          Array.from(nativeSelect.options).forEach((option) => {
+            option.dataset.baseLabel = option.textContent;
+            if (!option.dataset.eligible) option.dataset.eligible = "true";
+          });
+          widget._ttlRender = render;
+
+          addSelect.addEventListener("change", () => {
+            if (!addSelect.value) return;
+            const option = Array.from(nativeSelect.options).find(
+              (candidate) => candidate.value === addSelect.value
+            );
+            if (option) {
+              option.selected = true;
+              render();
+              emitChange();
+            }
+          });
+
+          render();
+        });
+      }
+
+      initMultiReferences();
+
+      function initCompendiumPickers() {
+        document.querySelectorAll("[data-compendium-picker]").forEach((picker) => {
+          const nativeSelect = picker.querySelector(".ttl-picker-native");
+          const selectedBox = picker.querySelector("[data-picker-selected]");
+          const openButton = picker.querySelector("[data-picker-open]");
+          const dialog = picker.querySelector("[data-picker-dialog]");
+          const search = picker.querySelector("[data-picker-search]");
+          const tagFilter = picker.querySelector("[data-picker-tag]");
+          const results = picker.querySelector("[data-picker-results]");
+          const closeButton = picker.querySelector("[data-picker-close]");
+          const mode = picker.dataset.pickerMode;
+
+          if (!nativeSelect || !selectedBox || !dialog || !results) return;
+
+          function tagsFor(option) {
+            return (option.dataset.pickerTags || "")
+              .split(/\s+/)
+              .filter(Boolean);
+          }
+
+          function populateTags() {
+            if (!tagFilter || tagFilter.options.length > 1) return;
+            const tags = new Set();
+            Array.from(nativeSelect.options).forEach((option) => {
+              tagsFor(option).forEach((tag) => tags.add(tag));
+            });
+            Array.from(tags).sort((a, b) => a.localeCompare(b)).forEach((tag) => {
+              const row = document.createElement("option");
+              row.value = tag;
+              row.textContent = tag;
+              tagFilter.appendChild(row);
+            });
+          }
+
+          function emitChange() {
+            nativeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+
+          function renderSelected() {
+            selectedBox.innerHTML = "";
+            const selected = Array.from(nativeSelect.options).filter(
+              (option) => option.selected && option.value
+            );
+
+            if (!selected.length) {
+              const empty = document.createElement("span");
+              empty.className = "ttl-picker-empty";
+              empty.textContent = "None selected";
+              selectedBox.appendChild(empty);
+              return;
+            }
+
+            const entityType = picker.dataset.pickerEntity || "";
+            if (mode === "multi" && entityType === "skill") {
+              const table = document.createElement("table");
+              table.className = "ttl-skill-table";
+              table.innerHTML = "<thead><tr><th>Skill</th><th>Description</th><th></th></tr></thead>";
+              const body = document.createElement("tbody");
+
+              selected.forEach((option) => {
+                const row = document.createElement("tr");
+                if (option.dataset.eligible === "false") {
+                  row.classList.add("is-ineligible");
+                  row.title = option.dataset.eligibilityMessage || "Requirements are not met.";
+                }
+
+                const nameCell = document.createElement("td");
+                nameCell.className = "ttl-skill-name";
+                nameCell.textContent = option.dataset.pickerName || option.dataset.baseLabel || option.textContent;
+
+                const descriptionCell = document.createElement("td");
+                descriptionCell.className = "ttl-skill-description";
+                descriptionCell.textContent = option.dataset.pickerDescription || "";
+
+                const actionCell = document.createElement("td");
+                actionCell.className = "ttl-skill-action";
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.className = "ttl-picker-chip-remove";
+                remove.textContent = "×";
+                remove.title = `Remove ${nameCell.textContent}`;
+                remove.addEventListener("click", () => {
+                  option.selected = false;
+                  emitChange();
+                  renderSelected();
+                  renderResults();
+                });
+                actionCell.appendChild(remove);
+                row.append(nameCell, descriptionCell, actionCell);
+                body.appendChild(row);
+              });
+
+              table.appendChild(body);
+              selectedBox.appendChild(table);
+              return;
+            }
+
+            selected.forEach((option) => {
+              const chip = document.createElement("span");
+              chip.className = "ttl-picker-chip";
+
+              if (option.dataset.eligible === "false") {
+                chip.classList.add("ttl-picker-chip-ineligible");
+                chip.title = option.dataset.eligibilityMessage || "Requirements are not met.";
+              }
+
+              const name = document.createElement("span");
+              name.textContent = option.dataset.pickerName || option.dataset.baseLabel || option.textContent;
+              chip.appendChild(name);
+
+              const remove = document.createElement("button");
+              remove.type = "button";
+              remove.className = "ttl-picker-chip-remove";
+              remove.textContent = "×";
+              remove.title = `Remove ${name.textContent}`;
+              remove.addEventListener("click", () => {
+                option.selected = false;
+                emitChange();
+                renderSelected();
+                renderResults();
+              });
+              chip.appendChild(remove);
+              selectedBox.appendChild(chip);
+            });
+          }
+
+          function matches(option) {
+            if (!option.value) return false;
+
+            const query = (search?.value || "").trim().toLowerCase();
+            const selectedTag = tagFilter?.value || "";
+            const tags = tagsFor(option);
+
+            if (selectedTag && !tags.includes(selectedTag)) return false;
+            if (!query) return true;
+
+            return [
+              option.dataset.pickerName || option.dataset.baseLabel || option.textContent,
+              option.value,
+              option.dataset.pickerTags || "",
+              option.dataset.pickerDescription || "",
+            ].join(" ").toLowerCase().includes(query);
+          }
+
+          function renderResults() {
+            results.innerHTML = "";
+            const matchesList = Array.from(nativeSelect.options).filter(matches);
+
+            if (!matchesList.length) {
+              const empty = document.createElement("div");
+              empty.className = "ttl-picker-no-results";
+              empty.textContent = "No matching entries.";
+              results.appendChild(empty);
+              return;
+            }
+
+            matchesList.slice(0, 250).forEach((option) => {
+              const row = document.createElement("button");
+              row.type = "button";
+              row.className = "ttl-picker-result";
+
+              const eligible = option.dataset.eligible !== "false";
+              if (option.selected) row.classList.add("is-selected");
+              if (!eligible) row.classList.add("is-ineligible");
+              row.disabled = !eligible && !option.selected;
+
+              const main = document.createElement("span");
+              main.className = "ttl-picker-result-main";
+
+              const name = document.createElement("strong");
+              name.textContent =
+                option.dataset.pickerName ||
+                option.dataset.baseLabel ||
+                option.textContent;
+              main.appendChild(name);
+
+              const description = option.dataset.pickerDescription || "";
+              if (description) {
+                const descriptionRow = document.createElement("span");
+                descriptionRow.className = "ttl-picker-description";
+                descriptionRow.textContent = description;
+                main.appendChild(descriptionRow);
+              }
+
+              const tags = tagsFor(option);
+              if (tags.length) {
+                const tagsRow = document.createElement("span");
+                tagsRow.className = "ttl-picker-tags";
+                tagsRow.textContent = tags.join(" · ");
+                main.appendChild(tagsRow);
+              }
+
+              if (!eligible && option.dataset.eligibilityMessage) {
+                const reason = document.createElement("span");
+                reason.className = "ttl-picker-ineligible-reason";
+                reason.textContent = option.dataset.eligibilityMessage;
+                main.appendChild(reason);
+              }
+
+              row.appendChild(main);
+              row.addEventListener("click", () => {
+                if (mode === "single") {
+                  Array.from(nativeSelect.options).forEach((candidate) => {
+                    candidate.selected = candidate === option;
+                  });
+                  dialog.close();
+                } else {
+                  option.selected = !option.selected;
+                }
+
+                emitChange();
+                renderSelected();
+                renderResults();
+              });
+
+              results.appendChild(row);
+            });
+
+            if (matchesList.length > 250) {
+              const more = document.createElement("div");
+              more.className = "ttl-picker-no-results";
+              more.textContent =
+                `Showing first 250 of ${matchesList.length} matches. Refine the search.`;
+              results.appendChild(more);
+            }
+          }
+
+          populateTags();
+          renderSelected();
+
+          openButton?.addEventListener("click", () => {
+            if (tagFilter) {
+              tagFilter.value = "";
+            }
+            renderResults();
+            dialog.showModal();
+            window.setTimeout(() => search?.focus(), 0);
+          });
+          closeButton?.addEventListener("click", () => dialog.close());
+          search?.addEventListener("input", renderResults);
+          tagFilter?.addEventListener("change", renderResults);
+          nativeSelect.addEventListener("change", () => {
+            renderSelected();
+            renderResults();
+          });
+          nativeSelect.addEventListener("ttl-eligibility-updated", () => {
+            renderSelected();
+            renderResults();
+          });
+          dialog.addEventListener("click", (event) => {
+            if (event.target === dialog) dialog.close();
+          });
+        });
+      }
+
+      initCompendiumPickers();
+
+      function renderEligibility(eligibility) {
+        Object.entries(eligibility || {}).forEach(([fieldId, entityStates]) => {
+          const select = form.querySelector(`[name="field__${CSS.escape(fieldId)}"]`);
+          if (!select || select.tagName !== "SELECT") return;
+
+          Array.from(select.options).forEach((option) => {
+            if (!option.value) return;
+            if (!option.dataset.baseLabel) option.dataset.baseLabel = option.textContent;
+
+            const state = entityStates?.[option.value] || { eligible: true, message: null };
+            option.dataset.eligible = state.eligible ? "true" : "false";
+            option.dataset.eligibilityMessage = state.message || "";
+
+            if (!select.multiple) {
+              const suffix = state.eligible
+                ? ""
+                : (option.selected ? " (Ineligible)" : " (Unavailable)");
+              option.textContent = `${option.dataset.baseLabel}${suffix}`;
+              option.disabled = !state.eligible && !option.selected;
+              option.title = state.message || "";
+            }
+          });
+
+          if (select.multiple) {
+            const widget = select.closest("[data-multi-reference]");
+            if (widget && typeof widget._ttlRender === "function") {
+              widget._ttlRender();
+            }
+          }
+          select.dispatchEvent(
+            new Event("ttl-eligibility-updated")
+          );
+        });
+      }
+
+
+
+      function initSheetTabs() {
+        const layout = document.querySelector("[data-sheet-layout]");
+        if (!layout) return;
+
+        const tabs = Array.from(layout.querySelectorAll("[data-sheet-tab]"));
+        const panels = Array.from(layout.querySelectorAll("[data-sheet-panel]"));
+        if (!tabs.length || !panels.length) return;
+
+        function activate(id) {
+          tabs.forEach((tab) => {
+            tab.classList.toggle("is-active", tab.dataset.sheetTab === id);
+          });
+          panels.forEach((panel) => {
+            panel.classList.toggle("is-active", panel.dataset.sheetPanel === id);
+          });
+        }
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => activate(tab.dataset.sheetTab));
+        });
+
+        activate(tabs[0].dataset.sheetTab);
+      }
+
+      initSheetTabs();
+
+      function initStructuredCollections() {
+        form.querySelectorAll("[data-structured-collection]").forEach((widget) => {
+          const hidden = widget.querySelector("[data-collection-json]");
+          const rowsBox = widget.querySelector("[data-collection-rows]");
+          const template = widget.querySelector("[data-collection-template]");
+          const addButton = widget.querySelector("[data-collection-add]");
+          const fieldId = widget.dataset.fieldId;
+          const countTarget = document.querySelector(
+            `[data-collection-count="${CSS.escape(fieldId)}"]`
+          );
+
+          if (!hidden || !rowsBox || !template || !addButton) return;
+
+          function readValue(input) {
+            const type = input.dataset.subfieldType || "text";
+
+            if (type === "boolean") return input.checked;
+            if (type === "integer") {
+              return input.value === "" ? null : Number.parseInt(input.value, 10);
+            }
+            if (type === "decimal") {
+              return input.value === "" ? null : Number.parseFloat(input.value);
+            }
+            return input.value;
+          }
+
+          function rowData(row) {
+            const result = {};
+            row.querySelectorAll("[data-collection-subfield]").forEach((input) => {
+              result[input.dataset.collectionSubfield] = readValue(input);
+            });
+            return result;
+          }
+
+          function sync({ emit = true } = {}) {
+            const rows = Array.from(
+              rowsBox.querySelectorAll(":scope > [data-collection-row]")
+            );
+            hidden.value = JSON.stringify(rows.map(rowData));
+
+            if (countTarget) {
+              countTarget.textContent = `${rows.length} entr${rows.length === 1 ? "y" : "ies"}`;
+            }
+
+            rows.forEach((row, index) => {
+              const up = row.querySelector("[data-row-up]");
+              const down = row.querySelector("[data-row-down]");
+              if (up) up.disabled = index === 0;
+              if (down) down.disabled = index === rows.length - 1;
+            });
+
+            if (emit) {
+              hidden.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+          }
+
+          function wireRow(row) {
+            row.querySelectorAll("[data-collection-subfield]").forEach((input) => {
+              input.addEventListener("input", () => sync());
+              input.addEventListener("change", () => sync());
+            });
+
+            row.querySelector("[data-row-remove]")?.addEventListener("click", () => {
+              row.remove();
+              sync();
+            });
+
+            row.querySelector("[data-row-up]")?.addEventListener("click", () => {
+              const previous = row.previousElementSibling;
+              if (previous) {
+                rowsBox.insertBefore(row, previous);
+                sync();
+              }
+            });
+
+            row.querySelector("[data-row-down]")?.addEventListener("click", () => {
+              const next = row.nextElementSibling;
+              if (next) {
+                rowsBox.insertBefore(next, row);
+                sync();
+              }
+            });
+          }
+
+          rowsBox.querySelectorAll("[data-collection-row]").forEach(wireRow);
+
+          addButton.addEventListener("click", () => {
+            const fragment = template.content.cloneNode(true);
+            const row = fragment.querySelector("[data-collection-row]");
+            rowsBox.appendChild(fragment);
+            if (row) {
+              wireRow(row);
+              row.querySelector("[data-collection-subfield]")?.focus();
+            }
+            sync();
+          });
+
+          sync({ emit: false });
+        });
+      }
+
+      initStructuredCollections();
+
+      function collectValues() {
+        const values = {};
+        form.querySelectorAll("[name^='field__']").forEach((element) => {
+          const fieldId = element.name.substring("field__".length);
+          if (element.type === "checkbox") {
+            values[fieldId] = element.checked;
+          } else if (element.tagName === "SELECT" && element.multiple) {
+            values[fieldId] = Array.from(element.selectedOptions, option => option.value);
+          } else {
+            values[fieldId] = element.value;
+          }
+        });
+        return values;
+      }
+
+      function renderLimits(limits) {
+        document.querySelectorAll("[data-limit-status]").forEach((target) => {
+          const fieldId = target.dataset.limitStatus;
+          const rows = (limits && limits[fieldId]) || [];
+          target.innerHTML = "";
+
+          rows.forEach((limit) => {
+            const badge = document.createElement("span");
+            badge.className = "ttl-limit-badge";
+            if (limit.over_by > 0) badge.classList.add("is-over");
+            if (limit.remaining === 0 && limit.over_by === 0) {
+              badge.classList.add("is-full");
+            }
+
+            const prefix = rows.length > 1 ? `${limit.label}: ` : "";
+            const maximum = limit.maximum === null || limit.maximum === undefined
+              ? "?"
+              : limit.maximum;
+            badge.textContent = `${prefix}${limit.count} / ${maximum}`;
+
+            const details = [];
+            if (limit.maximum_display) {
+              details.push(`Maximum: ${limit.maximum_display}`);
+            }
+            (limit.inputs || []).forEach((input) => {
+              details.push(`${input.label}: ${input.value}`);
+            });
+            if (details.length) badge.title = details.join(" | ");
+
+            target.appendChild(badge);
+          });
+        });
+      }
+
+      function renderIssues(issues) {
+        ruleList.innerHTML = "";
+        if (!issues || !issues.length) {
+          rulePanel.style.display = "none";
+          return;
+        }
+
+        issues.forEach((issue) => {
+          const li = document.createElement("li");
+          const strong = document.createElement("strong");
+          strong.textContent = `${String(issue.severity || "info").toUpperCase()}:`;
+          li.appendChild(strong);
+          li.appendChild(document.createTextNode(` ${issue.message}`));
+          ruleList.appendChild(li);
+        });
+        rulePanel.style.display = "";
+      }
+
+      function renderCalculated(calculated) {
+        Object.entries(calculated || {}).forEach(([fieldId, value]) => {
+          const target = document.querySelector(`[data-calculated-field="${CSS.escape(fieldId)}"]`);
+          if (target) {
+            target.textContent = value === null || value === undefined ? "" : value;
+          }
+        });
+      }
+
+      async function evaluateNow() {
+        if (leavingPage) return;
+        const serial = ++requestSerial;
+        if (activeController) activeController.abort();
+        activeController = new AbortController();
+        try {
+          const response = await fetch(endpoint, {
+            signal: activeController.signal,
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify({ values: collectValues() })
+          });
+          const result = await response.json();
+          if (serial !== requestSerial) return;
+
+          if (!response.ok || !result.ok) {
+            renderIssues([{
+              severity: "error",
+              message: result.error || result.detail || "Rule evaluation failed."
+            }]);
+            return;
+          }
+
+          renderCalculated(result.calculated);
+          renderExplanations(result.explanations);
+          renderEligibility(result.eligibility);
+          renderLimits(result.limits);
+          renderIssues(result.issues);
+        } catch (error) {
+          if (leavingPage || error.name === "AbortError" || serial !== requestSerial) return;
+          renderIssues([{ severity: "error", message: "Live rule evaluation could not reach the server." }]);
+        }
+      }
+
+      function scheduleEvaluation() {
+        clearTimeout(timer);
+        timer = setTimeout(evaluateNow, 120);
+      }
+
+      form.addEventListener("input", scheduleEvaluation);
+      form.addEventListener("change", scheduleEvaluation);
+      form.addEventListener("submit", () => {
+        leavingPage = true;
+        clearTimeout(timer);
+        if (activeController) activeController.abort();
+      });
+      evaluateNow();
+    })();
+  </script>
+</body>
+</html>

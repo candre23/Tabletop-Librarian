@@ -1,0 +1,28 @@
+entity: equipment
+entries:
+- id: rope
+  name: Rope
+  tags:
+  - gear
+- id: healing_potion
+  name: Healing Potion
+  tags:
+  - consumable
+- id: ring_of_power
+  name: Ring of Power
+  tags:
+  - magic
+  - worn
+  effects:
+    skill_power_bonus:
+      value: 2
+      when: equipped == True
+      label: Ring of Power
+- id: lucky_charm
+  name: Lucky Charm
+  tags:
+  - trinket
+  effects:
+    skill_power_bonus:
+      value: 1
+      label: Lucky Charm

@@ -1,0 +1,20 @@
+entity: skill
+
+entries:
+  - id: athletics
+    name: Athletics
+    tags: [physical]
+    effects:
+      skill_power_bonus: 1
+
+  - id: lore
+    name: Lore
+    tags: [knowledge]
+    effects:
+      skill_power_bonus: 2
+
+  - id: stealth
+    name: Stealth
+    tags: [general]
+    effects:
+      skill_power_bonus: 3

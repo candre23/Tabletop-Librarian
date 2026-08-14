@@ -3,6 +3,22 @@
 {% block title %}RAG Corpus - {{ app_name }}
 <script>
 (() => {
+    const providerSelect = document.getElementById("ai-provider");
+    const baseUrlInput = document.getElementById("ai-base-url");
+    if (providerSelect && baseUrlInput) {
+        let priorProvider = providerSelect.value;
+        providerSelect.addEventListener("change", () => {
+            const priorOption = Array.from(providerSelect.options).find((option) => option.value === priorProvider);
+            const nextOption = providerSelect.selectedOptions[0];
+            const priorDefault = priorOption ? (priorOption.dataset.defaultBaseUrl || "") : "";
+            const nextDefault = nextOption ? (nextOption.dataset.defaultBaseUrl || "") : "";
+            if (!baseUrlInput.value.trim() || baseUrlInput.value.trim().replace(/\/$/, "") === priorDefault.replace(/\/$/, "")) {
+                baseUrlInput.value = nextDefault;
+            }
+            baseUrlInput.placeholder = nextDefault || "http://192.168.1.23:8080/v1";
+            priorProvider = providerSelect.value;
+        });
+    }
     const panel = document.getElementById("embedding-progress");
     const stage = document.getElementById("embedding-progress-stage");
     const percent = document.getElementById("embedding-progress-percent");
@@ -171,12 +187,20 @@
     </section>
 
     <section class="subpanel rag-test-box">
-        <h2>Local AI Provider</h2>
-        <p class="muted">Connect Tabletop Librarian to a local OpenAI-compatible server such as llama.cpp. The API key is stored only on this server and is never displayed after saving.</p>
+        <h2>AI Provider</h2>
+        <p class="muted">Connect Tabletop Librarian to a local OpenAI-compatible server, OpenAI, or Google Gemini. API keys are stored only on this server and are never displayed after saving.</p>
 
         <form method="post" action="/admin/ai/save" class="ai-provider-form">
+            <label for="ai-provider">Provider</label>
+            <select id="ai-provider" name="provider">
+                {% for provider in ai_settings.provider_options %}
+                <option value="{{ provider.id }}" data-default-base-url="{{ provider.default_base_url }}" {% if provider.id == ai_settings.provider %}selected{% endif %}>{{ provider.name }}</option>
+                {% endfor %}
+            </select>
+
             <label for="ai-base-url">Base URL</label>
-            <input id="ai-base-url" name="base_url" type="text" value="{{ ai_settings.base_url }}" placeholder="http://192.168.1.23:8080/v1" required>
+            <input id="ai-base-url" name="base_url" type="text" value="{{ ai_settings.base_url }}" placeholder="http://192.168.1.23:8080/v1">
+            <p class="muted">OpenAI and Google Gemini use their standard API endpoint automatically. Enter a URL for Custom / OpenAI-compatible providers, or override a hosted provider endpoint only if needed.</p>
 
             <label for="ai-model">Model / Alias</label>
             <input id="ai-model" name="model" type="text" value="{{ ai_settings.model }}" placeholder="qwen3.5-9b-q5" required>

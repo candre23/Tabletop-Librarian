@@ -1,0 +1,14 @@
+entity: archetype
+
+entries:
+  - id: adventurer
+    name: Adventurer
+    tags: [general]
+
+  - id: scholar
+    name: Scholar
+    tags: [knowledge]
+
+  - id: warrior
+    name: Warrior
+    tags: [combat]

@@ -1,0 +1,317 @@
+entity: descriptor
+entries:
+- id: beholden
+  name: Beholden
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: brash
+  name: Brash
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: charming
+  name: Charming
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+  effects:
+    intellect_edge_bonus: 1
+    armor_bonus: 2
+- id: clever
+  name: Clever
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: clumsy
+  name: Clumsy
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: creative
+  name: Creative
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+  effects:
+    intellect_edge_bonus: 1
+    armor_bonus: 2
+- id: curious
+  name: Curious
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: cursed
+  name: Cursed
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+  effects:
+    intellect_edge_bonus: 1
+    armor_bonus: 2
+- id: dishonorable
+  name: Dishonorable
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: driven
+  name: Driven
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: educated
+  name: Educated
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: foolish
+  name: Foolish
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: graceful
+  name: Graceful
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: gracious
+  name: Gracious
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+  effects:
+    intellect_edge_bonus: 1
+    armor_bonus: 2
+- id: hardy
+  name: Hardy
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: honorable
+  name: Honorable
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: industrious
+  name: Industrious
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+  effects:
+    intellect_edge_bonus: 1
+    armor_bonus: 2
+- id: loyal
+  name: Loyal
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+  effects:
+    intellect_edge_bonus: 1
+    armor_bonus: 2
+- id: lucky
+  name: Lucky
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: mystical
+  name: Mystical
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: neighborly
+  name: Neighborly
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+  effects:
+    intellect_edge_bonus: 1
+    armor_bonus: 2
+- id: offish
+  name: Offish
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: outcast
+  name: Outcast
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: perceptive
+  name: Perceptive
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: rebellious
+  name: Rebellious
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: scrappy
+  name: Scrappy
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+  effects:
+    intellect_edge_bonus: 1
+    armor_bonus: 1
+- id: sharp_eyed
+  name: Sharp-Eyed
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: shifty
+  name: Shifty
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+  effects:
+    speed_bonus: 14
+    intellect_bonus: 32
+    might_bonus: 12
+- id: skeptical
+  name: Skeptical
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: skittish
+  name: Skittish
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: smart
+  name: Smart
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: stealthy
+  name: Stealthy
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: stout
+  name: Stout
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: superstitious
+  name: Superstitious
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: swift
+  name: Swift
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: tickled
+  name: Tickled
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: tongue_tied
+  name: Tongue-Tied
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: uncanny
+  name: Uncanny
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+  effects:
+    intellect_edge_bonus: 1
+    armor_bonus: 2
+- id: uppity
+  name: Uppity
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+- id: vengeful
+  name: Vengeful
+  description: 'Apply the descriptor package: listed Pool changes, skills/inabilities, equipment, and initial-link
+    options.'
+  source:
+    book: ogoa_corebook
+    page: 62
+  effects:
+    speed_bonus: 24
+    intellect_bonus: 48
+    might_bonus: 18

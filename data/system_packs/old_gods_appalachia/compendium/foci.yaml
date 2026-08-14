@@ -1,0 +1,152 @@
+entity: focus
+entries:
+- id: applies_themself
+  name: Applies Themself
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: becomes_the_beast
+  name: Becomes the Beast
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: calls_home_the_hounds
+  name: Calls Home the Hounds
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: cannot_escape_the_darkness
+  name: Cannot Escape the Darkness
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: crafts_powerful_objects
+  name: Crafts Powerful Objects
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: cures_what_ails_ya
+  name: Cures What Ails Ya
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: defends_what_matters
+  name: Defends What Matters
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: delves_the_darkness
+  name: Delves the Darkness
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: does_what_needs_doin
+  name: Does What Needs Doin’
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: fears_no_haints
+  name: Fears No Haints
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: gets_rough_and_rowdy
+  name: Gets Rough and Rowdy
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: hunts
+  name: Hunts
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: knows_jack
+  name: Knows Jack
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: knows_the_unknowable
+  name: Knows the Unknowable
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: makes_a_high_lonesome_sound
+  name: Makes a High Lonesome Sound
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: manifests_the_mountain
+  name: Manifests the Mountain
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: masters_the_swarm
+  name: Masters the Swarm
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: moves_like_a_catamount
+  name: Moves Like a Catamount
+  description: 'Apply the focus connection, equipment, and Tier 1 benefits. Tier 1: Enabler; There’s Your Problem.'
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: possesses_the_gift
+  name: Possesses the Gift
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: serves_the_green
+  name: Serves the Green
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: shares_the_ways_and_signs
+  name: Shares the Ways and Signs
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: shoots_sharp_and_straight
+  name: Shoots Sharp and Straight
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: speaks_in_tongues
+  name: Speaks in Tongues
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: walks_these_woods
+  name: Walks These Woods
+  description: Apply the focus connection, equipment, and Tier 1 benefits.
+  source:
+    book: ogoa_corebook
+    page: 83
+- id: would_rather_be_reading
+  name: Would Rather Be Reading
+  description: 'Apply the focus connection, equipment, and Tier 1 benefits. Tier 1: Enabler; There’s Your Problem.'
+  source:
+    book: ogoa_corebook
+    page: 83

@@ -4,12 +4,17 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+.update_backups/
 
 logs/*
 !logs/.gitkeep
 
 cache/
-data/
+
+# Runtime/user state. Keep shipped System Packs under version control.
+data/*
+!data/system_packs/
+!data/system_packs/**
 
 .DS_Store
 Thumbs.db

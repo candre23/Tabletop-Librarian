@@ -1,0 +1,359 @@
+schema_version: 1
+fields:
+  name:
+    type: text
+    label: Name
+    required: true
+  character_type:
+    type: reference
+    label: Type
+    entity: character_type
+    required: true
+  identity:
+    type: text
+    label: Identity / Moniker
+    default: ''
+  descriptor:
+    type: reference
+    label: Descriptor
+    entity: descriptor
+    required: true
+  focus:
+    type: reference
+    label: Focus
+    entity: focus
+    required: true
+  character_arc:
+    type: reference
+    label: Character Arc
+    entity: character_arc
+    required: true
+    play_editable: true
+  tier:
+    type: integer
+    label: Tier
+    default: 1
+    min: 1
+    max: 6
+  xp:
+    type: integer
+    label: XP
+    default: 0
+    min: 0
+    play_editable: true
+  might_alloc:
+    type: integer
+    label: Might Allocation
+    default: 0
+    min: 0
+    max: 6
+  speed_alloc:
+    type: integer
+    label: Speed Allocation
+    default: 0
+    min: 0
+    max: 6
+  intellect_alloc:
+    type: integer
+    label: Intellect Allocation
+    default: 0
+    min: 0
+    max: 6
+  protector_edge:
+    type: enum
+    label: Protector Starting Edge
+    options:
+    - Not applicable
+    - Might
+    - Speed
+    default: Not applicable
+  might_max:
+    type: calculated
+    label: Might Pool Max
+  speed_max:
+    type: calculated
+    label: Speed Pool Max
+  intellect_max:
+    type: calculated
+    label: Intellect Pool Max
+  might_current:
+    type: integer
+    label: Might Current
+    default: 0
+    min: 0
+    play_editable: true
+  speed_current:
+    type: integer
+    label: Speed Current
+    default: 0
+    min: 0
+    play_editable: true
+  intellect_current:
+    type: integer
+    label: Intellect Current
+    default: 0
+    min: 0
+    play_editable: true
+  might_edge:
+    type: calculated
+    label: Might Edge
+  speed_edge:
+    type: calculated
+    label: Speed Edge
+  intellect_edge:
+    type: calculated
+    label: Intellect Edge
+  effort:
+    type: integer
+    label: Effort
+    default: 1
+    min: 1
+    max: 10
+  armor_worn:
+    type: integer
+    label: Armor from Worn Gear
+    default: 0
+    min: 0
+    max: 20
+    play_editable: true
+  armor:
+    type: calculated
+    label: Total Armor
+  damage_track:
+    type: enum
+    label: Damage Track
+    options:
+    - Hale
+    - Impaired
+    - Debilitated
+    - Dead
+    default: Hale
+    play_editable: true
+  recovery_bonus:
+    type: integer
+    label: Recovery Roll Bonus
+    default: 0
+    min: -20
+    max: 20
+    play_editable: true
+  recovery_action_used:
+    type: boolean
+    label: 1 Action Recovery Used
+    default: false
+    play_editable: true
+  recovery_10min_used:
+    type: boolean
+    label: 10 Minute Recovery Used
+    default: false
+    play_editable: true
+  recovery_1hour_used:
+    type: boolean
+    label: 1 Hour Recovery Used
+    default: false
+    play_editable: true
+  recovery_10hour_used:
+    type: boolean
+    label: 10 Hour Recovery Used
+    default: false
+    play_editable: true
+  type_abilities:
+    type: multi_reference
+    label: First-Tier Type Abilities
+    entity: ability
+    default: []
+  focus_benefits:
+    type: collection
+    label: Focus / Other Abilities
+    item_schema:
+      name:
+        type: text
+        label: Ability
+        required: true
+      tier:
+        type: integer
+        label: Tier
+        default: 1
+        min: 1
+        max: 6
+      notes:
+        type: text
+        label: Rule / Notes
+        default: ''
+    allow_custom: true
+    custom_name_field: name
+    default: []
+  skills:
+    type: collection
+    label: Skills
+    item_schema:
+      skill:
+        type: reference
+        label: Skill
+        entity: skill
+        required: false
+      custom_name:
+        type: text
+        label: Custom Skill
+        default: ''
+      rank:
+        type: enum
+        label: Rank
+        options:
+        - Inability
+        - Trained
+        - Specialized
+        default: Trained
+      notes:
+        type: text
+        label: Notes
+        default: ''
+    allow_custom: true
+    custom_name_field: custom_name
+    default: []
+  weapons:
+    type: collection
+    label: Weapons
+    item_schema:
+      weapon:
+        type: reference
+        label: Weapon
+        entity: weapon
+        required: false
+      custom_name:
+        type: text
+        label: Custom Weapon
+        default: ''
+      damage:
+        type: integer
+        label: Damage
+        default: 0
+        min: 0
+      range:
+        type: text
+        label: Range
+        default: ''
+      notes:
+        type: text
+        label: Notes
+        default: ''
+    allow_custom: true
+    custom_name_field: custom_name
+    play_editable: true
+    default: []
+  armor_items:
+    type: collection
+    label: Armor / Protection
+    item_schema:
+      armor_item:
+        type: reference
+        label: Armor
+        entity: armor_item
+        required: false
+      custom_name:
+        type: text
+        label: Custom Armor
+        default: ''
+      notes:
+        type: text
+        label: Notes
+        default: ''
+    allow_custom: true
+    custom_name_field: custom_name
+    play_editable: true
+    default: []
+  equipment:
+    type: collection
+    label: Equipment
+    item_schema:
+      name:
+        type: text
+        label: Item
+        required: true
+      quantity:
+        type: integer
+        label: Qty
+        default: 1
+        min: 1
+      notes:
+        type: text
+        label: Notes
+        default: ''
+    allow_custom: true
+    custom_name_field: name
+    play_editable: true
+    default: []
+  cyphers:
+    type: collection
+    label: Cyphers
+    item_schema:
+      name:
+        type: text
+        label: Cypher
+        required: true
+      level:
+        type: text
+        label: Level
+        default: ''
+      form:
+        type: text
+        label: Form
+        default: ''
+      effect:
+        type: text
+        label: Use / Effect
+        default: ''
+      used:
+        type: boolean
+        label: Used
+        default: false
+    allow_custom: true
+    custom_name_field: name
+    play_editable: true
+    default: []
+  artifacts:
+    type: collection
+    label: Artifacts
+    item_schema:
+      name:
+        type: text
+        label: Artifact
+        required: true
+      effect:
+        type: text
+        label: Effect
+        default: ''
+      depletion:
+        type: text
+        label: Comes Due / Depletion
+        default: ''
+      notes:
+        type: text
+        label: Notes
+        default: ''
+    allow_custom: true
+    custom_name_field: name
+    play_editable: true
+    default: []
+  background:
+    type: notes
+    label: Background
+    default: ''
+  connections:
+    type: notes
+    label: Connections
+    default: ''
+  arc_progress:
+    type: notes
+    label: Character Arc Progress
+    default: 'Opening:
+
+      Steps:
+
+      Climax:
+
+      Resolution:'
+  notes:
+    type: notes
+    label: Notes
+    default: ''
+    play_editable: true

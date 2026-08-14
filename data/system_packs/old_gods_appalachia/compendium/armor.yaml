@@ -1,0 +1,74 @@
+entity: armor_item
+entries:
+- id: leather_jacket
+  name: Leather jacket
+  category: light
+  armor: 1
+  description: Light armor. Base Armor 1; Speed cost may apply.
+  source:
+    book: ogoa_corebook
+    page: 122
+- id: hunting_coat
+  name: Hunting coat
+  category: light
+  armor: 1
+  description: Light armor. Base Armor 1; Speed cost may apply.
+  source:
+    book: ogoa_corebook
+    page: 122
+- id: oil_slicker
+  name: Oil slicker
+  category: light
+  armor: 1
+  description: Light armor. Base Armor 1; Speed cost may apply.
+  source:
+    book: ogoa_corebook
+    page: 122
+- id: overall_jacket
+  name: Overall jacket
+  category: medium
+  armor: 2
+  description: Medium armor. Base Armor 2; Speed cost may apply.
+  source:
+    book: ogoa_corebook
+    page: 122
+- id: sheepskin_lined_coat
+  name: Sheepskin-lined coat
+  category: medium
+  armor: 2
+  description: Medium armor. Base Armor 2; Speed cost may apply.
+  source:
+    book: ogoa_corebook
+    page: 122
+- id: makeshift_metal_plated_armor
+  name: Makeshift metal-plated armor
+  category: heavy
+  armor: 3
+  description: Heavy armor. Base Armor 3; Speed cost may apply.
+  source:
+    book: ogoa_corebook
+    page: 122
+- id: reinforced_jacket
+  name: Reinforced jacket
+  category: heavy
+  armor: 3
+  description: Heavy armor. Base Armor 3; Speed cost may apply.
+  source:
+    book: ogoa_corebook
+    page: 122
+- id: steel_breastplate
+  name: Steel breastplate
+  category: heavy
+  armor: 3
+  description: Heavy armor. Base Armor 3; Speed cost may apply.
+  source:
+    book: ogoa_corebook
+    page: 122
+- id: simple_ballistic_armor
+  name: Simple ballistic armor
+  category: heavy
+  armor: 3
+  description: Heavy armor. Base Armor 3; Speed cost may apply.
+  source:
+    book: ogoa_corebook
+    page: 122

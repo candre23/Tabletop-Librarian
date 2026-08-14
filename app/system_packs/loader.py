@@ -8,7 +8,8 @@ import re
 import yaml
 
 
-PACK_FORMAT_VERSION = 1
+PACK_FORMAT_VERSION = 2
+SUPPORTED_PACK_FORMATS = {1, 2}
 PACK_ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 
 
@@ -222,12 +223,12 @@ def _parse_manifest(root: Path) -> tuple[PackManifest | None, list[PackIssue]]:
                 field="pack_format",
             )
         )
-    elif pack_format != PACK_FORMAT_VERSION:
+    elif pack_format not in SUPPORTED_PACK_FORMATS:
         issues.append(
             PackIssue(
                 "error",
                 f"Unsupported pack format {pack_format}; this TTL build supports "
-                f"format {PACK_FORMAT_VERSION}.",
+                f"formats {sorted(SUPPORTED_PACK_FORMATS)}.",
                 file="manifest.yaml",
                 field="pack_format",
             )
@@ -338,6 +339,24 @@ def validate_system_pack(root: Path | str) -> SystemPack:
             f"layouts.{layout_name}",
             pack.issues,
         )
+
+
+    assets_dir = manifest.raw.get("assets", "assets")
+    if assets_dir is not None:
+        if not isinstance(assets_dir, str) or not _is_safe_relative_path(assets_dir):
+            pack.issues.append(PackIssue("error", "assets must be a safe relative directory path.", file="manifest.yaml", field="assets"))
+        else:
+            asset_root = (root / assets_dir).resolve()
+            if asset_root.exists():
+                try:
+                    asset_root.relative_to(root.resolve())
+                except ValueError:
+                    pack.issues.append(PackIssue("error", "assets directory escapes the System Pack directory.", file="manifest.yaml", field="assets"))
+                else:
+                    allowed = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg"}
+                    for asset in asset_root.rglob("*"):
+                        if asset.is_file() and asset.suffix.lower() not in allowed:
+                            pack.issues.append(PackIssue("error", f"Unsupported asset type: {asset.relative_to(root)}", file="manifest.yaml", field="assets"))
 
     if not any(
         issue.severity == "error"

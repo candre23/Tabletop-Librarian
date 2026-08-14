@@ -1,0 +1,808 @@
+entity: ability
+entries:
+- id: protector_control_the_field
+  name: Control the Field
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_danger_sense
+  name: Danger Sense
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_don_t_mind
+  name: Don’t Mind
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_improved_edge
+  name: Improved Edge
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_iron_fist
+  name: Iron Fist
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_just_a_scratch
+  name: Just a Scratch
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_lick
+  name: Lick
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_physical_skills
+  name: Physical Skills
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_practiced_in_armor
+  name: Practiced in Armor
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_quick_throw
+  name: Quick Throw
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_swipe
+  name: Swipe
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_running_go
+  name: Running Go
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_trained_without_armor
+  name: Trained Without Armor
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_skill_with_attacks
+  name: Skill With Attacks
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_waylay
+  name: Waylay
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_skill_with_defense
+  name: Skill With Defense
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: protector_weapon_wielder
+  name: Weapon Wielder
+  tags:
+  - type
+  - protector
+  - tier1
+  eligibility:
+    rule: character_type == "protector"
+    message: Requires Protector type.
+  description: First-tier Protector ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 27
+- id: sage_draw_item
+  name: Draw Item
+  tags:
+  - type
+  - sage
+  - tier1
+  eligibility:
+    rule: character_type == "sage"
+    message: Requires Sage type.
+  description: First-tier Sage ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 35
+- id: sage_easy_forgetting
+  name: Easy Forgetting
+  tags:
+  - type
+  - sage
+  - tier1
+  eligibility:
+    rule: character_type == "sage"
+    message: Requires Sage type.
+  description: First-tier Sage ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 35
+- id: sage_foxfire
+  name: Foxfire
+  tags:
+  - type
+  - sage
+  - tier1
+  eligibility:
+    rule: character_type == "sage"
+    message: Requires Sage type.
+  description: First-tier Sage ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 35
+- id: sage_hedge_magic
+  name: Hedge Magic
+  tags:
+  - type
+  - sage
+  - tier1
+  eligibility:
+    rule: character_type == "sage"
+    message: Requires Sage type.
+  description: First-tier Sage ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 35
+- id: sage_charmed_touch
+  name: Charmed Touch
+  tags:
+  - type
+  - sage
+  - tier1
+  eligibility:
+    rule: character_type == "sage"
+    message: Requires Sage type.
+  description: First-tier Sage ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 35
+- id: sage_crafter
+  name: Crafter
+  tags:
+  - type
+  - sage
+  - tier1
+  eligibility:
+    rule: character_type == "sage"
+    message: Requires Sage type.
+  description: First-tier Sage ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 35
+- id: sage_living_off_the_land
+  name: Living Off the Land
+  tags:
+  - type
+  - sage
+  - tier1
+  eligibility:
+    rule: character_type == "sage"
+    message: Requires Sage type.
+  description: First-tier Sage ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 35
+- id: sage_push
+  name: Push
+  tags:
+  - type
+  - sage
+  - tier1
+  eligibility:
+    rule: character_type == "sage"
+    message: Requires Sage type.
+  description: First-tier Sage ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 35
+- id: sage_create_deadly_poison
+  name: Create Deadly Poison
+  tags:
+  - type
+  - sage
+  - tier1
+  eligibility:
+    rule: character_type == "sage"
+    message: Requires Sage type.
+  description: First-tier Sage ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 35
+- id: sage_restful_presence
+  name: Restful Presence
+  tags:
+  - type
+  - sage
+  - tier1
+  eligibility:
+    rule: character_type == "sage"
+    message: Requires Sage type.
+  description: First-tier Sage ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 35
+- id: sage_heal_and_soothe
+  name: Heal and Soothe
+  tags:
+  - type
+  - sage
+  - tier1
+  eligibility:
+    rule: character_type == "sage"
+    message: Requires Sage type.
+  description: First-tier Sage ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 35
+- id: sage_see_the_unseen
+  name: See the Unseen
+  tags:
+  - type
+  - sage
+  - tier1
+  eligibility:
+    rule: character_type == "sage"
+    message: Requires Sage type.
+  description: First-tier Sage ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 35
+- id: sage_wrap
+  name: Wrap
+  tags:
+  - type
+  - sage
+  - tier1
+  eligibility:
+    rule: character_type == "sage"
+    message: Requires Sage type.
+  description: First-tier Sage ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 35
+- id: explorer_decipher
+  name: Decipher
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_endurance
+  name: Endurance
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_find_the_way
+  name: Find the Way
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_block
+  name: Block
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_fleet_of_foot
+  name: Fleet of Foot
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_improved_edge
+  name: Improved Edge
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_iron_fist
+  name: Iron Fist
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_critter_companion
+  name: Critter Companion
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_danger_sense
+  name: Danger Sense
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_know_thy_neighbor
+  name: Know Thy Neighbor
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_slip_into_shadow
+  name: Slip Into Shadow
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_living_off_the_land
+  name: Living Off the Land
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_trained_without_armor
+  name: Trained Without Armor
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_muscles_of_iron
+  name: Muscles of Iron
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_wilderness_explorer
+  name: Wilderness Explorer
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: explorer_practiced_in_armor
+  name: Practiced in Armor
+  tags:
+  - type
+  - explorer
+  - tier1
+  eligibility:
+    rule: character_type == "explorer"
+    message: Requires Explorer type.
+  description: First-tier Explorer ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 44
+- id: speaker_encouragement
+  name: Encouragement
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_fast_talk
+  name: Fast Talk
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_anecdote
+  name: Anecdote
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_friendly_advice
+  name: Friendly Advice
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_bewitch
+  name: Bewitch
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_community_connection
+  name: Community Connection
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_hear_me_now
+  name: Hear Me Now
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_inspire_aggression
+  name: Inspire Aggression
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_dialect
+  name: Dialect
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_shake_the_bones
+  name: Shake the Bones
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_powerful_rhetoric
+  name: Powerful Rhetoric
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_skilled_talking
+  name: Skilled Talking
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_practiced_with_medium_weapons
+  name: Practiced With Medium Weapons
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_spin_identity
+  name: Spin Identity
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_terrifying_presence
+  name: Terrifying Presence
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53
+- id: speaker_trained_without_armor
+  name: Trained Without Armor
+  tags:
+  - type
+  - speaker
+  - tier1
+  eligibility:
+    rule: character_type == "speaker"
+    message: Requires Speaker type.
+  description: First-tier Speaker ability. See the corebook for the complete rule text.
+  source:
+    book: ogoa_corebook
+    page: 53

@@ -141,7 +141,7 @@
 
                 </div>
 
-                <div class="ttl-compendium-picker" data-compendium-picker data-picker-mode="single" data-picker-label="{{ field.label }}">
+                <div class="ttl-compendium-picker" data-compendium-picker data-picker-mode="single" data-picker-label="{{ field.label }}" data-picker-entity="{{ field.entity or '' }}" data-picker-required="{{ 'true' if field.required else 'false' }}">
 
                   <select id="field__{{ field_id }}" name="field__{{ field_id }}" class="ttl-picker-native" aria-hidden="true" tabindex="-1" {% if field.required %}required{% endif %}>
 
@@ -753,6 +753,7 @@
           const results = picker.querySelector("[data-picker-results]");
           const closeButton = picker.querySelector("[data-picker-close]");
           const mode = picker.dataset.pickerMode;
+          const requiredSingle = mode === "single" && picker.dataset.pickerRequired === "true";
 
           if (!nativeSelect || !selectedBox || !dialog || !results) return;
 
@@ -785,6 +786,10 @@
             const selected = Array.from(nativeSelect.options).filter(
               (option) => option.selected && option.value
             );
+
+            if (mode === "single" && openButton) {
+              openButton.textContent = `${selected.length ? "Change" : "Choose"} ${picker.dataset.pickerLabel || "selection"}`;
+            }
 
             if (!selected.length) {
               const empty = document.createElement("span");
@@ -852,18 +857,22 @@
               name.textContent = option.dataset.pickerName || option.dataset.baseLabel || option.textContent;
               chip.appendChild(name);
 
-              const remove = document.createElement("button");
-              remove.type = "button";
-              remove.className = "ttl-picker-chip-remove";
-              remove.textContent = "×";
-              remove.title = `Remove ${name.textContent}`;
-              remove.addEventListener("click", () => {
-                option.selected = false;
-                emitChange();
-                renderSelected();
-                renderResults();
-              });
-              chip.appendChild(remove);
+              if (!requiredSingle) {
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.className = "ttl-picker-chip-remove";
+                remove.textContent = "×";
+                remove.title = `Remove ${name.textContent}`;
+                remove.addEventListener("click", () => {
+                  option.selected = false;
+                  emitChange();
+                  renderSelected();
+                  renderResults();
+                });
+                chip.appendChild(remove);
+              } else {
+                chip.classList.add("ttl-picker-single-value");
+              }
               selectedBox.appendChild(chip);
             });
           }

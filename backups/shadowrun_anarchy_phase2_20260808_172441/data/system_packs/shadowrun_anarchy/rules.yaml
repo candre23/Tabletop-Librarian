@@ -1,0 +1,12 @@
+calculated:
+  unarmed_damage:
+    formula: ceil(strength / 2)
+  physical_capacity:
+    formula: ceil(strength / 2) + 8
+  stun_capacity:
+    formula: ceil(willpower / 2) + 8
+validation:
+  awakened_or_emerged:
+    rule: not (awakened and emerged)
+    message: "A standard Shadowrun: Anarchy character should not be both Awakened and Emerged."
+    severity: warning

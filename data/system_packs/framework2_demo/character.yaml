@@ -1,0 +1,21 @@
+schema_version: 1
+fields:
+  name: {type: text, label: Unit Name, required: true, default: Demo Mech}
+  chassis: {type: enum, label: Chassis, required: true, options: [Scout, Heavy], default: Scout}
+  head_armor: {type: integer, label: Head Armor, min: 0, max: 9, default: 9, play_editable: true}
+  torso_armor: {type: integer, label: Torso Armor, min: 0, max: 20, default: 20, play_editable: true}
+  left_arm_armor: {type: integer, label: Left Arm, min: 0, max: 12, default: 12, play_editable: true}
+  right_arm_armor: {type: integer, label: Right Arm, min: 0, max: 12, default: 12, play_editable: true}
+  damage_pips:
+    type: collection
+    label: Structure Pips
+    play_editable: true
+    item_schema:
+      state:
+        type: enum
+        label: State
+        options: [empty, temporary, permanent]
+        default: empty
+  heat: {type: integer, label: Heat, min: 0, max: 30, default: 0, play_editable: true}
+  ammo: {type: integer, label: Ammo, min: 0, max: 18, default: 12, play_editable: true}
+  heavy_note: {type: text, label: Heavy Chassis Note, default: Reinforced frame, play_editable: true}

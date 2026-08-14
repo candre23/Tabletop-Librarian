@@ -6,11 +6,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from app.config import DATA_DIR, PROJECT_ROOT
+from app.config import DATA_DIR, RESOURCE_ROOT
 from app.ai.provider import chat_completion
 from app.rag.retrieve import retrieve_chunks
 
-BUILTIN_PIPELINE_DIR = PROJECT_ROOT / "pipelines"
+BUILTIN_PIPELINE_DIR = RESOURCE_ROOT / "pipelines"
 USER_PIPELINE_DIR = DATA_DIR / "pipelines"
 PIPELINE_FORMAT_VERSION = 1
 _WORD_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9'_-]*")

@@ -6,6 +6,7 @@
   <title>Character - Tabletop Librarian</title>
   <link rel="stylesheet" href="/static/css/main.css?v={{ app_version }}">
 </head>
+{% import "characters/_pack_widgets.html" as packui with context %}
 {% set is_embedded = embed or request.query_params.get("embed") == "1" %}
 <body class="ttl-character-ui{% if is_embedded %} ttl-character-embedded{% endif %}">
   {% if not is_embedded %}{% include "_global_nav.html" %}{% endif %}
@@ -41,6 +42,18 @@
           >Saved</button>
           <a class="ttl-mode-switch" href="{{ character_url }}{% if "?" in character_url %}&{% else %}?{% endif %}mode=configure">Configure</a>
         {% else %}
+          {% if not is_embedded %}
+          <form method="post" action="/characters/{{ record.character_id }}/default-book{{ character_owner_query }}" class="ttl-default-book-form">
+            <label for="ttl-default-book">Default Book</label>
+            <select id="ttl-default-book" name="default_workspace_document">
+              <option value="">Automatic (first available)</option>
+              {% for item in workspace_documents %}
+                <option value="{{ item.value }}" {% if item.value == default_workspace_document %}selected{% endif %}>{{ item.label }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="secondary-button">Set</button>
+          </form>
+          {% endif %}
           <a class="ttl-mode-switch is-active" href="{{ character_url }}">Play View</a>
         {% endif %}
       </div>
@@ -79,6 +92,7 @@
             {% for tab in character_layout.tabs %}
               {% set tab_ns = namespace(show=false) %}
               {% for section in tab.sections %}
+                {% if section.widgets %}{% set tab_ns.show = true %}{% endif %}
                 {% for candidate_id in section.fields %}
                   {% if candidate_id in schema.fields %}
                     {% set tab_ns.show = true %}
@@ -98,6 +112,7 @@
           {% for tab in character_layout.tabs %}
             {% set tab_ns = namespace(show=false) %}
             {% for section in tab.sections %}
+              {% if section.widgets %}{% set tab_ns.show = true %}{% endif %}
               {% for candidate_id in section.fields %}
                 {% if candidate_id in schema.fields %}
                   {% set tab_ns.show = true %}
@@ -109,6 +124,7 @@
               <div class="ttl-sheet-tab-panel" data-sheet-panel="{{ tab.id }}">
                 {% for section in tab.sections %}
                   {% set section_ns = namespace(show=false) %}
+                  {% if section.widgets %}{% set section_ns.show = true %}{% endif %}
                   {% for candidate_id in section.fields %}
                     {% if candidate_id in schema.fields %}
                       {% set section_ns.show = true %}
@@ -119,12 +135,14 @@
                     <section
                       class="ttl-sheet-section ttl-section-color-{{ section.color or 'auto' }}{% if section.body_color %} ttl-section-body-color-{{ section.body_color }}{% endif %}"
                       style="--ttl-section-span: {{ section.span }}"
+                    {% if section.visible_when %}data-ttl-visible-when='{{ section.visible_when|tojson|forceescape }}'{% endif %}
                     >
                       <div class="ttl-sheet-section-heading">
                         <h3>{{ section.title }}</h3>
                         {% if section.description %}<p>{{ section.description }}</p>{% endif %}
                       </div>
                       <div class="ttl-field-grid ttl-layout-columns-{{ section.columns }}">
+                        {{ packui.section_widgets(section, record.data, schema, pack, mode == "configure") }}
                         {% if advancement_actions and mode == "configure" %}
                           {% set advancement_ns = namespace(show=false) %}
                           {% for action in advancement_actions %}
@@ -159,7 +177,10 @@
             {% set core_locked = mode == "configure" and field_id in core_fields and field_id != unlocked_field %}
             {% set field_locked = play_locked or core_locked %}
             {% set field_display = section.display_for(field_id) %}
-            {% if field_locked %}
+            {% set field_options = section.options_for(field_id) %}
+            {% if field_display in ["track", "grid", "clock", "counter", "icon", "state_track", "state_grid"] %}
+              {{ packui.special_field(field_id, field, value, field_options, pack, not field_locked) }}
+            {% elif field_locked %}
               <div class="ttl-field {% if field.type in ["notes", "multi_reference", "collection"] %}ttl-field-wide{% endif %}">
                 <div class="ttl-lockable-label">
                   <label>{{ field.label }}</label>
@@ -261,7 +282,7 @@
 
                 </div>
 
-                <div class="ttl-compendium-picker" data-compendium-picker data-picker-mode="single" data-picker-label="{{ field.label }}">
+                <div class="ttl-compendium-picker" data-compendium-picker data-picker-mode="single" data-picker-label="{{ field.label }}" data-picker-entity="{{ field.entity or '' }}" data-picker-required="{{ 'true' if field.required else 'false' }}">
 
                   <select id="field__{{ field_id }}" name="field__{{ field_id }}" class="ttl-picker-native" aria-hidden="true" tabindex="-1" {% if field.required %}required{% endif %}>
 
@@ -1236,6 +1257,7 @@
           const results = picker.querySelector("[data-picker-results]");
           const closeButton = picker.querySelector("[data-picker-close]");
           const mode = picker.dataset.pickerMode;
+          const requiredSingle = mode === "single" && picker.dataset.pickerRequired === "true";
 
           if (!nativeSelect || !selectedBox || !dialog || !results) return;
 
@@ -1268,6 +1290,10 @@
             const selected = Array.from(nativeSelect.options).filter(
               (option) => option.selected && option.value
             );
+
+            if (mode === "single" && openButton) {
+              openButton.textContent = `${selected.length ? "Change" : "Choose"} ${picker.dataset.pickerLabel || "selection"}`;
+            }
 
             if (!selected.length) {
               const empty = document.createElement("span");
@@ -1335,18 +1361,22 @@
               name.textContent = option.dataset.pickerName || option.dataset.baseLabel || option.textContent;
               chip.appendChild(name);
 
-              const remove = document.createElement("button");
-              remove.type = "button";
-              remove.className = "ttl-picker-chip-remove";
-              remove.textContent = "×";
-              remove.title = `Remove ${name.textContent}`;
-              remove.addEventListener("click", () => {
-                option.selected = false;
-                emitChange();
-                renderSelected();
-                renderResults();
-              });
-              chip.appendChild(remove);
+              if (!requiredSingle) {
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.className = "ttl-picker-chip-remove";
+                remove.textContent = "×";
+                remove.title = `Remove ${name.textContent}`;
+                remove.addEventListener("click", () => {
+                  option.selected = false;
+                  emitChange();
+                  renderSelected();
+                  renderResults();
+                });
+                chip.appendChild(remove);
+              } else {
+                chip.classList.add("ttl-picker-single-value");
+              }
               selectedBox.appendChild(chip);
             });
           }
@@ -1795,5 +1825,6 @@
     })();
   </script>
 
+  <script src="/static/js/pack_widgets.js?v={{ app_version }}"></script>
 </body>
 </html>

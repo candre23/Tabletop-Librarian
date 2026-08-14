@@ -1,0 +1,81 @@
+version: 1
+title: "Create Shadowrun: Anarchy Character"
+final_changes:
+  edge: min(6, 1 + (1 if metatype == "Human" else 0) + max(0, (6 if game_level == "Gang" else (14 if game_level == "Prime Runner" else 10)) - rowsum(shadow_amps, "amp_cost") - (2 if awakened or emerged else 0)))
+  armor: resource(((6 if armor_rating == "6" else (12 if armor_rating == "12" else 9)) + (3 if metatype == "Troll" else 0)), ((6 if armor_rating == "6" else (12 if armor_rating == "12" else 9)) + (3 if metatype == "Troll" else 0)))
+  physical_condition: resource(physical_capacity, physical_capacity)
+  stun_condition: resource(stun_capacity, stun_capacity)
+
+steps:
+- id: theme
+  title: "Character Theme"
+  description: Choose a name and short tags that capture the runner's concept.
+  fields: [name, tags]
+
+- id: game_level
+  title: "Game Level"
+  description: Gang, Street Runner, or Prime Runner determines the creation budgets.
+  fields: [game_level]
+  lock_after: [game_level]
+
+- id: metatype
+  title: "Metatype"
+  description: Choose Human, Elf, Dwarf, Ork, or Troll. Apply the listed metatype bonuses when assigning final ratings.
+  fields: [metatype]
+  lock_after: [metatype]
+
+- id: awakened_emerged
+  title: "Awakened or Emerged"
+  description: These options are mutually exclusive. Either choice costs 2 Shadow Amp points.
+  fields: [awakened, emerged]
+  lock_after: [awakened, emerged]
+
+- id: attributes
+  title: "Assign Attributes"
+  description: Strength, Agility, Willpower, Logic, and Charisma start at 1. The live counter excludes the two Attribute points supplied by non-human metatypes.
+  fields: [strength, agility, willpower, logic, charisma]
+
+- id: skills
+  title: "Assign Skills"
+  description: Choose up to five rated Skills plus one free custom Knowledge Skill. Knowledge Skills are unrated and cost no Skill points. A Specialization costs 1 Skill point and grants +2 dice in its focus.
+  fields: [skills]
+
+- id: shadow_amps
+  title: "Select Shadow Amps"
+  description: Choose or create up to six Amps. Enter each Amp's total point cost and Essence cost. The 2-point Awakened/Emerged cost is included automatically. Unspent Amp points become Edge, up to Edge 6.
+  fields: [shadow_amps, essence, edge]
+
+- id: qualities
+  title: "Add Qualities"
+  description: Choose two Positive Qualities and one Negative Quality. Custom qualities are allowed by the rules.
+  fields: [qualities]
+
+- id: armor
+  title: "Assign Armor"
+  description: Set the armor name and Armor Track maximum. Armor 6 grants +1 Skill point; Armor 12 costs 1 Skill point; Trolls add 3 Armor circles.
+  fields: [armor_name, armor_rating]
+
+- id: weapons
+  title: "Select Weapons"
+  description: Choose weapons appropriate to the game level. Custom weapons may use a comparable catalog weapon's stats.
+  fields: [weapons]
+
+- id: gear
+  title: "Select Gear"
+  description: Gear is intentionally narrative in Anarchy. Add the important noncombat items and contacts that support the character concept.
+  fields: [gear, contacts]
+
+- id: cues
+  title: "Create Cues"
+  description: Add prompts that help drive Narrations during play.
+  fields: [cues]
+
+- id: background
+  title: "Character Background"
+  description: Record the runner's background and dispositions.
+  fields: [dispositions, background]
+
+- id: final_tweaking
+  title: "Final Tweaking"
+  description: Review the sheet, resolve remaining point-budget warnings, and set starting trackers.
+  fields: [physical_condition, stun_condition, matrix_condition, plot_points, street_cred, total_karma, karma_spent]

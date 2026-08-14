@@ -1,0 +1,20 @@
+modifiers:
+  skill_power_bonus:
+    label: Skill Power Bonus
+    default: 0
+    aggregate: sum
+calculated:
+  power_score:
+    formula: level * 2 + skill_power_bonus
+validation:
+  reasonable_level:
+    rule: level <= 20
+    message: The minimal test system normally supports levels 1 through 20.
+    severity: warning
+limits:
+  skill_count:
+    field: skills
+    label: Skills
+    maximum: 2 + floor(level / 3)
+    message: 'Skills: {count} selected, but only {maximum} are allowed at the current
+      level.'

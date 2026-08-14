@@ -9,6 +9,32 @@ import yaml
 ID_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
 
 
+def _valid_dynamic_number(value: Any) -> bool:
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return True
+    if not isinstance(value, dict):
+        return False
+    if "default" in value and not isinstance(value.get("default"), (int, float)):
+        return False
+    if "field" in value:
+        if not isinstance(value.get("field"), str):
+            return False
+        values = value.get("values")
+        if values is not None and (not isinstance(values, dict) or any(not isinstance(v, (int, float)) for v in values.values())):
+            return False
+        if value.get("direct") not in (None, True, False):
+            return False
+        return True
+    cases = value.get("cases")
+    if cases is not None:
+        return isinstance(cases, list) and all(
+            isinstance(item, dict) and isinstance(item.get("when"), dict) and isinstance(item.get("value"), (int, float))
+            for item in cases
+        )
+    return "default" in value
+
+
+
 @dataclass(slots=True)
 class LayoutIssue:
     severity: str
@@ -27,6 +53,8 @@ class LayoutSection:
     body_color: str | None = None
     span: int = 12
     field_options: dict[str, dict[str, Any]] = field(default_factory=dict)
+    widgets: list[dict[str, Any]] = field(default_factory=list)
+    visible_when: dict[str, Any] | None = None
 
     def display_for(self, field_id: str) -> str:
         return str(self.field_options.get(field_id, {}).get("display") or "default")
@@ -34,6 +62,9 @@ class LayoutSection:
     def span_for(self, field_id: str) -> int:
         value = self.field_options.get(field_id, {}).get("span", 1)
         return value if isinstance(value, int) and value > 0 else 1
+
+    def options_for(self, field_id: str) -> dict[str, Any]:
+        return self.field_options.get(field_id, {})
 
 
 @dataclass(slots=True)
@@ -55,6 +86,12 @@ class CharacterLayout:
         for tab in self.tabs:
             for section in tab.sections:
                 result.extend(section.fields)
+                for widget in section.widgets:
+                    if widget.get("type") == "overlay":
+                        for region in widget.get("regions", []):
+                            field_id = region.get("field") if isinstance(region, dict) else None
+                            if isinstance(field_id, str):
+                                result.append(field_id)
         return result
 
 
@@ -79,8 +116,10 @@ def _parse_section(
 
     raw_fields = raw.get("fields")
     field_options: dict[str, dict[str, Any]] = {}
-    if not isinstance(raw_fields, list) or not raw_fields:
-        issues.append(LayoutIssue("error", "Section fields must be a non-empty list.", f"{location}.fields"))
+    if raw_fields is None:
+        raw_fields = []
+    if not isinstance(raw_fields, list):
+        issues.append(LayoutIssue("error", "Section fields must be a list.", f"{location}.fields"))
         fields: list[str] = []
     else:
         fields = []
@@ -94,7 +133,7 @@ def _parse_section(
                     issues.append(LayoutIssue("error", "Field layout objects require a non-empty id.", f"{location}.fields"))
                     continue
                 display = item.get("display", "default")
-                if display not in {"default", "inline", "stat", "value", "resource", "table", "block"}:
+                if display not in {"default", "inline", "stat", "value", "resource", "table", "block", "track", "grid", "clock", "counter", "icon", "state_track", "state_grid"}:
                     issues.append(LayoutIssue("error", f"Unsupported field display mode {display!r}.", f"{location}.fields"))
                     display = "default"
                 item_span = item.get("span", 1)
@@ -102,7 +141,34 @@ def _parse_section(
                     issues.append(LayoutIssue("error", "Field span must be an integer from 1 to 4.", f"{location}.fields"))
                     item_span = 1
                 fields.append(item_id)
-                field_options[item_id] = {"display": display, "span": item_span}
+                preserved = {key: value for key, value in item.items() if key not in {"id"}}
+                preserved["display"] = display
+                preserved["span"] = item_span
+                for dynamic_key in ("min", "max", "count", "columns", "rows"):
+                    if dynamic_key in preserved and not _valid_dynamic_number(preserved[dynamic_key]):
+                        issues.append(LayoutIssue("error", f"{dynamic_key} must be numeric or a valid dynamic numeric specification.", f"{location}.fields"))
+                if display in {"state_track", "state_grid"}:
+                    states = preserved.get("states")
+                    if not isinstance(states, list) or len(states) < 2:
+                        issues.append(LayoutIssue("error", "Multi-state widgets require at least two states.", f"{location}.fields"))
+                    else:
+                        for state in states:
+                            if not isinstance(state, dict) or not isinstance(state.get("id"), str) or not ID_RE.fullmatch(state.get("id", "")):
+                                issues.append(LayoutIssue("error", "Each multi-state state requires a safe id.", f"{location}.fields"))
+                                break
+                    positions = preserved.get("positions")
+                    if positions is not None:
+                        if not isinstance(positions, list):
+                            issues.append(LayoutIssue("error", "positions must be a list.", f"{location}.fields"))
+                        else:
+                            for pos in positions:
+                                if not isinstance(pos, dict) or not isinstance(pos.get("x"), (int, float)) or not isinstance(pos.get("y"), (int, float)):
+                                    issues.append(LayoutIssue("error", "Each position requires numeric x and y percentages.", f"{location}.fields"))
+                                    break
+                                if not (0 <= pos["x"] <= 100 and 0 <= pos["y"] <= 100):
+                                    issues.append(LayoutIssue("error", "Position x/y must be between 0 and 100.", f"{location}.fields"))
+                                    break
+                field_options[item_id] = preserved
                 continue
             issues.append(LayoutIssue("error", "Section fields must be ids or field layout objects.", f"{location}.fields"))
 
@@ -138,6 +204,53 @@ def _parse_section(
         issues.append(LayoutIssue("error", "span must be an integer from 1 to 12.", f"{location}.span"))
         span = 12
 
+    visible_when = raw.get("visible_when")
+    if visible_when is not None and not isinstance(visible_when, dict):
+        issues.append(LayoutIssue("error", "visible_when must be a mapping/object.", f"{location}.visible_when"))
+        visible_when = None
+
+    raw_widgets = raw.get("widgets", [])
+    widgets: list[dict[str, Any]] = []
+    if raw_widgets is not None:
+        if not isinstance(raw_widgets, list):
+            issues.append(LayoutIssue("error", "widgets must be a list.", f"{location}.widgets"))
+        else:
+            for widget_index, widget in enumerate(raw_widgets):
+                wloc = f"{location}.widgets[{widget_index}]"
+                if not isinstance(widget, dict):
+                    issues.append(LayoutIssue("error", "Widget must be a mapping/object.", wloc))
+                    continue
+                kind = widget.get("type")
+                if kind not in {"image", "overlay", "icon", "text"}:
+                    issues.append(LayoutIssue("error", f"Unsupported widget type {kind!r}.", f"{wloc}.type"))
+                    continue
+                if kind in {"image", "overlay", "icon"}:
+                    asset = widget.get("asset")
+                    if not isinstance(asset, str) or not asset or asset.startswith("/") or ".." in Path(asset).parts:
+                        issues.append(LayoutIssue("error", "Widget asset must be a safe relative asset path.", f"{wloc}.asset"))
+                        continue
+                if widget.get("visible_when") is not None and not isinstance(widget.get("visible_when"), dict):
+                    issues.append(LayoutIssue("error", "Widget visible_when must be a mapping/object.", f"{wloc}.visible_when"))
+                    continue
+                if kind == "overlay":
+                    regions = widget.get("regions", [])
+                    if not isinstance(regions, list):
+                        issues.append(LayoutIssue("error", "Overlay regions must be a list.", f"{wloc}.regions"))
+                        continue
+                    for r_index, region in enumerate(regions):
+                        rloc = f"{wloc}.regions[{r_index}]"
+                        if not isinstance(region, dict) or not isinstance(region.get("field"), str):
+                            issues.append(LayoutIssue("error", "Overlay region requires a character field id.", rloc))
+                            continue
+                        for coord in ("x", "y", "width", "height"):
+                            val = region.get(coord)
+                            if val is not None and (not isinstance(val, (int, float)) or val < 0 or val > 100):
+                                issues.append(LayoutIssue("error", f"{coord} must be between 0 and 100.", f"{rloc}.{coord}"))
+                widgets.append(dict(widget))
+
+    if not fields and not widgets:
+        issues.append(LayoutIssue("error", "Section requires at least one field or widget.", location))
+
     description = raw.get("description")
     if description is not None and not isinstance(description, str):
         issues.append(LayoutIssue("error", "description must be a string.", f"{location}.description"))
@@ -153,6 +266,8 @@ def _parse_section(
         body_color=body_color,
         span=span,
         field_options=field_options,
+        widgets=widgets,
+        visible_when=visible_when,
     )
 
 
@@ -223,9 +338,28 @@ def load_character_layout(
             for field_id in section.fields:
                 if schema is not None and field_id not in schema.fields:
                     issues.append(LayoutIssue("error", f"Unknown character field {field_id!r}.", f"{section_location}.fields"))
+                elif schema is not None:
+                    display = section.display_for(field_id)
+                    if display in {"state_track", "state_grid"} and schema.fields[field_id].type != "collection":
+                        issues.append(LayoutIssue("error", f"{display} requires a collection field.", f"{section_location}.fields"))
+                    if display in {"state_track", "state_grid"}:
+                        state_field = str(section.options_for(field_id).get("state_field") or "state")
+                        item_schema = schema.fields[field_id].item_schema or {}
+                        if state_field not in item_schema or item_schema[state_field].type != "enum":
+                            issues.append(LayoutIssue("error", f"{display} requires an enum collection item field named {state_field!r}.", f"{section_location}.fields"))
                 if field_id in seen_fields:
                     issues.append(LayoutIssue("error", f"Character field {field_id!r} appears more than once.", f"{section_location}.fields"))
                 seen_fields.add(field_id)
+            for widget in section.widgets:
+                if widget.get("type") == "overlay":
+                    for region in widget.get("regions", []):
+                        field_id = region.get("field") if isinstance(region, dict) else None
+                        if isinstance(field_id, str):
+                            if schema is not None and field_id not in schema.fields:
+                                issues.append(LayoutIssue("error", f"Unknown character field {field_id!r}.", f"{section_location}.widgets"))
+                            if field_id in seen_fields:
+                                issues.append(LayoutIssue("error", f"Character field {field_id!r} appears more than once.", f"{section_location}.widgets"))
+                            seen_fields.add(field_id)
 
             sections.append(section)
 

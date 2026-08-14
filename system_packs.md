@@ -5,7 +5,7 @@ creation workflows, and layouts while keeping Tabletop Librarian's core engine
 system-neutral.
 
 This document is the authoritative project reference for the pack format as it
-evolves through v0.4.
+evolves through TTL v0.5.22.
 
 ## Core principles
 
@@ -398,9 +398,11 @@ source mappings. Dependency and override precedence are not yet finalized.
 
 ## Packaging
 
-The planned `.ttlpack` format is a ZIP-compatible archive containing the pack
-with `manifest.yaml` at its root. Installation must validate paths and content
-before atomically activating the pack.
+System Packs are distributed as `.ttlsys` files: ordinary ZIP-compatible archives
+renamed to `.ttlsys`, with `manifest.yaml` at the archive root or inside one
+top-level pack directory. Installation validates archive paths and pack contents
+before atomically activating the replacement. See **Portable `.ttlsys` packages**
+below for update and migration behavior.
 
 ## Current implementation status
 
@@ -450,7 +452,6 @@ Still intentionally unresolved or future work:
 - localization
 - editor/print layout schema
 - staged LLM-proposed compendium entries
-- `.ttlpack` installation and sharing
 
 
 ### Collection-row effect activation
@@ -718,3 +719,235 @@ Changing a label is safe; changing a field ID is equivalent to removing one
 field and adding another. New required fields should provide a sensible default
 or be derived by rules so existing characters remain usable after migration.
 TTL reports any data it could not safely carry forward after the import.
+
+## System Pack Framework 2 (TTL v0.5.21)
+
+TTL v0.5.21 adds declarative presentation primitives intended to let unusual
+RPG and tabletop record sheets remain data-only System Packs. Packs that depend
+on these features should use `pack_format: 2` and normally declare
+`requires_ttl: '>=0.5.21'`. TTL v0.5.21 remains backward-compatible with
+`pack_format: 1` packs.
+
+### Static visual assets
+
+A pack may contain an `assets/` directory (or specify another safe relative
+folder with `assets:` in `manifest.yaml`). Supported asset types are PNG, JPG,
+JPEG, WEBP, GIF, and SVG. Assets are served read-only through TTL; packs still
+cannot execute JavaScript, Python, shell commands, or arbitrary HTML.
+
+Example:
+
+```yaml
+# manifest.yaml
+pack_format: 2
+assets: assets
+```
+
+Assets are referenced by paths relative to the asset directory, for example
+`mech.svg` or `icons/green-sigil.png`.
+
+### Field presentation widgets
+
+A field layout object may choose one of the Framework 2 display modes:
+
+- `track` - clickable fill boxes backed by an integer/decimal field
+- `grid` - a rectangular clickable box track; use `columns` to control width
+- `clock` - circular clickable segments backed by an integer/decimal field
+- `counter` - generic minus/value/plus control
+- `icon` - read-only image/icon presentation; `asset` or `asset_map` may be used
+
+Example:
+
+```yaml
+fields:
+  - id: heat
+    display: grid
+    max: 30
+    columns: 10
+  - id: ammo
+    display: track
+    max: 12
+```
+
+Track/grid/clock/counter widgets write the ordinary character field. No special
+runtime state exists outside the character schema, so export, import, migration,
+validation, and character-aware AI continue to see normal structured values.
+
+### Section widgets and image overlays
+
+Sections may also declare `widgets:`. `image`, `icon`, `text`, and `overlay`
+widgets are supported. An overlay places ordinary character fields over a pack
+image using percentage coordinates. This supports vehicle diagrams, body-location
+damage, paper-doll equipment, starship schematics, and similar sheets.
+
+```yaml
+- id: damage_diagram
+  title: Damage Diagram
+  fields: []
+  widgets:
+    - type: overlay
+      asset: mech.svg
+      aspect_ratio: '4 / 3'
+      regions:
+        - field: head_armor
+          label: Head
+          x: 42
+          y: 4
+          width: 16
+          height: 13
+          display: track
+          max: 9
+```
+
+Overlay region coordinates are percentages from 0 through 100. A region may use
+`display: track` for clickable damage boxes or the default numeric/value control.
+Fields bound by overlay regions count as placed in the layout and therefore do
+not reappear in the automatic Other tab.
+
+### Conditional visibility
+
+Sections, Framework 2 field widgets, section widgets, and overlay regions may use
+`visible_when:`. Conditions are declarative and do not execute code.
+
+```yaml
+visible_when:
+  field: chassis
+  equals: Heavy
+```
+
+Supported operators are `equals`, `not_equals`, `in`, `not_in`, `exists`, and
+`truthy`. Conditions may be nested with `all`, `any`, and `not`.
+
+```yaml
+visible_when:
+  all:
+    - {field: vehicle_type, equals: Mech}
+    - {field: damaged, truthy: true}
+```
+
+Visibility updates immediately as character fields change in the browser. It is
+a presentation rule only; hidden data is retained and still participates in
+normal validation/calculation unless the pack's rules explicitly say otherwise.
+
+### Security boundary
+
+Framework 2 deliberately does not permit pack-supplied Python, JavaScript,
+shell commands, or unrestricted CSS. New systems should be built from the
+schema, rules engine, creation/advancement workflows, compendium, layouts, static
+assets, and the generic TTL presentation widgets. If a future game exposes a
+missing interaction pattern, the preferred approach is to add another generic,
+documented widget to TTL rather than game-specific core logic.
+
+## System Pack Framework 2.1 (TTL v0.5.22)
+
+Framework 2.1 extends the declarative presentation layer with **multi-state
+cells** and **dynamic numeric widget properties**. These remain data-only
+features; System Packs still cannot execute JavaScript, Python, or other code.
+
+### Multi-state tracks and grids
+
+A collection field can be rendered as `state_track` or `state_grid`. Each
+collection row represents one cell and contains an enum item field (normally
+`state`). Clicking a cell in play mode cycles through the states in the order
+declared by the layout.
+
+```yaml
+character.yaml:
+  armor_pips:
+    type: collection
+    label: Armor
+    play_editable: true
+    item_schema:
+      state:
+        type: enum
+        options: [empty, temporary, permanent]
+        default: empty
+
+layouts/character.yaml:
+  - id: armor_pips
+    display: state_grid
+    count: 18
+    columns: 6
+    states:
+      - {id: empty, label: Intact}
+      - {id: temporary, label: Temporary Damage}
+      - {id: permanent, label: Permanent Damage}
+```
+
+This allows one pip to distinguish states such as intact, temporary/spent,
+permanent/damaged, or destroyed without separate fields. TTL supplies semantic
+styles for the commonly useful ids `empty`, `filled`, `marked`, `temporary`,
+`permanent`, `damaged`, `destroyed`, `warning`, and `critical`. Other safe state
+ids are valid and retain the normal neutral cell appearance unless a future TTL
+semantic style defines them.
+
+The state collection is ordinary character data. It therefore exports,
+imports, migrates, and autosaves using the same mechanisms as other fields.
+
+### Dynamic numeric widget properties
+
+`min`, `max`, `count`, and `columns` may be either literal numbers or safe
+declarative dynamic specifications. No expression text is executed.
+
+A value-map driven by another character field is the concise form:
+
+```yaml
+max:
+  field: chassis
+  values:
+    Light: 8
+    Medium: 12
+    Heavy: 18
+  default: 12
+```
+
+To use the referenced field's numeric value directly:
+
+```yaml
+max:
+  field: heat_capacity
+  direct: true
+  default: 30
+```
+
+For more general conditional cases, use the same condition structure as
+`visible_when`:
+
+```yaml
+count:
+  cases:
+    - when: {field: class, equals: assault}
+      value: 24
+    - when: {field: class, equals: heavy}
+      value: 18
+  default: 12
+```
+
+Dynamic properties reevaluate in the browser when their source fields change.
+Tracks/grids are rebuilt to the new size immediately. If a scalar track's
+current value exceeds a newly reduced maximum it is clamped. For multi-state
+tracks/grids, excess cells are removed when the count shrinks and newly added
+cells receive the first declared state.
+
+These features are intended to avoid pack-specific core changes for systems
+whose tracks vary by class, chassis, vehicle, creature form, equipment, tier,
+or similar character selections.
+
+Multi-state widgets may optionally supply `positions` for arbitrary pip geometry.
+Each position uses percentage coordinates within the widget area; this can form
+curves, circles, diagonals, silhouettes, or other non-grid arrangements without
+pack-side code:
+
+```yaml
+positions:
+  - {x: 50, y: 10}
+  - {x: 65, y: 18}
+  - {x: 75, y: 32}
+  - {x: 80, y: 50}
+  - {x: 75, y: 68}
+  - {x: 65, y: 82}
+  - {x: 50, y: 90}
+```
+
+When `positions` is omitted, `state_track` is linear and `state_grid` uses the
+configured column count.

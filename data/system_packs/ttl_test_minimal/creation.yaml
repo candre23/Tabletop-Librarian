@@ -1,0 +1,26 @@
+version: 1
+title: Create Minimal Test Character
+steps:
+- id: identity
+  title: Identity
+  description: Basic character identity and background.
+  fields:
+  - name
+  - background
+  lock_after:
+  - background
+- id: advancement
+  title: Advancement
+  description: Choose the character's basic development values.
+  fields:
+  - level
+  - archetype
+  - skills
+  lock_after:
+  - archetype
+- id: notes
+  title: Notes
+  fields:
+  - active
+  - inventory
+  - notes
