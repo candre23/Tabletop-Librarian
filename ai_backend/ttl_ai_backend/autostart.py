@@ -8,6 +8,9 @@ from pathlib import Path
 
 
 def _command() -> str:
+    launcher = os.environ.get("TTL_AI_LAUNCHER", "").strip()
+    if launcher:
+        return f'"{Path(launcher)}" --start-server'
     if getattr(sys, "frozen", False):
         return f'"{Path(sys.executable)}" --start-server'
     return f'"{Path(sys.executable)}" -m ttl_ai_backend --start-server'
