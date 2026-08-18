@@ -655,6 +655,30 @@ def _reference_options(schema, compendium, field_ids=None):
     }
 
 
+def _workflow_submission_field_ids(schema, field_ids):
+    """Include companion custom-entry collections for workflow fields.
+
+    A multi_reference field may declare raw.custom_entries_field. The companion
+    collection is intentionally omitted from layouts/workflow definitions, but
+    its hidden JSON input must participate in live evaluation and step saves.
+    """
+    output = list(field_ids)
+    seen = set(output)
+    for field_id in list(output):
+        field = schema.fields.get(field_id)
+        if field is None or field.type != "multi_reference":
+            continue
+        custom_field_id = str(field.raw.get("custom_entries_field") or "").strip()
+        if not custom_field_id or custom_field_id in seen:
+            continue
+        custom_field = schema.fields.get(custom_field_id)
+        if custom_field is None or custom_field.type != "collection":
+            continue
+        output.append(custom_field_id)
+        seen.add(custom_field_id)
+    return output
+
+
 def _collection_reference_options(schema, compendium, field_ids=None):
     allowed = set(field_ids) if field_ids is not None else None
     result: dict[str, dict[str, list[Any]]] = {}
@@ -1383,10 +1407,11 @@ async def character_creation_evaluate(request: Request, draft_id: str):
     if not isinstance(submitted, dict):
         raise HTTPException(status_code=400, detail="Evaluation values must be an object.")
 
+    submission_fields = _workflow_submission_field_ids(schema, step.fields)
     submitted = {
         key: value
         for key, value in submitted.items()
-        if key in step.fields
+        if key in submission_fields
     }
 
     try:
@@ -1409,7 +1434,7 @@ async def character_creation_evaluate(request: Request, draft_id: str):
         schema,
         compendium,
         values,
-        step.fields,
+        submission_fields,
     )
     eligibility, eligibility_issues = _eligibility_state(
         pack,
@@ -1519,7 +1544,8 @@ async def character_creation_step(request: Request, draft_id: str):
     unlocked_field = str(form_data.get("unlocked_field") or "").strip() or None
 
     try:
-        for field_id in step.fields:
+        submission_fields = _workflow_submission_field_ids(schema, step.fields)
+        for field_id in submission_fields:
             field = schema.fields[field_id]
             if not _editable_field(field):
                 continue
@@ -1570,7 +1596,7 @@ async def character_creation_step(request: Request, draft_id: str):
         schema,
         compendium,
         draft.data,
-        step.fields,
+        submission_fields,
     )
     _eligibility, eligibility_issues = _eligibility_state(
         pack,
@@ -1804,7 +1830,8 @@ async def character_advancement_evaluate(request:Request,draft_id:str):
     pack,schema,workflow=_load_advancement(draft.system_id); action=workflow.action(draft.action_id); step=action.steps[draft.current_step]
     payload=await request.json(); submitted=payload.get("values") if isinstance(payload,dict) else None
     if not isinstance(submitted,dict): raise HTTPException(status_code=400,detail="Evaluation values must be an object.")
-    submitted={k:v for k,v in submitted.items() if k in step.fields}
+    submission_fields=_workflow_submission_field_ids(schema,step.fields)
+    submitted={k:v for k,v in submitted.items() if k in submission_fields}
     try: values,rule_issues,explanations=_evaluate_character_values_with_explanations(pack,schema,draft.data,submitted)
     except (ValueError,CharacterStorageError) as exc: return JSONResponse(status_code=400,content={"ok":False,"error":str(exc)})
     eligibility,eligibility_issues=_eligibility_state(pack,schema,values,step.fields); limits,limit_issues=_limit_state(pack,schema,values,step.fields)
@@ -1818,7 +1845,8 @@ async def character_advancement_step(request:Request,draft_id:str):
     pack,schema,workflow=_load_advancement(draft.system_id); action=workflow.action(draft.action_id); step_index=max(0,min(draft.current_step,len(action.steps)-1)); step=action.steps[step_index]
     form=await request.form(); command=str(form.get("action") or "next")
     try:
-        for fid in step.fields:
+        submission_fields=_workflow_submission_field_ids(schema,step.fields)
+        for fid in submission_fields:
             field=schema.fields[fid]
             if _editable_field(field): draft.data[fid]=_coerce_form_value(field,form)
         draft.data,rule_issues=_evaluate_character_values(pack,schema,draft.data,{})
@@ -1828,7 +1856,7 @@ async def character_advancement_step(request:Request,draft_id:str):
         if command=="back": draft.current_step=max(0,step_index-1)
         save_advancement_draft(draft,draft_root=ADVANCEMENT_DRAFT_ROOT)
         return RedirectResponse(url="/characters" if command=="exit" else f"/characters/advance/{draft.draft_id}?owner={owner}",status_code=303)
-    compendium=_load_compendium_for_pack(pack); schema_issues,refs=_step_validation_issues(schema,compendium,draft.data,step.fields); _,elig=_eligibility_state(pack,schema,draft.data,step.fields); _,limits=_limit_state(pack,schema,draft.data,step.fields)
+    compendium=_load_compendium_for_pack(pack); schema_issues,refs=_step_validation_issues(schema,compendium,draft.data,submission_fields); _,elig=_eligibility_state(pack,schema,draft.data,step.fields); _,limits=_limit_state(pack,schema,draft.data,step.fields)
     blocking=[i for i in rule_issues if i.severity=="error"]+[i for i in limits if i.severity=="error"]
     if schema_issues or refs or elig or blocking:
         msgs=[i.format() for i in schema_issues]+refs+[i.format() for i in elig]+[i.format() for i in blocking]

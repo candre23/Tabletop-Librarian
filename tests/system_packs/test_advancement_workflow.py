@@ -7,7 +7,7 @@ from app.rules import load_rule_engine
 from app.system_packs import load_system_pack
 from app.advancement import load_advancement_workflow, create_advancement_draft, load_advancement_draft
 from jinja2 import Environment,FileSystemLoader
-pack=load_system_pack(ROOT/'data/system_packs/ttl_test_minimal'); assert pack.valid, [i.format() for i in pack.issues]
+pack=load_system_pack(ROOT/'tests/fixtures/system_packs/ttl_test_minimal'); assert pack.valid, [i.format() for i in pack.issues]
 schema,_=load_character_schema(pack.root/pack.manifest.character_schema); engine,_=load_rule_engine(pack.root/pack.manifest.rules,known_fields=set(schema.fields))
 wf,issues=load_advancement_workflow(pack.root/pack.manifest.advancement,schema=schema,engine=engine); assert wf and not issues
 a=wf.action('advance_level'); assert a and a.changes['level']=='level + 1'; assert engine.evaluate_expression(a.available_when,{'level':1})

@@ -51,7 +51,7 @@ assert "temperature: float | None = None" in provider
 assert '"pipeline_preset": "qwen3.5-9b-v10"' in provider
 assert "pipeline_preset=get_pipeline_preset" in main
 
-print("PASS: v0.5.11 GM-managed Advanced Ask pipeline")
+print("PASS: GM-managed Advanced Ask pipeline")
 print("  v10 preset loads and validates: OK")
 print("  per-request temperature override support: OK")
 print("  guarded selector + rescue anchor primitives: OK")

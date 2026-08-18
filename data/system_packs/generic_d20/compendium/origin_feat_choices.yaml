@@ -1,0 +1,46 @@
+entity: origin_feat_choice
+entries:
+- id: alert
+  name: Alert
+  category: Origin
+  description: Initiative Proficiency and Initiative Swap.
+  effects:
+    initiative_prof: 1
+  source:
+    book: srd521
+    page: 87
+- id: magic_initiate_cleric
+  name: Magic Initiate (Cleric)
+  category: Origin
+  description: Learn two Cleric cantrips and one level 1 Cleric spell; choose Int/Wis/Cha as spellcasting ability.
+  source:
+    book: srd521
+    page: 87
+- id: magic_initiate_druid
+  name: Magic Initiate (Druid)
+  category: Origin
+  description: Learn two Druid cantrips and one level 1 Druid spell; choose Int/Wis/Cha as spellcasting ability.
+  source:
+    book: srd521
+    page: 87
+- id: magic_initiate_wizard
+  name: Magic Initiate (Wizard)
+  category: Origin
+  description: Learn two Wizard cantrips and one level 1 Wizard spell; choose Int/Wis/Cha as spellcasting ability.
+  source:
+    book: srd521
+    page: 87
+- id: savage_attacker
+  name: Savage Attacker
+  category: Origin
+  description: Once per turn when you hit with a weapon, roll the weapon damage dice twice and use either roll.
+  source:
+    book: srd521
+    page: 87
+- id: skilled
+  name: Skilled
+  category: Origin
+  description: Gain proficiency in any combination of three skills or tools. Repeatable.
+  source:
+    book: srd521
+    page: 87

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}{{ app_name }}{% endblock %}</title>
     <link rel="stylesheet" href="/static/css/main.css?v={{ app_version }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', path='favicon.png') }}">
 </head>
 <body class="{% if embed %}ttl-embedded-page {% endif %}{% if workspace_page %}ttl-workspace-page{% endif %}">
     {% if not embed %}

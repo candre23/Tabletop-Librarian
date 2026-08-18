@@ -21,7 +21,7 @@ from app.system_packs import load_system_pack
 
 
 def main() -> int:
-    pack_root = ROOT / "data" / "system_packs"
+    pack_root = ROOT / "tests" / "fixtures" / "system_packs"
     pack = load_system_pack(pack_root / "ttl_test_minimal")
     assert pack.valid and pack.manifest is not None, [
         issue.format() for issue in pack.issues

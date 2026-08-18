@@ -11,7 +11,7 @@ from app.system_packs import load_system_pack
 
 
 def main() -> int:
-    pack = load_system_pack("data/system_packs/ttl_test_minimal")
+    pack = load_system_pack(str(PROJECT_ROOT / "tests/fixtures/system_packs/ttl_test_minimal"))
     if not pack.valid or pack.manifest is None:
         for issue in pack.issues:
             print(issue.format())

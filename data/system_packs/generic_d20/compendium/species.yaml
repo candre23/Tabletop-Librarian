@@ -1,0 +1,93 @@
+entity: species
+entries:
+- id: dragonborn
+  name: Dragonborn
+  size: Medium
+  speed: 30
+  description: Humanoid. Medium. Draconic Ancestry, Breath Weapon, Damage Resistance, Darkvision 60 ft.; Draconic
+    Flight at level 5.
+  effects:
+    speed_base: 30
+  source:
+    book: srd521
+    page: 84
+- id: dwarf
+  name: Dwarf
+  size: Medium
+  speed: 30
+  description: Humanoid. Medium. Darkvision 120 ft., Dwarven Resilience, Dwarven Toughness, Stonecunning.
+  effects:
+    speed_base: 30
+  source:
+    book: srd521
+    page: 84
+- id: elf
+  name: Elf
+  size: Medium
+  speed: 30
+  description: Humanoid. Medium. Darkvision 60 ft., Elven Lineage, Fey Ancestry, Keen Senses, Trance.
+  effects:
+    speed_base: 30
+  source:
+    book: srd521
+    page: 84
+- id: gnome
+  name: Gnome
+  size: Small
+  speed: 30
+  description: Humanoid. Small. Darkvision 60 ft., Gnomish Cunning, Forest or Rock Gnome lineage.
+  effects:
+    speed_base: 30
+  source:
+    book: srd521
+    page: 85
+- id: goliath
+  name: Goliath
+  size: Medium
+  speed: 35
+  description: Humanoid. Medium. Speed 35 ft., Giant Ancestry, Large Form at level 5, Powerful Build.
+  effects:
+    speed_base: 35
+  source:
+    book: srd521
+    page: 85
+- id: halfling
+  name: Halfling
+  size: Small
+  speed: 30
+  description: Humanoid. Small. Brave, Halfling Nimbleness, Luck, Naturally Stealthy.
+  effects:
+    speed_base: 30
+  source:
+    book: srd521
+    page: 86
+- id: human
+  name: Human
+  size: Small or Medium
+  speed: 30
+  description: Humanoid. Small or Medium. Resourceful, Skillful (one skill), Versatile (one Origin feat).
+  effects:
+    speed_base: 30
+  source:
+    book: srd521
+    page: 86
+- id: orc
+  name: Orc
+  size: Medium
+  speed: 30
+  description: Humanoid. Medium. Adrenaline Rush, Darkvision 120 ft., Relentless Endurance.
+  effects:
+    speed_base: 30
+  source:
+    book: srd521
+    page: 86
+- id: tiefling
+  name: Tiefling
+  size: Small or Medium
+  speed: 30
+  description: Humanoid. Small or Medium. Darkvision 60 ft., Fiendish Legacy, Otherworldly Presence.
+  effects:
+    speed_base: 30
+  source:
+    book: srd521
+    page: 86

@@ -1,0 +1,44 @@
+entity: background_origin_feat
+entries:
+- id: magic_initiate_cleric
+  name: Magic Initiate (Cleric)
+  category: Origin
+  description: Learn two Cleric cantrips and one level 1 Cleric spell; choose Int/Wis/Cha as spellcasting ability.
+  source:
+    book: srd521
+    page: 87
+  eligibility:
+    rule: background == "acolyte"
+    message: Granted by the Acolyte background.
+- id: alert
+  name: Alert
+  category: Origin
+  description: Initiative Proficiency and Initiative Swap.
+  effects:
+    initiative_prof: 1
+  source:
+    book: srd521
+    page: 87
+  eligibility:
+    rule: background == "criminal"
+    message: Granted by the Criminal background.
+- id: magic_initiate_wizard
+  name: Magic Initiate (Wizard)
+  category: Origin
+  description: Learn two Wizard cantrips and one level 1 Wizard spell; choose Int/Wis/Cha as spellcasting ability.
+  source:
+    book: srd521
+    page: 87
+  eligibility:
+    rule: background == "sage"
+    message: Granted by the Sage background.
+- id: savage_attacker
+  name: Savage Attacker
+  category: Origin
+  description: Once per turn when you hit with a weapon, roll the weapon damage dice twice and use either roll.
+  source:
+    book: srd521
+    page: 87
+  eligibility:
+    rule: background == "soldier"
+    message: Granted by the Soldier background.

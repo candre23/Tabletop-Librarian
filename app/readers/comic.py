@@ -3,8 +3,10 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import os
 import shutil
 import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
@@ -37,12 +39,48 @@ def cbz_pages(path: Path) -> list[str]:
         )
 
 
+def _packaged_tool(*parts: str) -> str | None:
+    if not getattr(sys, "frozen", False):
+        return None
+    candidate = Path(sys.executable).resolve().parent.joinpath(*parts)
+    return str(candidate) if candidate.is_file() else None
+
+
 def _find_unrar() -> str | None:
-    return shutil.which("unrar")
+    configured = os.environ.get("TTL_UNRAR", "").strip()
+    if configured and Path(configured).is_file():
+        return configured
+    return shutil.which("unrar") or _packaged_tool("vendor", "unrar", "unrar.exe")
 
 
 def _find_7zip() -> str | None:
-    return shutil.which("7zz") or shutil.which("7z")
+    configured = os.environ.get("TTL_7ZIP", "").strip()
+    if configured and Path(configured).is_file():
+        return configured
+
+    found = shutil.which("7zz") or shutil.which("7z")
+    if found:
+        return found
+
+    packaged = _packaged_tool("vendor", "7zip", "7z.exe")
+    if packaged:
+        return packaged
+
+    if os.name == "nt":
+        for root_name in ("ProgramFiles", "ProgramFiles(x86)"):
+            root = os.environ.get(root_name, "").strip()
+            if not root:
+                continue
+            candidate = Path(root) / "7-Zip" / "7z.exe"
+            if candidate.is_file():
+                return str(candidate)
+    return None
+
+
+def _subprocess_creationflags() -> int:
+    if os.name != "nt":
+        return 0
+    return int(getattr(subprocess, "CREATE_NO_WINDOW", 0))
 
 
 def _cbr_cache_path(path: Path) -> Path:
@@ -68,6 +106,7 @@ def _extract_with_unrar(path: Path, cache_path: Path) -> subprocess.CompletedPro
         capture_output=True,
         text=True,
         timeout=180,
+        creationflags=_subprocess_creationflags(),
     )
 
 
@@ -87,6 +126,7 @@ def _extract_with_7zip(path: Path, cache_path: Path) -> subprocess.CompletedProc
         capture_output=True,
         text=True,
         timeout=180,
+        creationflags=_subprocess_creationflags(),
     )
 
 

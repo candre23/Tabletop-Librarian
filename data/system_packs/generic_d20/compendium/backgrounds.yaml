@@ -1,0 +1,85 @@
+entity: background
+entries:
+- id: acolyte
+  name: Acolyte
+  ability_scores:
+  - Intelligence
+  - Wisdom
+  - Charisma
+  origin_feat: magic_initiate_cleric
+  skill_proficiencies:
+  - Insight
+  - Religion
+  tool_proficiency: Calligrapher's Supplies
+  starting_equipment: Calligrapher's Supplies, Book (prayers), Holy Symbol, Parchment (10 sheets), Robe, 8 GP; or
+    50 GP.
+  description: Ability boosts may be assigned among Intelligence, Wisdom, Charisma. Grants Insight, Religion proficiency
+    and Calligrapher's Supplies.
+  effects:
+    insight_prof: 1
+    religion_prof: 1
+  source:
+    book: srd521
+    page: 83
+- id: criminal
+  name: Criminal
+  ability_scores:
+  - Dexterity
+  - Constitution
+  - Intelligence
+  origin_feat: alert
+  skill_proficiencies:
+  - Sleight of Hand
+  - Stealth
+  tool_proficiency: Thieves' Tools
+  starting_equipment: 2 Daggers, Thieves' Tools, Crowbar, 2 Pouches, Traveler's Clothes, 16 GP; or 50 GP.
+  description: Ability boosts may be assigned among Dexterity, Constitution, Intelligence. Grants Sleight of Hand,
+    Stealth proficiency and Thieves' Tools.
+  effects:
+    sleight_of_hand_prof: 1
+    stealth_prof: 1
+  source:
+    book: srd521
+    page: 83
+- id: sage
+  name: Sage
+  ability_scores:
+  - Constitution
+  - Intelligence
+  - Wisdom
+  origin_feat: magic_initiate_wizard
+  skill_proficiencies:
+  - Arcana
+  - History
+  tool_proficiency: Calligrapher's Supplies
+  starting_equipment: Quarterstaff, Calligrapher's Supplies, Book (history), Parchment (8 sheets), Robe, 8 GP; or
+    50 GP.
+  description: Ability boosts may be assigned among Constitution, Intelligence, Wisdom. Grants Arcana, History proficiency
+    and Calligrapher's Supplies.
+  effects:
+    arcana_prof: 1
+    history_prof: 1
+  source:
+    book: srd521
+    page: 83
+- id: soldier
+  name: Soldier
+  ability_scores:
+  - Strength
+  - Dexterity
+  - Constitution
+  origin_feat: savage_attacker
+  skill_proficiencies:
+  - Athletics
+  - Intimidation
+  tool_proficiency: One Gaming Set
+  starting_equipment: Spear, Shortbow, 20 Arrows, Gaming Set, Healer's Kit, Quiver, Traveler's Clothes, 14 GP; or
+    50 GP.
+  description: Ability boosts may be assigned among Strength, Dexterity, Constitution. Grants Athletics, Intimidation
+    proficiency and One Gaming Set.
+  effects:
+    athletics_prof: 1
+    intimidation_prof: 1
+  source:
+    book: srd521
+    page: 83

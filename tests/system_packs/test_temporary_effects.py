@@ -32,7 +32,7 @@ assert effects["power_score"][0]["duration"] == "scene"
 
 with tempfile.TemporaryDirectory() as temp_dir:
     root = Path(temp_dir) / "characters"
-    pack_root = ROOT / "data/system_packs"
+    pack_root = ROOT / "tests/fixtures/system_packs"
 
     record = create_character(
         "test-user",

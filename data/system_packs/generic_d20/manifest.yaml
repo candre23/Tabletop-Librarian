@@ -1,0 +1,29 @@
+id: generic_d20
+name: Generic D20
+version: '1.0'
+pack_format: 2
+description: 5E-compatible Generic D20 character support derived from SRD 5.2.1.
+author: Tabletop Librarian
+license: CC-BY-4.0
+requires_ttl: '>=1.0.0'
+character_schema: character.yaml
+rules: rules.yaml
+creation: creation.yaml
+advancement: advancement.yaml
+compendium:
+- compendium/classes.yaml
+- compendium/subclasses.yaml
+- compendium/backgrounds.yaml
+- compendium/species.yaml
+- compendium/skills.yaml
+- compendium/expertise_skills.yaml
+- compendium/languages.yaml
+- compendium/feats.yaml
+- compendium/weapons.yaml
+- compendium/armor.yaml
+- compendium/cantrips.yaml
+- compendium/spells.yaml
+- compendium/background_origin_feats.yaml
+- compendium/origin_feat_choices.yaml
+layouts:
+  character: layout.yaml

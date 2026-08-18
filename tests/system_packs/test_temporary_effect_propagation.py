@@ -15,7 +15,7 @@ from app.compendium import load_compendium
 from app.rules import load_rule_engine, resolve_compendium_modifiers
 from app.system_packs import load_system_pack
 
-pack = load_system_pack(ROOT / "data/system_packs/ttl_test_minimal")
+pack = load_system_pack(ROOT / "tests/fixtures/system_packs/ttl_test_minimal")
 assert pack.valid and pack.manifest is not None
 
 schema, issues = load_character_schema(pack.root / pack.manifest.character_schema)

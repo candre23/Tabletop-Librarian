@@ -20,7 +20,8 @@ from app.characters.schema import load_character_schema
 from app.system_packs import load_system_pack
 
 def main() -> int:
-    pack = load_system_pack("data/system_packs/ttl_test_minimal")
+    pack_root = PROJECT_ROOT / "tests" / "fixtures" / "system_packs"
+    pack = load_system_pack(pack_root / "ttl_test_minimal")
     if not pack.valid or pack.manifest is None:
         print("FAIL: minimal System Pack is invalid")
         for issue in pack.issues:
@@ -42,25 +43,26 @@ def main() -> int:
             initial_data={"name": "Test Hero"},
             character_id="testhero",
             character_root=temp_root,
+            pack_root=pack_root,
         )
         assert record.data["level"] == 1
         assert record.data["archetype"] == "Adventurer"
         assert record.data["background"] == "traveler"
 
-        loaded = load_character("test_user", "testhero", character_root=temp_root)
+        loaded = load_character("test_user", "testhero", character_root=temp_root, pack_root=pack_root)
         loaded.data["level"] = 2
         loaded.data["notes"] = "Storage smoke test."
-        save_character(loaded, character_root=temp_root)
+        save_character(loaded, character_root=temp_root, pack_root=pack_root)
 
         listed = list_characters("test_user", character_root=temp_root)
         assert len(listed) == 1
 
-        loaded_again = load_character("test_user", "testhero", character_root=temp_root)
+        loaded_again = load_character("test_user", "testhero", character_root=temp_root, pack_root=pack_root)
         assert loaded_again.data["level"] == 2
 
         try:
             loaded_again.data["level"] = 999
-            save_character(loaded_again, character_root=temp_root)
+            save_character(loaded_again, character_root=temp_root, pack_root=pack_root)
         except CharacterStorageError:
             loaded_again.data["level"] = 2
         else:
@@ -68,7 +70,7 @@ def main() -> int:
 
         try:
             loaded_again.data["background"] = "does_not_exist"
-            save_character(loaded_again, character_root=temp_root)
+            save_character(loaded_again, character_root=temp_root, pack_root=pack_root)
         except CharacterStorageError:
             loaded_again.data["background"] = "traveler"
         else:

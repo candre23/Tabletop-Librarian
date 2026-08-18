@@ -53,7 +53,7 @@ def make_request(body: bytes) -> Request:
 async def exercise_configure_save() -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
         character_root = Path(temp_dir) / "characters"
-        pack_root = ROOT / "data/system_packs"
+        pack_root = ROOT / "tests/fixtures/system_packs"
 
         record = create_character(
             "configure-test",

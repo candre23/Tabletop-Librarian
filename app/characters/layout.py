@@ -366,7 +366,7 @@ def load_character_layout(
         tabs.append(LayoutTab(id=tab_id, title=title.strip(), sections=sections))
 
     if schema is not None:
-        missing = [field_id for field_id in schema.fields if field_id not in seen_fields]
+        missing = [field_id for field_id, field in schema.fields.items() if field_id not in seen_fields and not field.raw.get("ui_hidden")]
         if missing:
             issues.append(
                 LayoutIssue(
@@ -412,7 +412,7 @@ def complete_character_layout(
         return fallback_character_layout(schema)
 
     placed = set(layout.field_ids)
-    missing = [field_id for field_id in schema.fields if field_id not in placed]
+    missing = [field_id for field_id, field in schema.fields.items() if field_id not in placed and not field.raw.get("ui_hidden")]
     if not missing:
         return layout
 

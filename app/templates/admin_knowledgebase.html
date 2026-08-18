@@ -73,8 +73,8 @@
 
         {% if not ocr.available %}
         <div class="knowledgebase-page-warning ocr-dependency-warning">
-            <strong>OCR dependencies are not installed.</strong>
-            Install them on Ubuntu with <code>sudo apt install ocrmypdf tesseract-ocr</code>, then restart TTLibrarian.
+            <strong>OCR dependencies are not available.</strong>
+            {{ ocr.dependency_message }}
         </div>
         {% endif %}
 

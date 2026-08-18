@@ -60,7 +60,7 @@ LOG_FILE = LOG_DIR / "server.log"
 APP_HOST = os.environ.get("TTL_HOST", "0.0.0.0").strip() or "0.0.0.0"
 APP_PORT = _int_from_env("TTL_PORT", 8080)
 APP_NAME = "Tabletop Librarian"
-APP_VERSION = "0.5.23"
+APP_VERSION = "1.0.0"
 
 SUPPORTED_EXTENSIONS = {
     ".pdf": "PDF",

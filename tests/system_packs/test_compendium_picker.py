@@ -19,7 +19,7 @@ for name in ("characters/create.html", "characters/edit.html"):
     assert "ttl-eligibility-updated" in text
 
 skills = (
-    ROOT / "data/system_packs/ttl_test_minimal/compendium/skills.yaml"
+    ROOT / "tests/fixtures/system_packs/ttl_test_minimal/compendium/skills.yaml"
 ).read_text()
 assert "perception" in skills
 assert "awareness" in skills

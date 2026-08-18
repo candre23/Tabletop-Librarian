@@ -20,4 +20,4 @@ assert 'issue.message != "Required field is missing."' in web
 assert '.ttl-sheet-section {' in css
 assert 'grid-template-columns: max-content minmax(0, 1fr)' in css
 assert '.ttl-step-head h2' in css and 'background: transparent' in css
-print('PASS: v0.4.19.1 dense sheet cleanup regression test')
+print('PASS: dense sheet cleanup regression test')

@@ -10,7 +10,7 @@ if str(ROOT) not in sys.path:
 from app.characters.ai_context import build_character_ai_context
 from app.characters.storage import create_character, save_character
 
-PACK_ROOT=ROOT/"data/system_packs"
+PACK_ROOT=ROOT/"tests/fixtures/system_packs"
 
 with tempfile.TemporaryDirectory() as td:
     root=Path(td)/"characters"

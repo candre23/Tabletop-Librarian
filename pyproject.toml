@@ -4,8 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tabletop-librarian"
-version = "0.5.23"
-description = "Self-hosted tabletop RPG library, rules helper, and character resource server."
+version = "1.0.0"
+description = "Self-hosted tabletop RPG library, rules helper, character manager, and AI resource server."
+readme = "README.md"
+license = "Unlicense"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.116,<1.0",
@@ -33,4 +35,10 @@ app = [
     "templates/characters/*.html",
     "static/css/*.css",
     "static/js/*.js",
+    "static/*.png",
 ]
+
+[project.urls]
+Homepage = "https://github.com/candre23/Tabletop-Librarian"
+Repository = "https://github.com/candre23/Tabletop-Librarian"
+

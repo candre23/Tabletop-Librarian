@@ -1,0 +1,551 @@
+entity: cantrip
+entries:
+- id: acid_splash
+  name: Acid Splash
+  level: 0
+  school: Evocation
+  special: —
+  classes:
+  - sorcerer
+  - wizard
+  tags:
+  - level_0
+  - evocation
+  - class_sorcerer
+  - class_wizard
+  eligibility:
+    rule: (character_class == "sorcerer" and level >= 1) or (character_class == "wizard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: chill_touch
+  name: Chill Touch
+  level: 0
+  school: Necromancy
+  special: —
+  classes:
+  - sorcerer
+  - warlock
+  - wizard
+  tags:
+  - level_0
+  - necromancy
+  - class_sorcerer
+  - class_warlock
+  - class_wizard
+  eligibility:
+    rule: (character_class == "sorcerer" and level >= 1) or (character_class == "warlock" and level >= 1) or (character_class
+      == "wizard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: dancing_lights
+  name: Dancing Lights
+  level: 0
+  school: Illusion
+  special: C
+  classes:
+  - bard
+  - sorcerer
+  - wizard
+  tags:
+  - level_0
+  - illusion
+  - class_bard
+  - class_sorcerer
+  - class_wizard
+  eligibility:
+    rule: (character_class == "bard" and level >= 1) or (character_class == "sorcerer" and level >= 1) or (character_class
+      == "wizard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: druidcraft
+  name: Druidcraft
+  level: 0
+  school: Transmutation
+  special: —
+  classes:
+  - druid
+  tags:
+  - level_0
+  - transmutation
+  - class_druid
+  eligibility:
+    rule: (character_class == "druid" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: eldritch_blast
+  name: Eldritch Blast
+  level: 0
+  school: Evocation
+  special: —
+  classes:
+  - warlock
+  tags:
+  - level_0
+  - evocation
+  - class_warlock
+  eligibility:
+    rule: (character_class == "warlock" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: elementalism
+  name: Elementalism
+  level: 0
+  school: Transmutation
+  special: —
+  classes:
+  - druid
+  - sorcerer
+  - wizard
+  tags:
+  - level_0
+  - transmutation
+  - class_druid
+  - class_sorcerer
+  - class_wizard
+  eligibility:
+    rule: (character_class == "druid" and level >= 1) or (character_class == "sorcerer" and level >= 1) or (character_class
+      == "wizard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: fire_bolt
+  name: Fire Bolt
+  level: 0
+  school: Evocation
+  special: —
+  classes:
+  - sorcerer
+  - wizard
+  tags:
+  - level_0
+  - evocation
+  - class_sorcerer
+  - class_wizard
+  eligibility:
+    rule: (character_class == "sorcerer" and level >= 1) or (character_class == "wizard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: guidance
+  name: Guidance
+  level: 0
+  school: Divination
+  special: C
+  classes:
+  - cleric
+  - druid
+  tags:
+  - level_0
+  - divination
+  - class_cleric
+  - class_druid
+  eligibility:
+    rule: (character_class == "cleric" and level >= 1) or (character_class == "druid" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: light
+  name: Light
+  level: 0
+  school: Evocation
+  special: —
+  classes:
+  - bard
+  - cleric
+  - sorcerer
+  - wizard
+  tags:
+  - level_0
+  - evocation
+  - class_bard
+  - class_cleric
+  - class_sorcerer
+  - class_wizard
+  eligibility:
+    rule: (character_class == "bard" and level >= 1) or (character_class == "cleric" and level >= 1) or (character_class
+      == "sorcerer" and level >= 1) or (character_class == "wizard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: mage_hand
+  name: Mage Hand
+  level: 0
+  school: Conjuration
+  special: —
+  classes:
+  - bard
+  - sorcerer
+  - warlock
+  - wizard
+  tags:
+  - level_0
+  - conjuration
+  - class_bard
+  - class_sorcerer
+  - class_warlock
+  - class_wizard
+  eligibility:
+    rule: (character_class == "bard" and level >= 1) or (character_class == "sorcerer" and level >= 1) or (character_class
+      == "warlock" and level >= 1) or (character_class == "wizard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: mending
+  name: Mending
+  level: 0
+  school: Transmutation
+  special: —
+  classes:
+  - bard
+  - cleric
+  - druid
+  - sorcerer
+  - wizard
+  tags:
+  - level_0
+  - transmutation
+  - class_bard
+  - class_cleric
+  - class_druid
+  - class_sorcerer
+  - class_wizard
+  eligibility:
+    rule: (character_class == "bard" and level >= 1) or (character_class == "cleric" and level >= 1) or (character_class
+      == "druid" and level >= 1) or (character_class == "sorcerer" and level >= 1) or (character_class == "wizard"
+      and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: message
+  name: Message
+  level: 0
+  school: Transmutation
+  special: —
+  classes:
+  - bard
+  - druid
+  - sorcerer
+  - wizard
+  tags:
+  - level_0
+  - transmutation
+  - class_bard
+  - class_druid
+  - class_sorcerer
+  - class_wizard
+  eligibility:
+    rule: (character_class == "bard" and level >= 1) or (character_class == "druid" and level >= 1) or (character_class
+      == "sorcerer" and level >= 1) or (character_class == "wizard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: minor_illusion
+  name: Minor Illusion
+  level: 0
+  school: Illusion
+  special: —
+  classes:
+  - bard
+  - sorcerer
+  - warlock
+  - wizard
+  tags:
+  - level_0
+  - illusion
+  - class_bard
+  - class_sorcerer
+  - class_warlock
+  - class_wizard
+  eligibility:
+    rule: (character_class == "bard" and level >= 1) or (character_class == "sorcerer" and level >= 1) or (character_class
+      == "warlock" and level >= 1) or (character_class == "wizard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: poison_spray
+  name: Poison Spray
+  level: 0
+  school: Necromancy
+  special: —
+  classes:
+  - druid
+  - sorcerer
+  - warlock
+  - wizard
+  tags:
+  - level_0
+  - necromancy
+  - class_druid
+  - class_sorcerer
+  - class_warlock
+  - class_wizard
+  eligibility:
+    rule: (character_class == "druid" and level >= 1) or (character_class == "sorcerer" and level >= 1) or (character_class
+      == "warlock" and level >= 1) or (character_class == "wizard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: prestidigitation
+  name: Prestidigitation
+  level: 0
+  school: Transmutation
+  special: —
+  classes:
+  - bard
+  - sorcerer
+  - warlock
+  - wizard
+  tags:
+  - level_0
+  - transmutation
+  - class_bard
+  - class_sorcerer
+  - class_warlock
+  - class_wizard
+  eligibility:
+    rule: (character_class == "bard" and level >= 1) or (character_class == "sorcerer" and level >= 1) or (character_class
+      == "warlock" and level >= 1) or (character_class == "wizard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: produce_flame
+  name: Produce Flame
+  level: 0
+  school: Conjuration
+  special: —
+  classes:
+  - druid
+  tags:
+  - level_0
+  - conjuration
+  - class_druid
+  eligibility:
+    rule: (character_class == "druid" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: ray_of_frost
+  name: Ray of Frost
+  level: 0
+  school: Evocation
+  special: —
+  classes:
+  - sorcerer
+  - wizard
+  tags:
+  - level_0
+  - evocation
+  - class_sorcerer
+  - class_wizard
+  eligibility:
+    rule: (character_class == "sorcerer" and level >= 1) or (character_class == "wizard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: resistance
+  name: Resistance
+  level: 0
+  school: Abjuration
+  special: C
+  classes:
+  - cleric
+  - druid
+  tags:
+  - level_0
+  - abjuration
+  - class_cleric
+  - class_druid
+  eligibility:
+    rule: (character_class == "cleric" and level >= 1) or (character_class == "druid" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: sacred_flame
+  name: Sacred Flame
+  level: 0
+  school: Evocation
+  special: —
+  classes:
+  - cleric
+  tags:
+  - level_0
+  - evocation
+  - class_cleric
+  eligibility:
+    rule: (character_class == "cleric" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: shillelagh
+  name: Shillelagh
+  level: 0
+  school: Transmutation
+  special: —
+  classes:
+  - druid
+  tags:
+  - level_0
+  - transmutation
+  - class_druid
+  eligibility:
+    rule: (character_class == "druid" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: shocking_grasp
+  name: Shocking Grasp
+  level: 0
+  school: Evocation
+  special: —
+  classes:
+  - sorcerer
+  - wizard
+  tags:
+  - level_0
+  - evocation
+  - class_sorcerer
+  - class_wizard
+  eligibility:
+    rule: (character_class == "sorcerer" and level >= 1) or (character_class == "wizard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: sorcerous_burst
+  name: Sorcerous Burst
+  level: 0
+  school: Evocation
+  special: —
+  classes:
+  - sorcerer
+  tags:
+  - level_0
+  - evocation
+  - class_sorcerer
+  eligibility:
+    rule: (character_class == "sorcerer" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: spare_the_dying
+  name: Spare the Dying
+  level: 0
+  school: Necromancy
+  special: —
+  classes:
+  - cleric
+  - druid
+  tags:
+  - level_0
+  - necromancy
+  - class_cleric
+  - class_druid
+  eligibility:
+    rule: (character_class == "cleric" and level >= 1) or (character_class == "druid" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: starry_wisp
+  name: Starry Wisp
+  level: 0
+  school: Evocation
+  special: —
+  classes:
+  - bard
+  - druid
+  tags:
+  - level_0
+  - evocation
+  - class_bard
+  - class_druid
+  eligibility:
+    rule: (character_class == "bard" and level >= 1) or (character_class == "druid" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: thaumaturgy
+  name: Thaumaturgy
+  level: 0
+  school: Transmutation
+  special: —
+  classes:
+  - cleric
+  tags:
+  - level_0
+  - transmutation
+  - class_cleric
+  eligibility:
+    rule: (character_class == "cleric" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: true_strike
+  name: True Strike
+  level: 0
+  school: Divination
+  special: —
+  classes:
+  - bard
+  - sorcerer
+  - warlock
+  - wizard
+  tags:
+  - level_0
+  - divination
+  - class_bard
+  - class_sorcerer
+  - class_warlock
+  - class_wizard
+  eligibility:
+    rule: (character_class == "bard" and level >= 1) or (character_class == "sorcerer" and level >= 1) or (character_class
+      == "warlock" and level >= 1) or (character_class == "wizard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists
+- id: vicious_mockery
+  name: Vicious Mockery
+  level: 0
+  school: Enchantment
+  special: —
+  classes:
+  - bard
+  tags:
+  - level_0
+  - enchantment
+  - class_bard
+  eligibility:
+    rule: (character_class == "bard" and level >= 1)
+    message: This spell is not on your class list at your current level.
+  source:
+    book: srd521
+    section: Class spell lists

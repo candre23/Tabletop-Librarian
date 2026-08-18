@@ -1,0 +1,354 @@
+entity: character_class
+entries:
+- id: barbarian
+  name: Barbarian
+  primary_ability: Strength
+  hit_die: d12
+  skill_choice_count: 2
+  skill_choices:
+  - Animal Handling
+  - Athletics
+  - Intimidation
+  - Nature
+  - Perception
+  - Survival
+  weapon_proficiencies: Simple and Martial weapons
+  armor_training: Light and Medium armor and Shields
+  tool_proficiencies: None
+  starting_equipment: Greataxe, 4 Handaxes, Explorer's Pack, and 15 GP; or 75 GP.
+  level_1_features: Rage, Unarmored Defense, Weapon Mastery
+  srd_subclass: Path of the Berserker
+  description: 'Primary ability: Strength. Hit Die: d12. Choose 2 class skill proficiencies. Level 1 features: Rage,
+    Unarmored Defense, Weapon Mastery.'
+  effects:
+    level1_hp_base: 12
+    strength_save_prof: 1
+    constitution_save_prof: 1
+  source:
+    book: srd521
+    page: 28
+- id: bard
+  name: Bard
+  primary_ability: Charisma
+  hit_die: d8
+  skill_choice_count: 3
+  skill_choices:
+  - Acrobatics
+  - Animal Handling
+  - Arcana
+  - Athletics
+  - Deception
+  - History
+  - Insight
+  - Intimidation
+  - Investigation
+  - Medicine
+  - Nature
+  - Perception
+  - Performance
+  - Persuasion
+  - Religion
+  - Sleight of Hand
+  - Stealth
+  - Survival
+  weapon_proficiencies: Simple weapons
+  armor_training: Light armor
+  tool_proficiencies: Choose 3 Musical Instruments
+  starting_equipment: Leather Armor, 2 Daggers, a Musical Instrument, Entertainer's Pack, and 19 GP; or 90 GP.
+  level_1_features: Bardic Inspiration, Spellcasting
+  srd_subclass: College of Lore
+  description: 'Primary ability: Charisma. Hit Die: d8. Choose 3 class skill proficiencies. Level 1 features: Bardic
+    Inspiration, Spellcasting.'
+  effects:
+    level1_hp_base: 8
+    dexterity_save_prof: 1
+    charisma_save_prof: 1
+  source:
+    book: srd521
+    page: 31
+- id: cleric
+  name: Cleric
+  primary_ability: Wisdom
+  hit_die: d8
+  skill_choice_count: 2
+  skill_choices:
+  - History
+  - Insight
+  - Medicine
+  - Persuasion
+  - Religion
+  weapon_proficiencies: Simple weapons
+  armor_training: Light and Medium armor and Shields
+  tool_proficiencies: None
+  starting_equipment: Chain Shirt, Shield, Mace, Holy Symbol, Priest's Pack, and 7 GP; or 110 GP.
+  level_1_features: Spellcasting, Divine Order
+  srd_subclass: Life Domain
+  description: 'Primary ability: Wisdom. Hit Die: d8. Choose 2 class skill proficiencies. Level 1 features: Spellcasting,
+    Divine Order.'
+  effects:
+    level1_hp_base: 8
+    wisdom_save_prof: 1
+    charisma_save_prof: 1
+  source:
+    book: srd521
+    page: 36
+- id: druid
+  name: Druid
+  primary_ability: Wisdom
+  hit_die: d8
+  skill_choice_count: 2
+  skill_choices:
+  - Animal Handling
+  - Arcana
+  - Insight
+  - Medicine
+  - Nature
+  - Perception
+  - Religion
+  - Survival
+  weapon_proficiencies: Simple weapons
+  armor_training: Light armor and Shields
+  tool_proficiencies: Herbalism Kit
+  starting_equipment: Leather Armor, Shield, Sickle, Druidic Focus (Quarterstaff), Explorer's Pack, Herbalism Kit,
+    and 9 GP; or 50 GP.
+  level_1_features: Spellcasting, Druidic, Primal Order
+  srd_subclass: Circle of the Land
+  description: 'Primary ability: Wisdom. Hit Die: d8. Choose 2 class skill proficiencies. Level 1 features: Spellcasting,
+    Druidic, Primal Order.'
+  effects:
+    level1_hp_base: 8
+    intelligence_save_prof: 1
+    wisdom_save_prof: 1
+  source:
+    book: srd521
+    page: 41
+- id: fighter
+  name: Fighter
+  primary_ability: Strength or Dexterity
+  hit_die: d10
+  skill_choice_count: 2
+  skill_choices:
+  - Acrobatics
+  - Animal Handling
+  - Athletics
+  - History
+  - Insight
+  - Intimidation
+  - Persuasion
+  - Perception
+  - Survival
+  weapon_proficiencies: Simple and Martial weapons
+  armor_training: Light, Medium, and Heavy armor and Shields
+  tool_proficiencies: None
+  starting_equipment: Chain Mail/Greatsword loadout, Studded Leather/Longbow loadout, or 155 GP.
+  level_1_features: Fighting Style, Second Wind, Weapon Mastery
+  srd_subclass: Champion
+  description: 'Primary ability: Strength or Dexterity. Hit Die: d10. Choose 2 class skill proficiencies. Level
+    1 features: Fighting Style, Second Wind, Weapon Mastery.'
+  effects:
+    level1_hp_base: 10
+    strength_save_prof: 1
+    constitution_save_prof: 1
+  source:
+    book: srd521
+    page: 47
+- id: monk
+  name: Monk
+  primary_ability: Dexterity and Wisdom
+  hit_die: d8
+  skill_choice_count: 2
+  skill_choices:
+  - Acrobatics
+  - Athletics
+  - History
+  - Insight
+  - Religion
+  - Stealth
+  weapon_proficiencies: Simple weapons and Martial weapons with the Light property
+  armor_training: None
+  tool_proficiencies: Choose one Artisan's Tool or Musical Instrument
+  starting_equipment: Spear, 5 Daggers, chosen tool/instrument, Explorer's Pack, and 11 GP; or 50 GP.
+  level_1_features: Martial Arts, Unarmored Defense
+  srd_subclass: Warrior of the Open Hand
+  description: 'Primary ability: Dexterity and Wisdom. Hit Die: d8. Choose 2 class skill proficiencies. Level 1
+    features: Martial Arts, Unarmored Defense.'
+  effects:
+    level1_hp_base: 8
+    strength_save_prof: 1
+    dexterity_save_prof: 1
+  source:
+    book: srd521
+    page: 49
+- id: paladin
+  name: Paladin
+  primary_ability: Strength and Charisma
+  hit_die: d10
+  skill_choice_count: 2
+  skill_choices:
+  - Athletics
+  - Insight
+  - Intimidation
+  - Medicine
+  - Persuasion
+  - Religion
+  weapon_proficiencies: Simple and Martial weapons
+  armor_training: Light, Medium, and Heavy armor and Shields
+  tool_proficiencies: None
+  starting_equipment: Chain Mail, Shield, Longsword, 6 Javelins, Holy Symbol, Priest's Pack, and 9 GP; or 150 GP.
+  level_1_features: Lay On Hands, Spellcasting, Weapon Mastery
+  srd_subclass: Oath of Devotion
+  description: 'Primary ability: Strength and Charisma. Hit Die: d10. Choose 2 class skill proficiencies. Level
+    1 features: Lay On Hands, Spellcasting, Weapon Mastery.'
+  effects:
+    level1_hp_base: 10
+    wisdom_save_prof: 1
+    charisma_save_prof: 1
+  source:
+    book: srd521
+    page: 53
+- id: ranger
+  name: Ranger
+  primary_ability: Dexterity and Wisdom
+  hit_die: d10
+  skill_choice_count: 3
+  skill_choices:
+  - Animal Handling
+  - Athletics
+  - Insight
+  - Investigation
+  - Nature
+  - Perception
+  - Stealth
+  - Survival
+  weapon_proficiencies: Simple and Martial weapons
+  armor_training: Light and Medium armor and Shields
+  tool_proficiencies: None
+  starting_equipment: Studded Leather Armor, Scimitar, Shortsword, Longbow, 20 Arrows, Quiver, Druidic Focus, Explorer's
+    Pack, and 7 GP; or 150 GP.
+  level_1_features: Spellcasting, Favored Enemy, Weapon Mastery
+  srd_subclass: Hunter
+  description: 'Primary ability: Dexterity and Wisdom. Hit Die: d10. Choose 3 class skill proficiencies. Level 1
+    features: Spellcasting, Favored Enemy, Weapon Mastery.'
+  effects:
+    level1_hp_base: 10
+    strength_save_prof: 1
+    dexterity_save_prof: 1
+  source:
+    book: srd521
+    page: 57
+- id: rogue
+  name: Rogue
+  primary_ability: Dexterity
+  hit_die: d8
+  skill_choice_count: 4
+  skill_choices:
+  - Acrobatics
+  - Athletics
+  - Deception
+  - Insight
+  - Intimidation
+  - Investigation
+  - Perception
+  - Persuasion
+  - Sleight of Hand
+  - Stealth
+  weapon_proficiencies: Simple weapons and Martial weapons with the Finesse or Light property
+  armor_training: Light armor
+  tool_proficiencies: Thieves' Tools
+  starting_equipment: Leather Armor, 2 Daggers, Shortsword, Shortbow, 20 Arrows, Quiver, Thieves' Tools, Burglar's
+    Pack, and 8 GP; or 100 GP.
+  level_1_features: Expertise, Sneak Attack, Thieves' Cant, Weapon Mastery
+  srd_subclass: Thief
+  description: 'Primary ability: Dexterity. Hit Die: d8. Choose 4 class skill proficiencies. Level 1 features: Expertise,
+    Sneak Attack, Thieves'' Cant, Weapon Mastery.'
+  effects:
+    level1_hp_base: 8
+    dexterity_save_prof: 1
+    intelligence_save_prof: 1
+  source:
+    book: srd521
+    page: 61
+- id: sorcerer
+  name: Sorcerer
+  primary_ability: Charisma
+  hit_die: d6
+  skill_choice_count: 2
+  skill_choices:
+  - Arcana
+  - Deception
+  - Insight
+  - Intimidation
+  - Persuasion
+  - Religion
+  weapon_proficiencies: Simple weapons
+  armor_training: None
+  tool_proficiencies: None
+  starting_equipment: Spear, 2 Daggers, Arcane Focus (crystal), Dungeoneer's Pack, and 28 GP; or 50 GP.
+  level_1_features: Spellcasting, Innate Sorcery
+  srd_subclass: Draconic Sorcery
+  description: 'Primary ability: Charisma. Hit Die: d6. Choose 2 class skill proficiencies. Level 1 features: Spellcasting,
+    Innate Sorcery.'
+  effects:
+    level1_hp_base: 6
+    constitution_save_prof: 1
+    charisma_save_prof: 1
+  source:
+    book: srd521
+    page: 64
+- id: warlock
+  name: Warlock
+  primary_ability: Charisma
+  hit_die: d8
+  skill_choice_count: 2
+  skill_choices:
+  - Arcana
+  - Deception
+  - History
+  - Intimidation
+  - Investigation
+  - Nature
+  - Religion
+  weapon_proficiencies: Simple weapons
+  armor_training: Light armor
+  tool_proficiencies: None
+  starting_equipment: Leather Armor, Sickle, 2 Daggers, Arcane Focus (orb), Book (occult lore), Scholar's Pack,
+    and 15 GP; or 100 GP.
+  level_1_features: Eldritch Invocations, Pact Magic
+  srd_subclass: Fiend Patron
+  description: 'Primary ability: Charisma. Hit Die: d8. Choose 2 class skill proficiencies. Level 1 features: Eldritch
+    Invocations, Pact Magic.'
+  effects:
+    level1_hp_base: 8
+    wisdom_save_prof: 1
+    charisma_save_prof: 1
+  source:
+    book: srd521
+    page: 70
+- id: wizard
+  name: Wizard
+  primary_ability: Intelligence
+  hit_die: d6
+  skill_choice_count: 2
+  skill_choices:
+  - Arcana
+  - History
+  - Insight
+  - Investigation
+  - Medicine
+  - Nature
+  - Religion
+  weapon_proficiencies: Simple weapons
+  armor_training: None
+  tool_proficiencies: None
+  starting_equipment: 2 Daggers, Arcane Focus (Quarterstaff), Robe, Spellbook, Scholar's Pack, and 5 GP; or 55 GP.
+  level_1_features: Spellcasting, Ritual Adept, Arcane Recovery
+  srd_subclass: Evoker
+  description: 'Primary ability: Intelligence. Hit Die: d6. Choose 2 class skill proficiencies. Level 1 features:
+    Spellcasting, Ritual Adept, Arcane Recovery.'
+  effects:
+    level1_hp_base: 6
+    intelligence_save_prof: 1
+    wisdom_save_prof: 1
+  source:
+    book: srd521
+    page: 77

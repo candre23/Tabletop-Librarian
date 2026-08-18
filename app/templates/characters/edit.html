@@ -194,19 +194,21 @@
                     >&#128274;</a>
                   {% endif %}
                 </div>
-                {% if field.type == "multi_reference" and field.entity == "skill" %}
-                  <table class="ttl-skill-table ttl-play-table">
-                    <thead><tr><th>Skill</th><th>Description</th></tr></thead>
+                {% if field.type == "multi_reference" and (field.entity == "skill" or field.raw.get("table_display") == "description") %}
+                  {% set custom_entries_field = field.raw.get("custom_entries_field") or "" %}
+                  {% set custom_rows = record.data.get(custom_entries_field) if custom_entries_field else [] %}
+                  <table class="ttl-skill-table ttl-play-table ttl-description-picker-table">
+                    <thead><tr><th>{{ field.raw.get("row_label") or field.label }}</th><th>Description</th></tr></thead>
                     <tbody>
                       {% for selected_id in (value or []) %}
                         {% for entity in reference_options.get(field_id, []) %}
                           {% if entity.id == selected_id %}
-                            <tr>
-                              <td>{{ entity.name }}</td>
-                              <td>{{ entity.data.get("description") or entity.data.get("summary") or "" }}</td>
-                            </tr>
+                            <tr><td>{{ entity.name }}</td><td>{{ entity.data.get("description") or entity.data.get("summary") or "" }}</td></tr>
                           {% endif %}
                         {% endfor %}
+                      {% endfor %}
+                      {% for custom in (custom_rows or []) %}
+                        <tr class="is-custom"><td>{{ custom.get("name") or "Custom" }}</td><td>{{ custom.get("description") or "" }}</td></tr>
                       {% endfor %}
                     </tbody>
                   </table>
@@ -317,6 +319,7 @@
                         <input type="search" placeholder="Search name, tag, or description" data-picker-search>
 
                         <select data-picker-tag><option value="">All tags</option></select>
+                        <label class="ttl-picker-hide-unavailable"><input type="checkbox" data-picker-hide-unavailable checked> Hide unavailable</label>
 
                       </div>
 
@@ -348,7 +351,8 @@
                 </div>
 
 
-                <div class="ttl-compendium-picker" data-compendium-picker data-picker-mode="multi" data-picker-label="{{ field.label }}" data-picker-entity="{{ field.entity or '' }}">
+                {% set custom_entries_field = field.raw.get("custom_entries_field") or "" %}
+                <div class="ttl-compendium-picker" data-compendium-picker data-picker-mode="multi" data-picker-label="{{ field.label }}" data-picker-entity="{{ field.entity or '' }}" data-picker-table-display="{{ field.raw.get('table_display') or '' }}" data-picker-row-label="{{ field.raw.get('row_label') or field.label }}" data-picker-custom-field="{{ custom_entries_field }}">
 
 
                   <select id="field__{{ field_id }}" name="field__{{ field_id }}" multiple class="ttl-picker-native ttl-multi-reference-native" aria-hidden="true" tabindex="-1">
@@ -365,6 +369,9 @@
 
                   </select>
 
+                  {% if custom_entries_field %}
+                    <input type="hidden" name="field__{{ custom_entries_field }}" data-picker-custom-json value="{{ (record.data.get(custom_entries_field) or [])|tojson|forceescape }}">
+                  {% endif %}
 
                   <div class="ttl-picker-selected" data-picker-selected></div>
 
@@ -397,6 +404,8 @@
 
 
                         <select data-picker-tag><option value="">All tags</option></select>
+
+                        <label class="ttl-picker-hide-unavailable"><input type="checkbox" data-picker-hide-unavailable checked> Hide unavailable</label>
 
 
                       </div>
@@ -444,18 +453,18 @@
                         <div class="ttl-collection-row-fields">
                           {% for item_id, item_field in field.item_schema.items() %}
                             {% set item_value = row.get(item_id) if row is mapping else none %}
-                            <div class="ttl-collection-cell">
+                            <div class="ttl-collection-cell" {% if item_field.raw.get("show_when_reference_blank") %} data-show-when-reference-blank="{{ item_field.raw.get('show_when_reference_blank') }}" {% endif %}>
                               <label>{{ item_field.label }}</label>
                               {% if item_field.type == "reference" and collection_reference_options.get(field_id, {}).get(item_id) %}
-                                <select data-collection-subfield="{{ item_id }}" data-subfield-type="reference" {% if item_field.required %}required{% endif %}>
-                                  {% if not item_field.required %}<option value="">None</option>{% endif %}
+                                <select data-collection-subfield="{{ item_id }}" data-subfield-type="reference" {% if item_field.raw.get('autofill') %}data-collection-autofill='{{ item_field.raw.get("autofill")|tojson|forceescape }}'{% endif %} {% if item_field.required %}required{% endif %}>
+                                  {% if not item_field.required %}<option value="">{{ item_field.raw.get("blank_label", "None") }}</option>{% endif %}
                                   {% for entity in collection_reference_options.get(field_id, {}).get(item_id, []) %}
-                                    <option value="{{ entity.id }}" {% if entity.id == item_value %}selected{% endif %}>{{ entity.name }}</option>
+                                    <option value="{{ entity.id }}" data-entity-data='{{ entity.data|tojson|forceescape }}' {% if entity.id == item_value %}selected{% endif %}>{{ entity.name }}</option>
                                   {% endfor %}
                                 </select>
                               {% elif item_field.type == "enum" %}
                                 <select data-collection-subfield="{{ item_id }}" data-subfield-type="enum" {% if item_field.required %}required{% endif %}>
-                                  {% if not item_field.required %}<option value="">None</option>{% endif %}
+                                  {% if not item_field.required %}<option value="">{{ item_field.raw.get("blank_label", "None") }}</option>{% endif %}
                                   {% for option in item_field.options %}
                                     <option value="{{ option }}" {% if option == item_value %}selected{% endif %}>{{ option }}</option>
                                   {% endfor %}
@@ -506,18 +515,18 @@
                         {% set default_row = collection_item_default(field) %}
                         {% for item_id, item_field in field.item_schema.items() %}
                           {% set item_value = default_row.get(item_id) %}
-                          <div class="ttl-collection-cell">
+                          <div class="ttl-collection-cell" {% if item_field.raw.get("show_when_reference_blank") %} data-show-when-reference-blank="{{ item_field.raw.get('show_when_reference_blank') }}" {% endif %}>
                             <label>{{ item_field.label }}</label>
                             {% if item_field.type == "reference" and collection_reference_options.get(field_id, {}).get(item_id) %}
-                              <select data-collection-subfield="{{ item_id }}" data-subfield-type="reference" {% if item_field.required %}required{% endif %}>
-                                {% if not item_field.required %}<option value="">None</option>{% endif %}
+                              <select data-collection-subfield="{{ item_id }}" data-subfield-type="reference" {% if item_field.raw.get('autofill') %}data-collection-autofill='{{ item_field.raw.get("autofill")|tojson|forceescape }}'{% endif %} {% if item_field.required %}required{% endif %}>
+                                {% if not item_field.required %}<option value="">{{ item_field.raw.get("blank_label", "None") }}</option>{% endif %}
                                 {% for entity in collection_reference_options.get(field_id, {}).get(item_id, []) %}
-                                  <option value="{{ entity.id }}">{{ entity.name }}</option>
+                                  <option value="{{ entity.id }}" data-entity-data='{{ entity.data|tojson|forceescape }}'>{{ entity.name }}</option>
                                 {% endfor %}
                               </select>
                             {% elif item_field.type == "enum" %}
                               <select data-collection-subfield="{{ item_id }}" data-subfield-type="enum" {% if item_field.required %}required{% endif %}>
-                                {% if not item_field.required %}<option value="">None</option>{% endif %}
+                                {% if not item_field.required %}<option value="">{{ item_field.raw.get("blank_label", "None") }}</option>{% endif %}
                                 {% for option in item_field.options %}
                                   <option value="{{ option }}" {% if option == item_value %}selected{% endif %}>{{ option }}</option>
                                 {% endfor %}
@@ -1254,10 +1263,34 @@
           const dialog = picker.querySelector("[data-picker-dialog]");
           const search = picker.querySelector("[data-picker-search]");
           const tagFilter = picker.querySelector("[data-picker-tag]");
+          const hideUnavailable = picker.querySelector("[data-picker-hide-unavailable]");
           const results = picker.querySelector("[data-picker-results]");
           const closeButton = picker.querySelector("[data-picker-close]");
           const mode = picker.dataset.pickerMode;
           const requiredSingle = mode === "single" && picker.dataset.pickerRequired === "true";
+          const customFieldId = picker.dataset.pickerCustomField || "";
+          const customInput = picker.querySelector("[data-picker-custom-json]");
+          const tableDisplay = picker.dataset.pickerTableDisplay || "";
+          const rowLabel = picker.dataset.pickerRowLabel || picker.dataset.pickerLabel || "Entry";
+
+          function readCustomRows() {
+            if (!customInput) return [];
+            try {
+              const parsed = JSON.parse(customInput.value || "[]");
+              return Array.isArray(parsed) ? parsed.filter((row) => row && typeof row === "object") : [];
+            } catch (_) {
+              return [];
+            }
+          }
+
+          function writeCustomRows(rows, { emit = true } = {}) {
+            if (!customInput) return;
+            customInput.value = JSON.stringify(rows);
+            if (emit) {
+              customInput.dispatchEvent(new Event("input", { bubbles: true }));
+              customInput.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+          }
 
           if (!nativeSelect || !selectedBox || !dialog || !results) return;
 
@@ -1295,7 +1328,7 @@
               openButton.textContent = `${selected.length ? "Change" : "Choose"} ${picker.dataset.pickerLabel || "selection"}`;
             }
 
-            if (!selected.length) {
+            if (!selected.length && !readCustomRows().length) {
               const empty = document.createElement("span");
               empty.className = "ttl-picker-empty";
               empty.textContent = "None selected";
@@ -1304,10 +1337,15 @@
             }
 
             const entityType = picker.dataset.pickerEntity || "";
-            if (mode === "multi" && entityType === "skill") {
+            const customRows = readCustomRows();
+            const useDescriptionTable = mode === "multi" && (
+              tableDisplay === "description" || entityType === "skill"
+            );
+
+            if (useDescriptionTable) {
               const table = document.createElement("table");
-              table.className = "ttl-skill-table ttl-skill-table-removable";
-              table.innerHTML = "<thead><tr><th>Skill</th><th>Description</th><th></th></tr></thead>";
+              table.className = "ttl-skill-table ttl-skill-table-removable ttl-description-picker-table";
+              table.innerHTML = `<thead><tr><th>${rowLabel}</th><th>Description</th><th></th></tr></thead>`;
               const body = document.createElement("tbody");
 
               selected.forEach((option) => {
@@ -1343,8 +1381,65 @@
                 body.appendChild(row);
               });
 
+              customRows.forEach((custom, index) => {
+                const row = document.createElement("tr");
+                row.className = "is-custom";
+
+                const nameCell = document.createElement("td");
+                const nameInput = document.createElement("input");
+                nameInput.type = "text";
+                nameInput.className = "ttl-custom-reference-name";
+                nameInput.placeholder = `Custom ${rowLabel}`;
+                nameInput.value = custom.name || "";
+                nameInput.addEventListener("input", () => {
+                  const rows = readCustomRows();
+                  if (!rows[index]) return;
+                  rows[index].name = nameInput.value;
+                  writeCustomRows(rows);
+                });
+                nameCell.appendChild(nameInput);
+
+                const descriptionCell = document.createElement("td");
+                const descriptionInput = document.createElement("textarea");
+                descriptionInput.className = "ttl-custom-reference-description";
+                descriptionInput.rows = 2;
+                descriptionInput.placeholder = "Description";
+                descriptionInput.value = custom.description || "";
+                descriptionInput.addEventListener("input", () => {
+                  const rows = readCustomRows();
+                  if (!rows[index]) return;
+                  rows[index].description = descriptionInput.value;
+                  writeCustomRows(rows);
+                });
+                descriptionCell.appendChild(descriptionInput);
+
+                const actionCell = document.createElement("td");
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.className = "ttl-picker-chip-remove";
+                remove.textContent = "×";
+                remove.title = "Remove custom entry";
+                remove.addEventListener("click", () => {
+                  const rows = readCustomRows();
+                  rows.splice(index, 1);
+                  writeCustomRows(rows);
+                  renderSelected();
+                  renderResults();
+                });
+                actionCell.appendChild(remove);
+                row.append(nameCell, descriptionCell, actionCell);
+                body.appendChild(row);
+              });
+
               table.appendChild(body);
               selectedBox.appendChild(table);
+              if (!selected.length && !customRows.length) {
+                selectedBox.innerHTML = "";
+                const empty = document.createElement("span");
+                empty.className = "ttl-picker-empty";
+                empty.textContent = "None selected";
+                selectedBox.appendChild(empty);
+              }
               return;
             }
 
@@ -1388,6 +1483,7 @@
             const selectedTag = tagFilter?.value || "";
             const tags = tagsFor(option);
 
+            if (hideUnavailable?.checked && option.dataset.eligible === "false" && !option.selected) return false;
             if (selectedTag && !tags.includes(selectedTag)) return false;
             if (!query) return true;
 
@@ -1401,13 +1497,42 @@
 
           function renderResults() {
             results.innerHTML = "";
+
+            const query = (search?.value || "").trim().toLowerCase();
+            if (customInput && (!query || "<custom> custom".includes(query))) {
+              const customButton = document.createElement("button");
+              customButton.type = "button";
+              customButton.className = "ttl-picker-result ttl-picker-result-custom";
+              const customMain = document.createElement("span");
+              customMain.className = "ttl-picker-result-main";
+              const customName = document.createElement("strong");
+              customName.textContent = "<Custom>";
+              const customDescription = document.createElement("span");
+              customDescription.className = "ttl-picker-description";
+              customDescription.textContent = `Add a custom ${rowLabel.toLowerCase()} with your own name and description.`;
+              customMain.append(customName, customDescription);
+              customButton.appendChild(customMain);
+              customButton.addEventListener("click", () => {
+                const rows = readCustomRows();
+                rows.push({ name: "", description: "" });
+                writeCustomRows(rows);
+                renderSelected();
+                renderResults();
+                if (dialog.open) dialog.close();
+                selectedBox.querySelector(".ttl-custom-reference-name:last-of-type")?.focus();
+              });
+              results.appendChild(customButton);
+            }
+
             const matchesList = Array.from(nativeSelect.options).filter(matches);
 
             if (!matchesList.length) {
-              const empty = document.createElement("div");
-              empty.className = "ttl-picker-no-results";
-              empty.textContent = "No matching entries.";
-              results.appendChild(empty);
+              if (!results.children.length) {
+                const empty = document.createElement("div");
+                empty.className = "ttl-picker-no-results";
+                empty.textContent = "No matching entries.";
+                results.appendChild(empty);
+              }
               return;
             }
 
@@ -1496,6 +1621,7 @@
           closeButton?.addEventListener("click", () => dialog.close());
           search?.addEventListener("input", renderResults);
           tagFilter?.addEventListener("change", renderResults);
+          hideUnavailable?.addEventListener("change", renderResults);
           nativeSelect.addEventListener("change", () => {
             renderSelected();
             renderResults();
@@ -1548,6 +1674,47 @@
       }
 
 
+
+      function readCurrentFieldValue(fieldId) {
+        const element = form.querySelector(`[name="field__${CSS.escape(fieldId)}"]`);
+        if (!element) return "";
+        if (element.type === "checkbox") return element.checked;
+        if (element.multiple) {
+          return Array.from(element.selectedOptions).map((option) => option.value);
+        }
+        return element.value;
+      }
+
+      function conditionMatches(condition) {
+        if (!condition || typeof condition !== "object") return true;
+        const value = readCurrentFieldValue(condition.field || "");
+        if (Object.prototype.hasOwnProperty.call(condition, "equals")) {
+          return value === String(condition.equals);
+        }
+        if (Array.isArray(condition.in)) {
+          return condition.in.map(String).includes(String(value));
+        }
+        if (Object.prototype.hasOwnProperty.call(condition, "not_equals")) {
+          return value !== String(condition.not_equals);
+        }
+        return true;
+      }
+
+      function refreshConditionalSections() {
+        document.querySelectorAll("[data-ttl-visible-when]").forEach((section) => {
+          let condition = null;
+          try {
+            condition = JSON.parse(section.dataset.ttlVisibleWhen || "{}");
+          } catch (_) {
+            condition = null;
+          }
+          section.hidden = !conditionMatches(condition);
+        });
+      }
+
+      form.addEventListener("change", refreshConditionalSections);
+      form.addEventListener("input", refreshConditionalSections);
+      refreshConditionalSections();
 
       function initSheetTabs() {
         const layout = document.querySelector("[data-sheet-layout]");
@@ -1631,10 +1798,124 @@
             }
           }
 
+          function calculatedNumber(fieldId) {
+            const target = document.querySelector(`[data-calculated-field="${CSS.escape(fieldId)}"]`);
+            if (!target) return 0;
+            const value = Number(target.textContent);
+            return Number.isFinite(value) ? value : 0;
+          }
+
+          function armorClassFor(entity) {
+            const dex = calculatedNumber("dexterity_mod");
+            const base = Number(entity.ac_base ?? 0);
+            if (entity.ac_mode === "light") return base + dex;
+            if (entity.ac_mode === "medium") return base + Math.min(2, dex);
+            if (entity.ac_mode === "heavy") return base;
+            if (entity.ac_mode === "shield") {
+              const acInput = form.querySelector('[name="field__armor_class"]');
+              const current = Number(acInput?.value ?? 0);
+              return (Number.isFinite(current) ? current : 10 + dex) + 2;
+            }
+            return null;
+          }
+
+          function weaponIsProficient(entity) {
+            const cls = form.querySelector('[name="field__character_class"]')?.value || "";
+            const category = String(entity.category || "").toLowerCase();
+            const properties = String(entity.properties || "").toLowerCase();
+
+            if (category.includes("simple")) return true;
+            if (["barbarian", "fighter", "paladin", "ranger"].includes(cls)) return true;
+            if (cls === "rogue" && (properties.includes("finesse") || properties.includes("light"))) return true;
+            if (cls === "monk" && properties.includes("light")) return true;
+            return false;
+          }
+
+          function weaponAttackBonusFor(entity) {
+            const proficiency = weaponIsProficient(entity)
+              ? calculatedNumber("proficiency_bonus")
+              : 0;
+            const strength = calculatedNumber("strength_mod");
+            const dexterity = calculatedNumber("dexterity_mod");
+            let ability = strength;
+            if (entity.attack_ability === "dexterity") ability = dexterity;
+            if (entity.attack_ability === "best_str_dex") ability = Math.max(strength, dexterity);
+            return ability + proficiency;
+          }
+
+          function resolveAutofillValue(source, entity) {
+            if (source === "$weapon_attack_bonus") return weaponAttackBonusFor(entity);
+            if (source === "$armor_class") return armorClassFor(entity);
+            if (source === "$weapon_notes") {
+              return [entity.properties, entity.mastery ? `Mastery: ${entity.mastery}` : ""].filter(Boolean).join("; ");
+            }
+            if (source === "$armor_notes") {
+              return [entity.category, entity.strength && entity.strength !== "—" ? `Strength: ${entity.strength}` : "", entity.stealth && entity.stealth !== "—" ? `Stealth: ${entity.stealth}` : ""].filter(Boolean).join("; ");
+            }
+            return entity[source] ?? "";
+          }
+
+          function applyReferenceAutofill(select) {
+            const raw = select.dataset.collectionAutofill;
+            if (!raw || !select.value) return;
+            const row = select.closest("[data-collection-row]");
+            if (!row) return;
+            let mapping;
+            let entity;
+            try {
+              mapping = JSON.parse(raw);
+              entity = JSON.parse(select.selectedOptions[0]?.dataset.entityData || "{}");
+            } catch (_) {
+              return;
+            }
+            Object.entries(mapping || {}).forEach(([targetId, source]) => {
+              const value = resolveAutofillValue(source, entity);
+              if (value === null || value === undefined) return;
+              if (targetId.startsWith("field:")) {
+                const topLevel = form.querySelector(`[name="field__${CSS.escape(targetId.substring(6))}"]`);
+                if (topLevel) {
+                  topLevel.value = value;
+                  topLevel.dispatchEvent(new Event("input", { bubbles: true }));
+                  topLevel.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+                return;
+              }
+              const target = row.querySelector(`[data-collection-subfield="${CSS.escape(targetId)}"]`);
+              if (!target) return;
+              if (target.type === "checkbox") target.checked = !!value;
+              else target.value = value;
+            });
+          }
+
+          function refreshConditionalCollectionFields(row) {
+            row.querySelectorAll("[data-show-when-reference-blank]").forEach((cell) => {
+              const referenceId = cell.dataset.showWhenReferenceBlank || "";
+              const reference = row.querySelector(
+                `[data-collection-subfield="${CSS.escape(referenceId)}"]`
+              );
+              const show = !!reference && !reference.value;
+              cell.hidden = !show;
+
+              if (!show) {
+                cell.querySelectorAll("[data-collection-subfield]").forEach((input) => {
+                  if (input.type === "checkbox") {
+                    input.checked = false;
+                  } else {
+                    input.value = "";
+                  }
+                });
+              }
+            });
+          }
+
           function wireRow(row) {
             row.querySelectorAll("[data-collection-subfield]").forEach((input) => {
               input.addEventListener("input", () => sync());
-              input.addEventListener("change", () => sync());
+              input.addEventListener("change", () => {
+                if (input.matches("select[data-collection-autofill]")) applyReferenceAutofill(input);
+                refreshConditionalCollectionFields(row);
+                sync();
+              });
             });
 
             row.querySelector("[data-row-remove]")?.addEventListener("click", () => {
@@ -1657,6 +1938,8 @@
                 sync();
               }
             });
+
+            refreshConditionalCollectionFields(row);
           }
 
           rowsBox.querySelectorAll("[data-collection-row]").forEach(wireRow);

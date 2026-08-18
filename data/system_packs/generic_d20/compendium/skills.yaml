@@ -1,0 +1,167 @@
+entity: skill
+entries:
+- id: acrobatics
+  name: Acrobatics
+  ability: Dexterity
+  effects:
+    acrobatics_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Keep your balance in a difficult situation or perform an acrobatic maneuver or stunt.
+- id: animal_handling
+  name: Animal Handling
+  ability: Wisdom
+  effects:
+    animal_handling_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Calm or train an animal, understand its behavior, or get it to act in a particular way.
+- id: arcana
+  name: Arcana
+  ability: Intelligence
+  effects:
+    arcana_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Recall or interpret lore concerning spells, magic items, magical traditions, and the planes of existence.
+- id: athletics
+  name: Athletics
+  ability: Strength
+  effects:
+    athletics_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Perform feats of physical power such as difficult jumps, swimming through rough water, climbing, or breaking
+    objects.
+- id: deception
+  name: Deception
+  ability: Charisma
+  effects:
+    deception_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Mislead someone through a convincing lie, false appearance, disguise, or other deliberate deception.
+- id: history
+  name: History
+  ability: Intelligence
+  effects:
+    history_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Recall lore about historical events, people, nations, cultures, wars, and other events of the past.
+- id: insight
+  name: Insight
+  ability: Wisdom
+  effects:
+    insight_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Read another creature's mood, intentions, motives, or behavior and judge whether something seems amiss.
+- id: intimidation
+  name: Intimidation
+  ability: Charisma
+  effects:
+    intimidation_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Influence another creature through threats, displays of force, or an imposing presence.
+- id: investigation
+  name: Investigation
+  ability: Intelligence
+  effects:
+    investigation_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Search for obscure information, examine clues, or use reasoning to deduce how something works or what happened.
+- id: medicine
+  name: Medicine
+  ability: Wisdom
+  effects:
+    medicine_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Diagnose illness or injury, assess a creature's physical condition, or determine what killed a recently slain
+    creature.
+- id: nature
+  name: Nature
+  ability: Intelligence
+  effects:
+    nature_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Recall lore about terrain, plants, animals, weather, and other features of the natural world.
+- id: perception
+  name: Perception
+  ability: Wisdom
+  effects:
+    perception_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Use your senses to notice creatures, objects, sounds, tracks, or other details that are easy to miss.
+- id: performance
+  name: Performance
+  ability: Charisma
+  effects:
+    performance_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Entertain an audience by acting, storytelling, music, dance, or another form of performance.
+- id: persuasion
+  name: Persuasion
+  ability: Charisma
+  effects:
+    persuasion_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Honestly and graciously influence another creature through reason, diplomacy, tact, or good faith.
+- id: religion
+  name: Religion
+  ability: Intelligence
+  effects:
+    religion_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Recall lore about deities, religions, religious rituals, holy symbols, faiths, and related traditions.
+- id: sleight_of_hand
+  name: Sleight of Hand
+  ability: Dexterity
+  effects:
+    sleight_of_hand_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Perform precise hand movements such as picking a pocket, concealing a small object, or legerdemain.
+- id: stealth
+  name: Stealth
+  ability: Dexterity
+  effects:
+    stealth_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Avoid notice by moving quietly, hiding, using cover, and otherwise concealing your presence.
+- id: survival
+  name: Survival
+  ability: Wisdom
+  effects:
+    survival_prof: 1
+  source:
+    book: srd521
+    page: 9
+  description: Follow tracks, forage, navigate wilderness, find a trail, predict hazards, or avoid dangers in the natural
+    environment.

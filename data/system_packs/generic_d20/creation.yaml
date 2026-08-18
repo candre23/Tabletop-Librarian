@@ -1,0 +1,96 @@
+version: 1
+title: Create Generic D20 Character
+steps:
+- id: identity
+  title: Class and Origin
+  description: Choose your class, background, species, alignment, and the Origin feat granted by your background. Human-only
+    choices appear automatically when Human is selected.
+  fields:
+  - name
+  - character_class
+  - background
+  - species
+  - alignment
+  - origin_feat
+  - bonus_origin_feat
+  lock_after:
+  - character_class
+  - background
+  - species
+- id: species_options
+  title: Species Options
+  description: Complete only the option that applies to your species. Elf, Gnome, and Tiefling lineage spells also require
+    a spellcasting ability.
+  fields:
+  - size_choice
+  - dragon_ancestry
+  - elf_lineage
+  - gnome_lineage
+  - goliath_ancestry
+  - tiefling_legacy
+  - lineage_spellcasting_ability
+  - languages
+- id: abilities
+  title: Ability Scores
+  description: Use the Standard Array, 27-point Point Cost, or Random/Manual scores. Then assign your background's three boost
+    points (+2/+1 or +1/+1/+1) only among its listed abilities.
+  fields:
+  - ability_method
+  - strength_base
+  - dexterity_base
+  - constitution_base
+  - intelligence_base
+  - wisdom_base
+  - charisma_base
+  - strength_boost
+  - dexterity_boost
+  - constitution_boost
+  - intelligence_boost
+  - wisdom_boost
+  - charisma_boost
+- id: proficiencies
+  title: Class Skills
+  description: Choose the number of class skills shown by your class. Your background's two fixed skill proficiencies are
+    applied automatically. Humans choose one additional skill. If a class choice duplicates a background proficiency, choose
+    a different allowed class skill.
+  fields:
+  - class_skills
+  - bonus_skills
+  - tool_proficiencies
+  - other_proficiencies
+- id: features
+  title: Features and Feats
+  description: Record level 1 class and species features. The picker descriptions show each class's level 1 feature names
+    and species traits.
+  fields:
+  - class_features
+  - feats
+- id: equipment
+  title: Equipment and Combat
+  description: Choose your class/background starting equipment or starting gold. Record weapons, armor, equipment, Armor Class,
+    and attacks.
+  fields:
+  - armor_class
+  - weapons
+  - armor_items
+  - equipment
+  - coins_gp
+- id: spells
+  title: Spellcasting
+  description: Spellcasting classes must choose their level 1 class cantrips and prepared/known spells. Use Species / Feat
+    / Other Spells for Magic Initiate and lineage-granted spells.
+  fields:
+  - cantrips
+  - prepared_spells
+  - bonus_spells
+- id: story
+  title: Finishing Details
+  description: Add background/personality details and any other notes. Hit Points initialize from class, Constitution, and
+    Dwarven Toughness when you finish creation.
+  fields:
+  - background_notes
+  - notes
+final_changes:
+  hp_max: level1_hp_base + constitution_mod + (1 if species == "dwarf" else 0)
+  hp_current: level1_hp_base + constitution_mod + (1 if species == "dwarf" else 0)
+  armor_class: 10 + dexterity_mod

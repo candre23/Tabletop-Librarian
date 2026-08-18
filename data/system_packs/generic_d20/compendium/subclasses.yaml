@@ -1,0 +1,122 @@
+entity: subclass
+entries:
+- id: berserker
+  name: Path of the Berserker
+  class: barbarian
+  description: SRD 5.2.1 Path of the Berserker subclass for the Barbarian.
+  eligibility:
+    rule: character_class == "barbarian" and level >= 3
+    message: Path of the Berserker requires level 3+ in Barbarian.
+  source:
+    book: srd521
+    page: 30
+- id: college_of_lore
+  name: College of Lore
+  class: bard
+  description: SRD 5.2.1 College of Lore subclass for the Bard.
+  eligibility:
+    rule: character_class == "bard" and level >= 3
+    message: College of Lore requires level 3+ in Bard.
+  source:
+    book: srd521
+    page: 35
+- id: life_domain
+  name: Life Domain
+  class: cleric
+  description: SRD 5.2.1 Life Domain subclass for the Cleric.
+  eligibility:
+    rule: character_class == "cleric" and level >= 3
+    message: Life Domain requires level 3+ in Cleric.
+  source:
+    book: srd521
+    page: 40
+- id: circle_of_the_land
+  name: Circle of the Land
+  class: druid
+  description: SRD 5.2.1 Circle of the Land subclass for the Druid.
+  eligibility:
+    rule: character_class == "druid" and level >= 3
+    message: Circle of the Land requires level 3+ in Druid.
+  source:
+    book: srd521
+    page: 46
+- id: champion
+  name: Champion
+  class: fighter
+  description: SRD 5.2.1 Champion subclass for the Fighter.
+  eligibility:
+    rule: character_class == "fighter" and level >= 3
+    message: Champion requires level 3+ in Fighter.
+  source:
+    book: srd521
+    page: 49
+- id: warrior_of_the_open_hand
+  name: Warrior of the Open Hand
+  class: monk
+  description: SRD 5.2.1 Warrior of the Open Hand subclass for the Monk.
+  eligibility:
+    rule: character_class == "monk" and level >= 3
+    message: Warrior of the Open Hand requires level 3+ in Monk.
+  source:
+    book: srd521
+    page: 52
+- id: oath_of_devotion
+  name: Oath of Devotion
+  class: paladin
+  description: SRD 5.2.1 Oath of Devotion subclass for the Paladin.
+  eligibility:
+    rule: character_class == "paladin" and level >= 3
+    message: Oath of Devotion requires level 3+ in Paladin.
+  source:
+    book: srd521
+    page: 56
+- id: hunter
+  name: Hunter
+  class: ranger
+  description: SRD 5.2.1 Hunter subclass for the Ranger.
+  eligibility:
+    rule: character_class == "ranger" and level >= 3
+    message: Hunter requires level 3+ in Ranger.
+  source:
+    book: srd521
+    page: 61
+- id: thief
+  name: Thief
+  class: rogue
+  description: SRD 5.2.1 Thief subclass for the Rogue.
+  eligibility:
+    rule: character_class == "rogue" and level >= 3
+    message: Thief requires level 3+ in Rogue.
+  source:
+    book: srd521
+    page: 64
+- id: draconic_sorcery
+  name: Draconic Sorcery
+  class: sorcerer
+  description: SRD 5.2.1 Draconic Sorcery subclass for the Sorcerer.
+  eligibility:
+    rule: character_class == "sorcerer" and level >= 3
+    message: Draconic Sorcery requires level 3+ in Sorcerer.
+  source:
+    book: srd521
+    page: 69
+- id: fiend_patron
+  name: Fiend Patron
+  class: warlock
+  description: SRD 5.2.1 Fiend Patron subclass for the Warlock.
+  eligibility:
+    rule: character_class == "warlock" and level >= 3
+    message: Fiend Patron requires level 3+ in Warlock.
+  source:
+    book: srd521
+    page: 76
+- id: evoker
+  name: Evoker
+  class: wizard
+  description: SRD 5.2.1 Evoker subclass for the Wizard.
+  eligibility:
+    rule: character_class == "wizard" and level >= 3
+    message: Evoker requires level 3+ in Wizard.
+  source:
+    book: srd521
+    page: 82

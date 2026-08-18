@@ -1,0 +1,415 @@
+modifiers:
+  level1_hp_base:
+    label: Level 1 Class HP
+    default: 0
+    aggregate: max
+  speed_base:
+    label: Species Speed
+    default: 30
+    aggregate: max
+  initiative_prof:
+    label: Initiative Proficiency
+    default: 0
+    aggregate: max
+  strength_save_prof:
+    label: Strength Save Proficiency
+    default: 0
+    aggregate: max
+  dexterity_save_prof:
+    label: Dexterity Save Proficiency
+    default: 0
+    aggregate: max
+  constitution_save_prof:
+    label: Constitution Save Proficiency
+    default: 0
+    aggregate: max
+  intelligence_save_prof:
+    label: Intelligence Save Proficiency
+    default: 0
+    aggregate: max
+  wisdom_save_prof:
+    label: Wisdom Save Proficiency
+    default: 0
+    aggregate: max
+  charisma_save_prof:
+    label: Charisma Save Proficiency
+    default: 0
+    aggregate: max
+  acrobatics_prof:
+    label: Acrobatics Proficiency
+    default: 0
+    aggregate: sum
+  acrobatics_expertise:
+    label: Acrobatics Expertise
+    default: 0
+    aggregate: sum
+  animal_handling_prof:
+    label: Animal Handling Proficiency
+    default: 0
+    aggregate: sum
+  animal_handling_expertise:
+    label: Animal Handling Expertise
+    default: 0
+    aggregate: sum
+  arcana_prof:
+    label: Arcana Proficiency
+    default: 0
+    aggregate: sum
+  arcana_expertise:
+    label: Arcana Expertise
+    default: 0
+    aggregate: sum
+  athletics_prof:
+    label: Athletics Proficiency
+    default: 0
+    aggregate: sum
+  athletics_expertise:
+    label: Athletics Expertise
+    default: 0
+    aggregate: sum
+  deception_prof:
+    label: Deception Proficiency
+    default: 0
+    aggregate: sum
+  deception_expertise:
+    label: Deception Expertise
+    default: 0
+    aggregate: sum
+  history_prof:
+    label: History Proficiency
+    default: 0
+    aggregate: sum
+  history_expertise:
+    label: History Expertise
+    default: 0
+    aggregate: sum
+  insight_prof:
+    label: Insight Proficiency
+    default: 0
+    aggregate: sum
+  insight_expertise:
+    label: Insight Expertise
+    default: 0
+    aggregate: sum
+  intimidation_prof:
+    label: Intimidation Proficiency
+    default: 0
+    aggregate: sum
+  intimidation_expertise:
+    label: Intimidation Expertise
+    default: 0
+    aggregate: sum
+  investigation_prof:
+    label: Investigation Proficiency
+    default: 0
+    aggregate: sum
+  investigation_expertise:
+    label: Investigation Expertise
+    default: 0
+    aggregate: sum
+  medicine_prof:
+    label: Medicine Proficiency
+    default: 0
+    aggregate: sum
+  medicine_expertise:
+    label: Medicine Expertise
+    default: 0
+    aggregate: sum
+  nature_prof:
+    label: Nature Proficiency
+    default: 0
+    aggregate: sum
+  nature_expertise:
+    label: Nature Expertise
+    default: 0
+    aggregate: sum
+  perception_prof:
+    label: Perception Proficiency
+    default: 0
+    aggregate: sum
+  perception_expertise:
+    label: Perception Expertise
+    default: 0
+    aggregate: sum
+  performance_prof:
+    label: Performance Proficiency
+    default: 0
+    aggregate: sum
+  performance_expertise:
+    label: Performance Expertise
+    default: 0
+    aggregate: sum
+  persuasion_prof:
+    label: Persuasion Proficiency
+    default: 0
+    aggregate: sum
+  persuasion_expertise:
+    label: Persuasion Expertise
+    default: 0
+    aggregate: sum
+  religion_prof:
+    label: Religion Proficiency
+    default: 0
+    aggregate: sum
+  religion_expertise:
+    label: Religion Expertise
+    default: 0
+    aggregate: sum
+  sleight_of_hand_prof:
+    label: Sleight of Hand Proficiency
+    default: 0
+    aggregate: sum
+  sleight_of_hand_expertise:
+    label: Sleight of Hand Expertise
+    default: 0
+    aggregate: sum
+  stealth_prof:
+    label: Stealth Proficiency
+    default: 0
+    aggregate: sum
+  stealth_expertise:
+    label: Stealth Expertise
+    default: 0
+    aggregate: sum
+  survival_prof:
+    label: Survival Proficiency
+    default: 0
+    aggregate: sum
+  survival_expertise:
+    label: Survival Expertise
+    default: 0
+    aggregate: sum
+calculated:
+  strength:
+    formula: strength_base + strength_boost
+  strength_mod:
+    formula: floor((strength - 10) / 2)
+  dexterity:
+    formula: dexterity_base + dexterity_boost
+  dexterity_mod:
+    formula: floor((dexterity - 10) / 2)
+  constitution:
+    formula: constitution_base + constitution_boost
+  constitution_mod:
+    formula: floor((constitution - 10) / 2)
+  intelligence:
+    formula: intelligence_base + intelligence_boost
+  intelligence_mod:
+    formula: floor((intelligence - 10) / 2)
+  wisdom:
+    formula: wisdom_base + wisdom_boost
+  wisdom_mod:
+    formula: floor((wisdom - 10) / 2)
+  charisma:
+    formula: charisma_base + charisma_boost
+  charisma_mod:
+    formula: floor((charisma - 10) / 2)
+  point_cost_total:
+    formula: (0 if strength_base == 8 else 1 if strength_base == 9 else 2 if strength_base == 10 else 3 if strength_base ==
+      11 else 4 if strength_base == 12 else 5 if strength_base == 13 else 7 if strength_base == 14 else 9 if strength_base
+      == 15 else 99) + (0 if dexterity_base == 8 else 1 if dexterity_base == 9 else 2 if dexterity_base == 10 else 3 if dexterity_base
+      == 11 else 4 if dexterity_base == 12 else 5 if dexterity_base == 13 else 7 if dexterity_base == 14 else 9 if dexterity_base
+      == 15 else 99) + (0 if constitution_base == 8 else 1 if constitution_base == 9 else 2 if constitution_base == 10 else
+      3 if constitution_base == 11 else 4 if constitution_base == 12 else 5 if constitution_base == 13 else 7 if constitution_base
+      == 14 else 9 if constitution_base == 15 else 99) + (0 if intelligence_base == 8 else 1 if intelligence_base == 9 else
+      2 if intelligence_base == 10 else 3 if intelligence_base == 11 else 4 if intelligence_base == 12 else 5 if intelligence_base
+      == 13 else 7 if intelligence_base == 14 else 9 if intelligence_base == 15 else 99) + (0 if wisdom_base == 8 else 1 if
+      wisdom_base == 9 else 2 if wisdom_base == 10 else 3 if wisdom_base == 11 else 4 if wisdom_base == 12 else 5 if wisdom_base
+      == 13 else 7 if wisdom_base == 14 else 9 if wisdom_base == 15 else 99) + (0 if charisma_base == 8 else 1 if charisma_base
+      == 9 else 2 if charisma_base == 10 else 3 if charisma_base == 11 else 4 if charisma_base == 12 else 5 if charisma_base
+      == 13 else 7 if charisma_base == 14 else 9 if charisma_base == 15 else 99)
+  proficiency_bonus:
+    formula: 2 if level <= 4 else (3 if level <= 8 else (4 if level <= 12 else (5 if level <= 16 else 6)))
+  speed:
+    formula: speed_base + (5 if species == "elf" and elf_lineage == "Wood Elf" else 0)
+  initiative:
+    formula: dexterity_mod + min(1, initiative_prof) * proficiency_bonus
+  strength_save:
+    formula: strength_mod + min(1, strength_save_prof) * proficiency_bonus
+  dexterity_save:
+    formula: dexterity_mod + min(1, dexterity_save_prof) * proficiency_bonus
+  constitution_save:
+    formula: constitution_mod + min(1, constitution_save_prof) * proficiency_bonus
+  intelligence_save:
+    formula: intelligence_mod + min(1, intelligence_save_prof) * proficiency_bonus
+  wisdom_save:
+    formula: wisdom_mod + min(1, wisdom_save_prof) * proficiency_bonus
+  charisma_save:
+    formula: charisma_mod + min(1, charisma_save_prof) * proficiency_bonus
+  acrobatics_mod:
+    formula: dexterity_mod + min(1, acrobatics_prof) * proficiency_bonus + min(1, acrobatics_expertise) * proficiency_bonus
+  animal_handling_mod:
+    formula: wisdom_mod + min(1, animal_handling_prof) * proficiency_bonus + min(1, animal_handling_expertise) * proficiency_bonus
+  arcana_mod:
+    formula: intelligence_mod + min(1, arcana_prof) * proficiency_bonus + min(1, arcana_expertise) * proficiency_bonus
+  athletics_mod:
+    formula: strength_mod + min(1, athletics_prof) * proficiency_bonus + min(1, athletics_expertise) * proficiency_bonus
+  deception_mod:
+    formula: charisma_mod + min(1, deception_prof) * proficiency_bonus + min(1, deception_expertise) * proficiency_bonus
+  history_mod:
+    formula: intelligence_mod + min(1, history_prof) * proficiency_bonus + min(1, history_expertise) * proficiency_bonus
+  insight_mod:
+    formula: wisdom_mod + min(1, insight_prof) * proficiency_bonus + min(1, insight_expertise) * proficiency_bonus
+  intimidation_mod:
+    formula: charisma_mod + min(1, intimidation_prof) * proficiency_bonus + min(1, intimidation_expertise) * proficiency_bonus
+  investigation_mod:
+    formula: intelligence_mod + min(1, investigation_prof) * proficiency_bonus + min(1, investigation_expertise) * proficiency_bonus
+  medicine_mod:
+    formula: wisdom_mod + min(1, medicine_prof) * proficiency_bonus + min(1, medicine_expertise) * proficiency_bonus
+  nature_mod:
+    formula: intelligence_mod + min(1, nature_prof) * proficiency_bonus + min(1, nature_expertise) * proficiency_bonus
+  perception_mod:
+    formula: wisdom_mod + min(1, perception_prof) * proficiency_bonus + min(1, perception_expertise) * proficiency_bonus
+  performance_mod:
+    formula: charisma_mod + min(1, performance_prof) * proficiency_bonus + min(1, performance_expertise) * proficiency_bonus
+  persuasion_mod:
+    formula: charisma_mod + min(1, persuasion_prof) * proficiency_bonus + min(1, persuasion_expertise) * proficiency_bonus
+  religion_mod:
+    formula: intelligence_mod + min(1, religion_prof) * proficiency_bonus + min(1, religion_expertise) * proficiency_bonus
+  sleight_of_hand_mod:
+    formula: dexterity_mod + min(1, sleight_of_hand_prof) * proficiency_bonus + min(1, sleight_of_hand_expertise) * proficiency_bonus
+  stealth_mod:
+    formula: dexterity_mod + min(1, stealth_prof) * proficiency_bonus + min(1, stealth_expertise) * proficiency_bonus
+  survival_mod:
+    formula: wisdom_mod + min(1, survival_prof) * proficiency_bonus + min(1, survival_expertise) * proficiency_bonus
+  passive_perception:
+    formula: 10 + perception_mod + passive_perception_bonus
+  spellcasting_mod:
+    formula: charisma_mod if character_class == "bard" or character_class == "paladin" or character_class == "sorcerer" or
+      character_class == "warlock" else (wisdom_mod if character_class == "cleric" or character_class == "druid" or character_class
+      == "ranger" else (intelligence_mod if character_class == "wizard" else 0))
+  spell_save_dc:
+    formula: 8 + spellcasting_mod + proficiency_bonus
+  spell_attack_bonus:
+    formula: spellcasting_mod + proficiency_bonus
+  size:
+    formula: size_choice if species == "human" or species == "tiefling" else ("Small" if species == "gnome" or species ==
+      "halfling" else "Medium")
+validation:
+  background_boost_total:
+    rule: strength_boost + dexterity_boost + constitution_boost + intelligence_boost + wisdom_boost + charisma_boost == 3
+    message: Background ability boosts must total exactly 3 points (+2/+1 or +1/+1/+1).
+    severity: error
+  acolyte_boosts:
+    rule: background != "acolyte" or (strength_boost == 0 and dexterity_boost == 0 and constitution_boost == 0)
+    message: Acolyte boosts may be assigned only to Intelligence, Wisdom, and Charisma.
+    severity: error
+  criminal_boosts:
+    rule: background != "criminal" or (strength_boost == 0 and wisdom_boost == 0 and charisma_boost == 0)
+    message: Criminal boosts may be assigned only to Dexterity, Constitution, and Intelligence.
+    severity: error
+  sage_boosts:
+    rule: background != "sage" or (strength_boost == 0 and dexterity_boost == 0 and charisma_boost == 0)
+    message: Sage boosts may be assigned only to Constitution, Intelligence, and Wisdom.
+    severity: error
+  soldier_boosts:
+    rule: background != "soldier" or (intelligence_boost == 0 and wisdom_boost == 0 and charisma_boost == 0)
+    message: Soldier boosts may be assigned only to Strength, Dexterity, and Constitution.
+    severity: error
+  score_caps:
+    rule: strength <= 20 and dexterity <= 20 and constitution <= 20 and intelligence <= 20 and wisdom <= 20 and charisma <=
+      20
+    message: Background boosts cannot raise an ability score above 20.
+    severity: error
+  point_cost:
+    rule: ability_method != "Point Cost" or point_cost_total == 27
+    message: Point Cost characters must spend exactly 27 points and use scores from 8 through 15.
+    severity: error
+  standard_array_sum:
+    rule: ability_method != "Standard Array" or (strength_base + dexterity_base + constitution_base + intelligence_base +
+      wisdom_base + charisma_base == 72)
+    message: Standard Array must use 15, 14, 13, 12, 10, and 8 once each.
+    severity: error
+  standard_array_squares:
+    rule: ability_method != "Standard Array" or (strength_base**2 + dexterity_base**2 + constitution_base**2 + intelligence_base**2
+      + wisdom_base**2 + charisma_base**2 == 898)
+    message: Standard Array must use 15, 14, 13, 12, 10, and 8 once each.
+    severity: error
+  standard_array_product:
+    rule: ability_method != "Standard Array" or (strength_base * dexterity_base * constitution_base * intelligence_base *
+      wisdom_base * charisma_base == 2620800)
+    message: Standard Array must use 15, 14, 13, 12, 10, and 8 once each.
+    severity: error
+  background_feat:
+    rule: (background == "acolyte" and origin_feat == "magic_initiate_cleric") or (background == "criminal" and origin_feat
+      == "alert") or (background == "sage" and origin_feat == "magic_initiate_wizard") or (background == "soldier" and origin_feat
+      == "savage_attacker")
+    message: Background Origin Feat must match the selected SRD background.
+    severity: error
+  human_bonus_feat:
+    rule: (species == "human" and bonus_origin_feat != "") or (species != "human" and bonus_origin_feat == "")
+    message: Humans choose one additional Origin feat; other species should leave Human Bonus Origin Feat blank.
+    severity: error
+  subclass_at_level_3:
+    rule: level < 3 or subclass != ""
+    message: Characters of level 3+ must select their SRD subclass.
+    severity: error
+  dragonborn_ancestry:
+    rule: (species == "dragonborn" and dragon_ancestry != "Not applicable") or (species != "dragonborn" and dragon_ancestry
+      == "Not applicable")
+    message: Dragonborn must select Draconic Ancestry; other species should leave it Not applicable.
+    severity: error
+  elf_lineage:
+    rule: (species == "elf" and elf_lineage != "Not applicable") or (species != "elf" and elf_lineage == "Not applicable")
+    message: Elves must select an Elven Lineage; other species should leave it Not applicable.
+    severity: error
+  gnome_lineage:
+    rule: (species == "gnome" and gnome_lineage != "Not applicable") or (species != "gnome" and gnome_lineage == "Not applicable")
+    message: Gnomes must select a Gnomish Lineage; other species should leave it Not applicable.
+    severity: error
+  goliath_ancestry:
+    rule: (species == "goliath" and goliath_ancestry != "Not applicable") or (species != "goliath" and goliath_ancestry ==
+      "Not applicable")
+    message: Goliaths must select Giant Ancestry; other species should leave it Not applicable.
+    severity: error
+  tiefling_legacy:
+    rule: (species == "tiefling" and tiefling_legacy != "Not applicable") or (species != "tiefling" and tiefling_legacy ==
+      "Not applicable")
+    message: Tieflings must select a Fiendish Legacy; other species should leave it Not applicable.
+    severity: error
+  lineage_spell_ability:
+    rule: ((species == "elf" or species == "gnome" or species == "tiefling") and lineage_spellcasting_ability != "Not applicable")
+      or ((species != "elf" and species != "gnome" and species != "tiefling") and lineage_spellcasting_ability == "Not applicable")
+    message: Elf, Gnome, and Tiefling lineage spells require a spellcasting ability choice.
+    severity: error
+limits:
+  class_skill_count:
+    field: class_skills
+    label: Class Skill Proficiencies
+    maximum: 3 if character_class == "bard" or character_class == "ranger" else (4 if character_class == "rogue" else 2)
+    require_full: true
+    message: 'Class Skill Proficiencies: {count} selected; choose {maximum}.'
+    warning_message: 'Class Skill Proficiencies: {count} / {maximum}.'
+    usage: count(class_skills) + count(class_skills_custom)
+  human_bonus_skill:
+    field: bonus_skills
+    label: Human Bonus Skill
+    maximum: 1 if species == "human" else 0
+    require_full: true
+    message: 'Human Bonus Skill: {count} selected; choose {maximum}.'
+    warning_message: 'Human Bonus Skill: {count} / {maximum}.'
+    usage: count(bonus_skills) + count(bonus_skills_custom)
+  languages:
+    field: languages
+    label: Starting Languages
+    maximum: '3'
+    require_full: true
+    message: 'Starting Languages: {count} selected; choose 3 (normally Common plus two Standard languages).'
+    warning_message: 'Starting Languages: {count} / 3.'
+  level1_cantrips:
+    field: cantrips
+    label: Class Cantrips
+    maximum: (2 if character_class == "bard" or character_class == "druid" or character_class == "warlock" else (3 if character_class
+      == "cleric" or character_class == "wizard" else (4 if character_class == "sorcerer" else 0))) if level == 1 else 99
+    require_full: true
+    message: 'Class Cantrips: {count} selected; choose {maximum} at level 1.'
+    warning_message: 'Class Cantrips: {count} / {maximum}.'
+  level1_spells:
+    field: prepared_spells
+    label: Prepared / Known Class Spells
+    maximum: (4 if character_class == "bard" or character_class == "cleric" or character_class == "druid" or character_class
+      == "wizard" else (2 if character_class == "paladin" or character_class == "ranger" or character_class == "sorcerer"
+      or character_class == "warlock" else 0)) if level == 1 else 99
+    require_full: true
+    message: 'Prepared / Known Class Spells: {count} selected; choose {maximum} at level 1.'
+    warning_message: 'Prepared / Known Class Spells: {count} / {maximum}.'

@@ -1,0 +1,655 @@
+schema_version: 1
+fields:
+  name:
+    type: text
+    label: Name
+    required: true
+  character_class:
+    type: reference
+    label: Class
+    entity: character_class
+    required: true
+  background:
+    type: reference
+    label: Background
+    entity: background
+    required: true
+  species:
+    type: reference
+    label: Species
+    entity: species
+    required: true
+  size_choice:
+    type: enum
+    label: Size
+    options:
+    - Small
+    - Medium
+    default: Medium
+  size:
+    type: calculated
+    label: Size
+  alignment:
+    type: enum
+    label: Alignment
+    options:
+    - Lawful Good
+    - Neutral Good
+    - Chaotic Good
+    - Lawful Neutral
+    - Neutral
+    - Chaotic Neutral
+    - Lawful Evil
+    - Neutral Evil
+    - Chaotic Evil
+    default: Neutral
+  level:
+    type: integer
+    label: Level
+    default: 1
+    min: 1
+    max: 20
+    play_editable: true
+  xp:
+    type: integer
+    label: Experience Points
+    default: 0
+    min: 0
+    play_editable: true
+  subclass:
+    type: reference
+    label: Subclass
+    entity: subclass
+    default: ''
+  dragon_ancestry:
+    type: enum
+    label: Dragonborn Ancestry
+    options:
+    - Not applicable
+    - Black
+    - Blue
+    - Brass
+    - Bronze
+    - Copper
+    - Gold
+    - Green
+    - Red
+    - Silver
+    - White
+    default: Not applicable
+  elf_lineage:
+    type: enum
+    label: Elf Lineage
+    options:
+    - Not applicable
+    - Drow
+    - High Elf
+    - Wood Elf
+    default: Not applicable
+  gnome_lineage:
+    type: enum
+    label: Gnome Lineage
+    options:
+    - Not applicable
+    - Forest Gnome
+    - Rock Gnome
+    default: Not applicable
+  goliath_ancestry:
+    type: enum
+    label: Goliath Giant Ancestry
+    options:
+    - Not applicable
+    - Cloud
+    - Fire
+    - Frost
+    - Hill
+    - Stone
+    - Storm
+    default: Not applicable
+  tiefling_legacy:
+    type: enum
+    label: Tiefling Legacy
+    options:
+    - Not applicable
+    - Abyssal
+    - Chthonic
+    - Infernal
+    default: Not applicable
+  lineage_spellcasting_ability:
+    type: enum
+    label: Lineage Spellcasting Ability
+    options:
+    - Not applicable
+    - Intelligence
+    - Wisdom
+    - Charisma
+    default: Not applicable
+  origin_feat:
+    type: reference
+    label: Background Origin Feat
+    entity: background_origin_feat
+    required: true
+    default: ''
+  bonus_origin_feat:
+    type: reference
+    label: Human Bonus Origin Feat
+    entity: origin_feat_choice
+    default: ''
+  languages:
+    type: multi_reference
+    label: Languages
+    entity: language
+    default: []
+  ability_method:
+    type: enum
+    label: Ability Score Method
+    options:
+    - Standard Array
+    - Point Cost
+    - Random / Manual
+    default: Standard Array
+  strength_base:
+    type: integer
+    label: STR Base
+    default: 10
+    min: 3
+    max: 20
+  strength_boost:
+    type: integer
+    label: STR Background Boost
+    default: 0
+    min: 0
+    max: 2
+  strength:
+    type: calculated
+    label: Strength
+  strength_mod:
+    type: calculated
+    label: Strength Modifier
+  dexterity_base:
+    type: integer
+    label: DEX Base
+    default: 10
+    min: 3
+    max: 20
+  dexterity_boost:
+    type: integer
+    label: DEX Background Boost
+    default: 0
+    min: 0
+    max: 2
+  dexterity:
+    type: calculated
+    label: Dexterity
+  dexterity_mod:
+    type: calculated
+    label: Dexterity Modifier
+  constitution_base:
+    type: integer
+    label: CON Base
+    default: 10
+    min: 3
+    max: 20
+  constitution_boost:
+    type: integer
+    label: CON Background Boost
+    default: 0
+    min: 0
+    max: 2
+  constitution:
+    type: calculated
+    label: Constitution
+  constitution_mod:
+    type: calculated
+    label: Constitution Modifier
+  intelligence_base:
+    type: integer
+    label: INT Base
+    default: 10
+    min: 3
+    max: 20
+  intelligence_boost:
+    type: integer
+    label: INT Background Boost
+    default: 0
+    min: 0
+    max: 2
+  intelligence:
+    type: calculated
+    label: Intelligence
+  intelligence_mod:
+    type: calculated
+    label: Intelligence Modifier
+  wisdom_base:
+    type: integer
+    label: WIS Base
+    default: 10
+    min: 3
+    max: 20
+  wisdom_boost:
+    type: integer
+    label: WIS Background Boost
+    default: 0
+    min: 0
+    max: 2
+  wisdom:
+    type: calculated
+    label: Wisdom
+  wisdom_mod:
+    type: calculated
+    label: Wisdom Modifier
+  charisma_base:
+    type: integer
+    label: CHA Base
+    default: 10
+    min: 3
+    max: 20
+  charisma_boost:
+    type: integer
+    label: CHA Background Boost
+    default: 0
+    min: 0
+    max: 2
+  charisma:
+    type: calculated
+    label: Charisma
+  charisma_mod:
+    type: calculated
+    label: Charisma Modifier
+  point_cost_total:
+    type: calculated
+    label: Point Cost
+  proficiency_bonus:
+    type: calculated
+    label: Proficiency Bonus
+  speed:
+    type: calculated
+    label: Speed
+  initiative:
+    type: calculated
+    label: Initiative
+  armor_class:
+    type: integer
+    label: Armor Class
+    default: 10
+    min: 0
+    max: 40
+    play_editable: true
+  hp_max:
+    type: integer
+    label: Hit Point Maximum
+    default: 1
+    min: 1
+    max: 999
+    play_editable: true
+  hp_current:
+    type: integer
+    label: Current Hit Points
+    default: 1
+    min: 0
+    max: 999
+    play_editable: true
+  temp_hp:
+    type: integer
+    label: Temporary Hit Points
+    default: 0
+    min: 0
+    max: 999
+    play_editable: true
+  death_successes:
+    type: integer
+    label: Death Save Successes
+    default: 0
+    min: 0
+    max: 3
+    play_editable: true
+  death_failures:
+    type: integer
+    label: Death Save Failures
+    default: 0
+    min: 0
+    max: 3
+    play_editable: true
+  strength_save:
+    type: calculated
+    label: Strength Save
+  dexterity_save:
+    type: calculated
+    label: Dexterity Save
+  constitution_save:
+    type: calculated
+    label: Constitution Save
+  intelligence_save:
+    type: calculated
+    label: Intelligence Save
+  wisdom_save:
+    type: calculated
+    label: Wisdom Save
+  charisma_save:
+    type: calculated
+    label: Charisma Save
+  class_skills:
+    type: multi_reference
+    label: Class Skill Proficiencies
+    entity: skill
+    default: []
+    custom_entries_field: class_skills_custom
+    table_display: description
+    row_label: Skill
+  bonus_skills:
+    type: multi_reference
+    label: Human Bonus Skill
+    entity: skill
+    default: []
+    custom_entries_field: bonus_skills_custom
+    table_display: description
+    row_label: Skill
+  expertise_skills:
+    type: multi_reference
+    label: Expertise Skills
+    entity: expertise_skill
+    default: []
+    custom_entries_field: expertise_skills_custom
+    table_display: description
+    row_label: Skill
+  acrobatics_mod:
+    type: calculated
+    label: Acrobatics
+  animal_handling_mod:
+    type: calculated
+    label: Animal Handling
+  arcana_mod:
+    type: calculated
+    label: Arcana
+  athletics_mod:
+    type: calculated
+    label: Athletics
+  deception_mod:
+    type: calculated
+    label: Deception
+  history_mod:
+    type: calculated
+    label: History
+  insight_mod:
+    type: calculated
+    label: Insight
+  intimidation_mod:
+    type: calculated
+    label: Intimidation
+  investigation_mod:
+    type: calculated
+    label: Investigation
+  medicine_mod:
+    type: calculated
+    label: Medicine
+  nature_mod:
+    type: calculated
+    label: Nature
+  perception_mod:
+    type: calculated
+    label: Perception
+  performance_mod:
+    type: calculated
+    label: Performance
+  persuasion_mod:
+    type: calculated
+    label: Persuasion
+  religion_mod:
+    type: calculated
+    label: Religion
+  sleight_of_hand_mod:
+    type: calculated
+    label: Sleight of Hand
+  stealth_mod:
+    type: calculated
+    label: Stealth
+  survival_mod:
+    type: calculated
+    label: Survival
+  passive_perception_bonus:
+    type: integer
+    label: Passive Perception Extra Bonus
+    default: 0
+    min: -20
+    max: 20
+    play_editable: true
+  passive_perception:
+    type: calculated
+    label: Passive Perception
+  feats:
+    type: multi_reference
+    label: Additional Feats
+    entity: feat
+    default: []
+    custom_entries_field: feats_custom
+    table_display: description
+    row_label: Feat
+  class_features:
+    type: collection
+    label: Class / Species Features
+    play_editable: true
+    item_schema:
+      name:
+        type: text
+        label: Feature
+        required: true
+      uses:
+        type: text
+        label: Uses
+        default: ''
+      notes:
+        type: text
+        label: Rule / Notes
+        default: ''
+    allow_custom: true
+    custom_name_field: name
+    default: []
+  weapons:
+    type: collection
+    label: Weapons / Attacks
+    play_editable: true
+    item_schema:
+      weapon:
+        type: reference
+        label: Weapon
+        entity: weapon
+        required: false
+        autofill:
+          attack_bonus: $weapon_attack_bonus
+          damage: damage
+          notes: $weapon_notes
+        blank_label: Custom
+      custom_name:
+        type: text
+        label: Custom Attack
+        default: ''
+        show_when_reference_blank: weapon
+      attack_bonus:
+        type: integer
+        label: Attack Bonus
+        default: 0
+        min: -20
+        max: 30
+      damage:
+        type: text
+        label: Damage
+        default: ''
+      notes:
+        type: text
+        label: Properties / Notes
+        default: ''
+    allow_custom: true
+    custom_name_field: custom_name
+    default: []
+  armor_items:
+    type: collection
+    label: Armor
+    play_editable: true
+    item_schema:
+      armor:
+        type: reference
+        label: Armor
+        entity: armor
+        required: false
+        autofill:
+          field:armor_class: $armor_class
+          notes: $armor_notes
+        blank_label: Custom
+      custom_name:
+        type: text
+        label: Custom Armor
+        default: ''
+        show_when_reference_blank: armor
+      equipped:
+        type: boolean
+        label: Equipped
+        default: false
+      notes:
+        type: text
+        label: Notes
+        default: ''
+    allow_custom: true
+    custom_name_field: custom_name
+    default: []
+  equipment:
+    type: collection
+    label: Equipment
+    play_editable: true
+    item_schema:
+      name:
+        type: text
+        label: Item
+        required: true
+      quantity:
+        type: integer
+        label: Qty
+        default: 1
+        min: 1
+      notes:
+        type: text
+        label: Notes
+        default: ''
+    allow_custom: true
+    custom_name_field: name
+    default: []
+  coins_gp:
+    type: decimal
+    label: Gold (GP equivalent)
+    default: 0
+    min: 0
+    play_editable: true
+  cantrips:
+    type: multi_reference
+    label: Class Cantrips
+    entity: cantrip
+    default: []
+  prepared_spells:
+    type: multi_reference
+    label: Prepared / Known Class Spells
+    entity: spell
+    default: []
+  bonus_spells:
+    type: collection
+    label: Species / Feat / Other Spells
+    play_editable: true
+    item_schema:
+      name:
+        type: text
+        label: Spell
+        required: true
+      source:
+        type: text
+        label: Source
+        default: ''
+      notes:
+        type: text
+        label: Notes
+        default: ''
+    allow_custom: true
+    custom_name_field: name
+    default: []
+  spellcasting_mod:
+    type: calculated
+    label: Spellcasting Modifier
+  spell_save_dc:
+    type: calculated
+    label: Spell Save DC
+  spell_attack_bonus:
+    type: calculated
+    label: Spell Attack Bonus
+  tool_proficiencies:
+    type: notes
+    label: Tool Proficiencies
+    default: ''
+    play_editable: true
+  other_proficiencies:
+    type: notes
+    label: Weapon / Armor / Other Proficiencies
+    default: ''
+    play_editable: true
+  background_notes:
+    type: notes
+    label: Background / Personality
+    default: ''
+    play_editable: true
+  notes:
+    type: notes
+    label: Notes
+    default: ''
+    play_editable: true
+  class_skills_custom:
+    type: collection
+    label: Custom Skills
+    default: []
+    item_schema:
+      name:
+        type: text
+        label: Name
+        required: true
+      description:
+        type: notes
+        label: Description
+        default: ''
+    ui_hidden: true
+  bonus_skills_custom:
+    type: collection
+    label: Custom Skills
+    default: []
+    item_schema:
+      name:
+        type: text
+        label: Name
+        required: true
+      description:
+        type: notes
+        label: Description
+        default: ''
+    ui_hidden: true
+  expertise_skills_custom:
+    type: collection
+    label: Custom Skills
+    default: []
+    item_schema:
+      name:
+        type: text
+        label: Name
+        required: true
+      description:
+        type: notes
+        label: Description
+        default: ''
+    ui_hidden: true
+  feats_custom:
+    type: collection
+    label: Custom Feats
+    default: []
+    item_schema:
+      name:
+        type: text
+        label: Name
+        required: true
+      description:
+        type: notes
+        label: Description
+        default: ''
+    ui_hidden: true

@@ -1,0 +1,182 @@
+entity: feat
+entries:
+- id: alert
+  name: Alert
+  category: Origin
+  description: Initiative Proficiency and Initiative Swap.
+  effects:
+    initiative_prof: 1
+  source:
+    book: srd521
+    page: 87
+- id: magic_initiate_cleric
+  name: Magic Initiate (Cleric)
+  category: Origin
+  description: Learn two Cleric cantrips and one level 1 Cleric spell; choose Int/Wis/Cha as spellcasting ability.
+  source:
+    book: srd521
+    page: 87
+- id: magic_initiate_druid
+  name: Magic Initiate (Druid)
+  category: Origin
+  description: Learn two Druid cantrips and one level 1 Druid spell; choose Int/Wis/Cha as spellcasting ability.
+  source:
+    book: srd521
+    page: 87
+- id: magic_initiate_wizard
+  name: Magic Initiate (Wizard)
+  category: Origin
+  description: Learn two Wizard cantrips and one level 1 Wizard spell; choose Int/Wis/Cha as spellcasting ability.
+  source:
+    book: srd521
+    page: 87
+- id: savage_attacker
+  name: Savage Attacker
+  category: Origin
+  description: Once per turn when you hit with a weapon, roll the weapon damage dice twice and use either roll.
+  source:
+    book: srd521
+    page: 87
+- id: skilled
+  name: Skilled
+  category: Origin
+  description: Gain proficiency in any combination of three skills or tools. Repeatable.
+  source:
+    book: srd521
+    page: 87
+- id: ability_score_improvement
+  name: Ability Score Improvement
+  category: General
+  description: Level 4+. Increase one ability by 2 or two abilities by 1, maximum 20. Repeatable.
+  eligibility:
+    rule: level >= 4
+    message: Requires level 4+.
+  source:
+    book: srd521
+    page: 87
+- id: grappler
+  name: Grappler
+  category: General
+  description: Level 4+, Strength or Dexterity 13+. Improves grappling and unarmed attacks.
+  eligibility:
+    rule: level >= 4 and (strength_base + strength_boost >= 13 or dexterity_base + dexterity_boost >= 13)
+    message: Requires level 4+ and Strength or Dexterity 13+.
+  source:
+    book: srd521
+    page: 87
+- id: archery
+  name: Archery
+  category: Fighting Style
+  description: Fighting Style feat from SRD 5.2.1.
+  eligibility:
+    rule: (character_class == "fighter") or (level >= 2 and (character_class == "paladin" or character_class ==
+      "ranger"))
+    message: Requires a Fighting Style feature.
+  source:
+    book: srd521
+    page: 87
+- id: defense
+  name: Defense
+  category: Fighting Style
+  description: Fighting Style feat from SRD 5.2.1.
+  eligibility:
+    rule: (character_class == "fighter") or (level >= 2 and (character_class == "paladin" or character_class ==
+      "ranger"))
+    message: Requires a Fighting Style feature.
+  source:
+    book: srd521
+    page: 88
+- id: great_weapon_fighting
+  name: Great Weapon Fighting
+  category: Fighting Style
+  description: Fighting Style feat from SRD 5.2.1.
+  eligibility:
+    rule: (character_class == "fighter") or (level >= 2 and (character_class == "paladin" or character_class ==
+      "ranger"))
+    message: Requires a Fighting Style feature.
+  source:
+    book: srd521
+    page: 88
+- id: two_weapon_fighting
+  name: Two-Weapon Fighting
+  category: Fighting Style
+  description: Fighting Style feat from SRD 5.2.1.
+  eligibility:
+    rule: (character_class == "fighter") or (level >= 2 and (character_class == "paladin" or character_class ==
+      "ranger"))
+    message: Requires a Fighting Style feature.
+  source:
+    book: srd521
+    page: 88
+- id: boon_of_combat_prowess
+  name: Boon of Combat Prowess
+  category: Epic Boon
+  description: Epic Boon feat from SRD 5.2.1.
+  eligibility:
+    rule: level >= 19
+    message: Requires level 19+.
+  source:
+    book: srd521
+    page: 88
+- id: boon_of_dimensional_travel
+  name: Boon of Dimensional Travel
+  category: Epic Boon
+  description: Epic Boon feat from SRD 5.2.1.
+  eligibility:
+    rule: level >= 19
+    message: Requires level 19+.
+  source:
+    book: srd521
+    page: 88
+- id: boon_of_fate
+  name: Boon of Fate
+  category: Epic Boon
+  description: Epic Boon feat from SRD 5.2.1.
+  eligibility:
+    rule: level >= 19
+    message: Requires level 19+.
+  source:
+    book: srd521
+    page: 88
+- id: boon_of_irresistible_offense
+  name: Boon of Irresistible Offense
+  category: Epic Boon
+  description: Epic Boon feat from SRD 5.2.1.
+  eligibility:
+    rule: level >= 19
+    message: Requires level 19+.
+  source:
+    book: srd521
+    page: 88
+- id: boon_of_spell_recall
+  name: Boon of Spell Recall
+  category: Epic Boon
+  description: Epic Boon feat from SRD 5.2.1.
+  eligibility:
+    rule: level >= 19 and (character_class == "bard" or character_class == "cleric" or character_class == "druid"
+      or character_class == "paladin" or character_class == "ranger" or character_class == "sorcerer" or character_class
+      == "warlock" or character_class == "wizard")
+    message: Requires level 19+ and a Spellcasting feature.
+  source:
+    book: srd521
+    page: 88
+- id: boon_of_the_night_spirit
+  name: Boon of the Night Spirit
+  category: Epic Boon
+  description: Epic Boon feat from SRD 5.2.1.
+  eligibility:
+    rule: level >= 19
+    message: Requires level 19+.
+  source:
+    book: srd521
+    page: 88
+- id: boon_of_truesight
+  name: Boon of Truesight
+  category: Epic Boon
+  description: Epic Boon feat from SRD 5.2.1.
+  eligibility:
+    rule: level >= 19
+    message: Requires level 19+.
+  source:
+    book: srd521
+    page: 88

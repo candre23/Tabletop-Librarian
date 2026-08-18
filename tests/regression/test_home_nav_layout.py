@@ -22,4 +22,4 @@ assert "ttl-home-title-row" in home
 assert "ttl-home-search" in home
 assert "Signed in as" not in home
 
-print("PASS: v0.4.8.3 home/nav layout regression test")
+print("PASS: home/nav layout regression test")

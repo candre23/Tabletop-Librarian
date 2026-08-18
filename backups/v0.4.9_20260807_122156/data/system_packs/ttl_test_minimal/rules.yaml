@@ -1,9 +1,0 @@
-calculated:
-  power_score:
-    formula: level * 2
-
-validation:
-  reasonable_level:
-    rule: level <= 20
-    message: The minimal test system normally supports levels 1 through 20.
-    severity: warning

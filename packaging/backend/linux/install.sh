@@ -45,6 +45,9 @@ install_os_deps
 rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR" "$BIN_DIR" "$DESKTOP_DIR"
 cp -a "$PAYLOAD_DIR/ttl_ai_backend" "$APP_DIR/"
+if [[ -d "$SOURCE_DIR/documentation" ]]; then
+  cp -a "$SOURCE_DIR/documentation" "$PREFIX/"
+fi
 
 cat > "$BIN_DIR/ttl-ai-backend" <<EOF
 #!/usr/bin/env bash

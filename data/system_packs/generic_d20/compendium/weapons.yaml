@@ -1,0 +1,458 @@
+entity: weapon
+entries:
+- id: club
+  name: Club
+  category: Simple Melee
+  damage: 1d4 Bludgeoning
+  properties: Light
+  mastery: Slow
+  weight: 2 lb.
+  cost: 1 SP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: dagger
+  name: Dagger
+  category: Simple Melee
+  damage: 1d4 Piercing
+  properties: Finesse, Light, Thrown (Range 20/60)
+  mastery: Nick
+  weight: 1 lb.
+  cost: 2 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: best_str_dex
+- id: greatclub
+  name: Greatclub
+  category: Simple Melee
+  damage: 1d8 Bludgeoning
+  properties: Two-Handed
+  mastery: Push
+  weight: 10 lb.
+  cost: 2 SP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: handaxe
+  name: Handaxe
+  category: Simple Melee
+  damage: 1d6 Slashing
+  properties: Light, Thrown (Range 20/60)
+  mastery: Vex
+  weight: 2 lb.
+  cost: 5 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: javelin
+  name: Javelin
+  category: Simple Melee
+  damage: 1d6 Piercing
+  properties: Thrown (Range 30/120)
+  mastery: Slow
+  weight: 2 lb.
+  cost: 5 SP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: light_hammer
+  name: Light Hammer
+  category: Simple Melee
+  damage: 1d4 Bludgeoning
+  properties: Light, Thrown (Range 20/60)
+  mastery: Nick
+  weight: 2 lb.
+  cost: 2 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: mace
+  name: Mace
+  category: Simple Melee
+  damage: 1d6 Bludgeoning
+  properties: —
+  mastery: Sap
+  weight: 4 lb.
+  cost: 5 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: quarterstaff
+  name: Quarterstaff
+  category: Simple Melee
+  damage: 1d6 Bludgeoning
+  properties: Versatile (1d8)
+  mastery: Topple
+  weight: 4 lb.
+  cost: 2 SP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: sickle
+  name: Sickle
+  category: Simple Melee
+  damage: 1d4 Slashing
+  properties: Light
+  mastery: Nick
+  weight: 2 lb.
+  cost: 1 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: spear
+  name: Spear
+  category: Simple Melee
+  damage: 1d6 Piercing
+  properties: Thrown (Range 20/60), Versatile (1d8)
+  mastery: Sap
+  weight: 3 lb.
+  cost: 1 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: dart
+  name: Dart
+  category: Simple Ranged
+  damage: 1d4 Piercing
+  properties: Finesse, Thrown (Range 20/60)
+  mastery: Vex
+  weight: 1/4 lb.
+  cost: 5 CP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: dexterity
+- id: light_crossbow
+  name: Light Crossbow
+  category: Simple Ranged
+  damage: 1d8 Piercing
+  properties: Ammunition (Range 80/320; Bolt), Loading, Two-Handed
+  mastery: Slow
+  weight: 5 lb.
+  cost: 25 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: dexterity
+- id: shortbow
+  name: Shortbow
+  category: Simple Ranged
+  damage: 1d6 Piercing
+  properties: Ammunition (Range 80/320; Arrow), Two-Handed
+  mastery: Vex
+  weight: 2 lb.
+  cost: 25 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: dexterity
+- id: sling
+  name: Sling
+  category: Simple Ranged
+  damage: 1d4 Bludgeoning
+  properties: Ammunition (Range 30/120; Bullet)
+  mastery: Slow
+  weight: —
+  cost: 1 SP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: dexterity
+- id: battleaxe
+  name: Battleaxe
+  category: Martial Melee
+  damage: 1d8 Slashing
+  properties: Versatile (1d10)
+  mastery: Topple
+  weight: 4 lb.
+  cost: 10 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: flail
+  name: Flail
+  category: Martial Melee
+  damage: 1d8 Bludgeoning
+  properties: —
+  mastery: Sap
+  weight: 2 lb.
+  cost: 10 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: glaive
+  name: Glaive
+  category: Martial Melee
+  damage: 1d10 Slashing
+  properties: Heavy, Reach, Two-Handed
+  mastery: Graze
+  weight: 6 lb.
+  cost: 20 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: greataxe
+  name: Greataxe
+  category: Martial Melee
+  damage: 1d12 Slashing
+  properties: Heavy, Two-Handed
+  mastery: Cleave
+  weight: 7 lb.
+  cost: 30 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: greatsword
+  name: Greatsword
+  category: Martial Melee
+  damage: 2d6 Slashing
+  properties: Heavy, Two-Handed
+  mastery: Graze
+  weight: 6 lb.
+  cost: 50 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: halberd
+  name: Halberd
+  category: Martial Melee
+  damage: 1d10 Slashing
+  properties: Heavy, Reach, Two-Handed
+  mastery: Cleave
+  weight: 6 lb.
+  cost: 20 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: lance
+  name: Lance
+  category: Martial Melee
+  damage: 1d10 Piercing
+  properties: Heavy, Reach, Two-Handed (unless mounted)
+  mastery: Topple
+  weight: 6 lb.
+  cost: 10 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: longsword
+  name: Longsword
+  category: Martial Melee
+  damage: 1d8 Slashing
+  properties: Versatile (1d10)
+  mastery: Sap
+  weight: 3 lb.
+  cost: 15 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: maul
+  name: Maul
+  category: Martial Melee
+  damage: 2d6 Bludgeoning
+  properties: Heavy, Two-Handed
+  mastery: Topple
+  weight: 10 lb.
+  cost: 10 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: morningstar
+  name: Morningstar
+  category: Martial Melee
+  damage: 1d8 Piercing
+  properties: —
+  mastery: Sap
+  weight: 4 lb.
+  cost: 15 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: pike
+  name: Pike
+  category: Martial Melee
+  damage: 1d10 Piercing
+  properties: Heavy, Reach, Two-Handed
+  mastery: Push
+  weight: 18 lb.
+  cost: 5 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: rapier
+  name: Rapier
+  category: Martial Melee
+  damage: 1d8 Piercing
+  properties: Finesse
+  mastery: Vex
+  weight: 2 lb.
+  cost: 25 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: best_str_dex
+- id: scimitar
+  name: Scimitar
+  category: Martial Melee
+  damage: 1d6 Slashing
+  properties: Finesse, Light
+  mastery: Nick
+  weight: 3 lb.
+  cost: 25 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: best_str_dex
+- id: shortsword
+  name: Shortsword
+  category: Martial Melee
+  damage: 1d6 Piercing
+  properties: Finesse, Light
+  mastery: Vex
+  weight: 2 lb.
+  cost: 10 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: best_str_dex
+- id: trident
+  name: Trident
+  category: Martial Melee
+  damage: 1d8 Piercing
+  properties: Thrown (Range 20/60), Versatile (1d10)
+  mastery: Topple
+  weight: 4 lb.
+  cost: 5 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: warhammer
+  name: Warhammer
+  category: Martial Melee
+  damage: 1d8 Bludgeoning
+  properties: Versatile (1d10)
+  mastery: Push
+  weight: 5 lb.
+  cost: 15 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: war_pick
+  name: War Pick
+  category: Martial Melee
+  damage: 1d8 Piercing
+  properties: Versatile (1d10)
+  mastery: Sap
+  weight: 2 lb.
+  cost: 5 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: strength
+- id: whip
+  name: Whip
+  category: Martial Melee
+  damage: 1d4 Slashing
+  properties: Finesse, Reach
+  mastery: Slow
+  weight: 3 lb.
+  cost: 2 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: best_str_dex
+- id: blowgun
+  name: Blowgun
+  category: Martial Ranged
+  damage: 1 Piercing
+  properties: Ammunition (Range 25/100; Needle), Loading
+  mastery: Vex
+  weight: 1 lb.
+  cost: 10 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: dexterity
+- id: hand_crossbow
+  name: Hand Crossbow
+  category: Martial Ranged
+  damage: 1d6 Piercing
+  properties: Ammunition (Range 30/120; Bolt), Light, Loading
+  mastery: Vex
+  weight: 3 lb.
+  cost: 75 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: dexterity
+- id: heavy_crossbow
+  name: Heavy Crossbow
+  category: Martial Ranged
+  damage: 1d10 Piercing
+  properties: Ammunition (Range 100/400; Bolt), Heavy, Loading, Two-Handed
+  mastery: Push
+  weight: 18 lb.
+  cost: 50 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: dexterity
+- id: longbow
+  name: Longbow
+  category: Martial Ranged
+  damage: 1d8 Piercing
+  properties: Ammunition (Range 150/600; Arrow), Heavy, Two-Handed
+  mastery: Slow
+  weight: 2 lb.
+  cost: 50 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: dexterity
+- id: musket
+  name: Musket
+  category: Martial Ranged
+  damage: 1d12 Piercing
+  properties: Ammunition (Range 40/120; Bullet), Loading, Two-Handed
+  mastery: Slow
+  weight: 10 lb.
+  cost: 500 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: dexterity
+- id: pistol
+  name: Pistol
+  category: Martial Ranged
+  damage: 1d10 Piercing
+  properties: Ammunition (Range 30/90; Bullet), Loading
+  mastery: Vex
+  weight: 3 lb.
+  cost: 250 GP
+  source:
+    book: srd521
+    page: 91
+  attack_ability: dexterity

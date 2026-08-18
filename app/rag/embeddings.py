@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from threading import Lock, Thread
 from time import time
@@ -209,7 +210,13 @@ def _load_embedding_cache():
             return None, None
         if metadata.get("model") != selected_model()["model"]:
             return None, None
-        vectors = np.load(EMBEDDINGS_FILE, mmap_mode="r")
+        # Windows cannot safely replace/truncate embeddings.npy while an active
+        # memory map still references it. Incremental builds rewrite this file,
+        # so use a normal in-memory ndarray on Windows.
+        vectors = np.load(
+            EMBEDDINGS_FILE,
+            mmap_mode=None if os.name == "nt" else "r",
+        )
         if vectors.shape[0] != len(metadata.get("chunk_ids", [])):
             return None, None
         return vectors, metadata

@@ -7,6 +7,7 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from threading import Event, Lock, Thread
 from time import time
@@ -58,16 +59,69 @@ def ocr_job_status() -> dict[str, Any]:
         return dict(_job_state)
 
 
+def _packaged_vendor_file(*parts: str) -> str | None:
+    if not getattr(sys, "frozen", False):
+        return None
+    candidate = Path(sys.executable).resolve().parent.joinpath(*parts)
+    return str(candidate) if candidate.is_file() else None
+
+
 def ocr_executable() -> str | None:
-    return shutil.which("ocrmypdf")
+    configured = os.environ.get("TTL_OCRMYPDF", "").strip()
+    if configured and Path(configured).is_file():
+        return configured
+    return shutil.which("ocrmypdf") or _packaged_vendor_file(
+        "vendor", "ocr", "TTL-OCRmyPDF.exe"
+    )
 
 
 def tesseract_executable() -> str | None:
-    return shutil.which("tesseract")
+    configured = os.environ.get("TTL_TESSERACT", "").strip()
+    if configured and Path(configured).is_file():
+        return configured
+
+    found = shutil.which("tesseract")
+    if found:
+        return found
+
+    packaged = _packaged_vendor_file("vendor", "tesseract", "tesseract.exe")
+    if packaged:
+        return packaged
+
+    if os.name == "nt":
+        for root_name in ("ProgramFiles", "LOCALAPPDATA"):
+            root = os.environ.get(root_name, "").strip()
+            if not root:
+                continue
+            for candidate in (
+                Path(root) / "Tesseract-OCR" / "tesseract.exe",
+                Path(root) / "Programs" / "Tesseract-OCR" / "tesseract.exe",
+            ):
+                if candidate.is_file():
+                    return str(candidate)
+    return None
 
 
 def ocr_available() -> bool:
     return bool(ocr_executable() and tesseract_executable())
+
+
+def ocr_dependency_message() -> str:
+    if os.name == "nt":
+        if getattr(sys, "frozen", False):
+            return (
+                "OCR support is incomplete in this TTL installation. "
+                "Repair or reinstall Tabletop Librarian Server to restore the bundled "
+                "OCRmyPDF and Tesseract components."
+            )
+        return (
+            "OCR dependencies are unavailable. On Windows, install 64-bit Tesseract "
+            "and OCRmyPDF, then restart Tabletop Librarian."
+        )
+    return (
+        "OCR dependencies are unavailable. On Ubuntu, install them with "
+        "'sudo apt install ocrmypdf tesseract-ocr', then restart Tabletop Librarian."
+    )
 
 
 def _source_key(path: Path) -> str:
@@ -225,6 +279,7 @@ def ocr_status() -> dict[str, Any]:
                 pass
     return {
         "available": ocr_available(),
+        "dependency_message": ocr_dependency_message(),
         "ocrmypdf": ocr_executable() or "",
         "tesseract": tesseract_executable() or "",
         "scanned_documents": len(rows),
@@ -421,10 +476,7 @@ def _run_ocr(source: Path) -> Path:
 
     executable = ocr_executable()
     if not executable or not tesseract_executable():
-        raise RuntimeError(
-            "OCR dependencies are unavailable. Install OCRmyPDF and Tesseract "
-            "on the TTLibrarian host (Ubuntu: sudo apt install ocrmypdf tesseract-ocr)."
-        )
+        raise RuntimeError(ocr_dependency_message())
 
     OCR_PDF_DIR.mkdir(parents=True, exist_ok=True)
     OCR_META_DIR.mkdir(parents=True, exist_ok=True)
@@ -436,7 +488,14 @@ def _run_ocr(source: Path) -> Path:
     progress_file.unlink(missing_ok=True)
     _set_state(current_page=0, total_pages=0, percent=0.0, progress_description="")
 
-    progress_plugin = Path(__file__).with_name("ocr_progress_plugin.py")
+    packaged_progress_plugin = _packaged_vendor_file(
+        "vendor", "ocr", "ocr_progress_plugin.py"
+    )
+    progress_plugin = (
+        Path(packaged_progress_plugin)
+        if packaged_progress_plugin
+        else Path(__file__).with_name("ocr_progress_plugin.py")
+    )
     command = [
         executable,
         "--skip-text",
@@ -452,6 +511,15 @@ def _run_ocr(source: Path) -> Path:
     env = dict(os.environ)
     env.setdefault("PYTHONUNBUFFERED", "1")
     env["TTL_OCR_PROGRESS_FILE"] = str(progress_file)
+
+    tesseract = tesseract_executable()
+    if tesseract:
+        tesseract_dir = Path(tesseract).resolve().parent
+        env["PATH"] = str(tesseract_dir) + os.pathsep + env.get("PATH", "")
+        tessdata = tesseract_dir / "tessdata"
+        if tessdata.is_dir():
+            env.setdefault("TESSDATA_PREFIX", str(tessdata))
+
     process = subprocess.Popen(
         command,
         stdout=subprocess.PIPE,
@@ -459,6 +527,11 @@ def _run_ocr(source: Path) -> Path:
         text=True,
         bufsize=0,
         env=env,
+        creationflags=(
+            int(getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            if os.name == "nt"
+            else 0
+        ),
     )
     with _process_lock:
         _active_process = process
@@ -605,10 +678,7 @@ def _worker(document_keys: list[str] | None) -> None:
 
 def start_ocr_job(document_keys: list[str] | None = None) -> dict[str, Any]:
     if not ocr_available():
-        raise RuntimeError(
-            "OCR dependencies are unavailable. Install OCRmyPDF and Tesseract "
-            "on the TTLibrarian host (Ubuntu: sudo apt install ocrmypdf tesseract-ocr)."
-        )
+        raise RuntimeError(ocr_dependency_message())
     with _state_lock:
         if _job_state["running"]:
             raise RuntimeError("An OCR job is already running.")

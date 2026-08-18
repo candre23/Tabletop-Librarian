@@ -118,6 +118,7 @@ class ServerProcess:
         self.on_line = on_line
         self.on_exit = on_exit
         self._reader: threading.Thread | None = None
+        self._intentional_stops: set[subprocess.Popen[str]] = set()
 
     @property
     def running(self) -> bool:
@@ -151,7 +152,9 @@ class ServerProcess:
             if self.on_line:
                 self.on_line(line.rstrip())
         code = proc.wait()
-        if self.on_exit:
+        intentional_stop = proc in self._intentional_stops
+        self._intentional_stops.discard(proc)
+        if self.on_exit and not intentional_stop:
             self.on_exit(code)
 
     def stop(self) -> None:
@@ -159,6 +162,10 @@ class ServerProcess:
         if not proc or proc.poll() is not None:
             self.process = None
             return
+        # llama.cpp may return a nonzero exit code when terminated. Mark this
+        # specific process before sending the termination signal so its reader
+        # thread does not report a normal user-requested stop as a crash.
+        self._intentional_stops.add(proc)
         proc.terminate()
         try:
             proc.wait(timeout=8)

@@ -9,7 +9,7 @@ from app.rules import load_rule_engine, resolve_compendium_modifier_details, val
 from app.system_packs import load_system_pack
 
 def main():
-    pack=load_system_pack(ROOT/'data/system_packs/ttl_test_minimal')
+    pack=load_system_pack(ROOT/'tests/fixtures/system_packs/ttl_test_minimal')
     assert pack.valid and pack.manifest is not None, [i.format() for i in pack.issues]
     schema,issues=load_character_schema(pack.root/pack.manifest.character_schema); assert schema is not None
     compendium,issues=load_compendium(pack.root,pack.manifest.compendium); assert compendium is not None

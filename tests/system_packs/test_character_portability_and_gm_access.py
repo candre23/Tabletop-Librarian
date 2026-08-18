@@ -18,7 +18,7 @@ from app.characters.portability import (
 )
 from app.characters.storage import create_character, load_character_raw, list_characters
 
-PACK_ROOT=ROOT/"data/system_packs"
+PACK_ROOT=ROOT/"tests/fixtures/system_packs"
 
 with tempfile.TemporaryDirectory() as td:
     char_root=Path(td)/"characters"

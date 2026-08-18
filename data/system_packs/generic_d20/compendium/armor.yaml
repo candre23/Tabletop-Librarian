@@ -1,0 +1,171 @@
+entity: armor
+entries:
+- id: padded_armor
+  name: Padded Armor
+  category: Light
+  armor_class: 11 + Dex modifier
+  strength: —
+  stealth: Disadvantage
+  weight: 8 lb.
+  cost: 5 GP
+  source:
+    book: srd521
+    page: 92
+  ac_mode: light
+  ac_base: 11
+- id: leather_armor
+  name: Leather Armor
+  category: Light
+  armor_class: 11 + Dex modifier
+  strength: —
+  stealth: —
+  weight: 10 lb.
+  cost: 10 GP
+  source:
+    book: srd521
+    page: 92
+  ac_mode: light
+  ac_base: 11
+- id: studded_leather_armor
+  name: Studded Leather Armor
+  category: Light
+  armor_class: 12 + Dex modifier
+  strength: —
+  stealth: —
+  weight: 13 lb.
+  cost: 45 GP
+  source:
+    book: srd521
+    page: 92
+  ac_mode: light
+  ac_base: 12
+- id: hide_armor
+  name: Hide Armor
+  category: Medium
+  armor_class: 12 + Dex modifier (max 2)
+  strength: —
+  stealth: —
+  weight: 12 lb.
+  cost: 10 GP
+  source:
+    book: srd521
+    page: 92
+  ac_mode: medium
+  ac_base: 12
+- id: chain_shirt
+  name: Chain Shirt
+  category: Medium
+  armor_class: 13 + Dex modifier (max 2)
+  strength: —
+  stealth: —
+  weight: 20 lb.
+  cost: 50 GP
+  source:
+    book: srd521
+    page: 92
+  ac_mode: medium
+  ac_base: 13
+- id: scale_mail
+  name: Scale Mail
+  category: Medium
+  armor_class: 14 + Dex modifier (max 2)
+  strength: —
+  stealth: Disadvantage
+  weight: 45 lb.
+  cost: 50 GP
+  source:
+    book: srd521
+    page: 92
+  ac_mode: medium
+  ac_base: 14
+- id: breastplate
+  name: Breastplate
+  category: Medium
+  armor_class: 14 + Dex modifier (max 2)
+  strength: —
+  stealth: —
+  weight: 20 lb.
+  cost: 400 GP
+  source:
+    book: srd521
+    page: 92
+  ac_mode: medium
+  ac_base: 14
+- id: half_plate_armor
+  name: Half Plate Armor
+  category: Medium
+  armor_class: 15 + Dex modifier (max 2)
+  strength: —
+  stealth: Disadvantage
+  weight: 40 lb.
+  cost: 750 GP
+  source:
+    book: srd521
+    page: 92
+  ac_mode: medium
+  ac_base: 15
+- id: ring_mail
+  name: Ring Mail
+  category: Heavy
+  armor_class: '14'
+  strength: —
+  stealth: Disadvantage
+  weight: 40 lb.
+  cost: 30 GP
+  source:
+    book: srd521
+    page: 92
+  ac_mode: heavy
+  ac_base: 14
+- id: chain_mail
+  name: Chain Mail
+  category: Heavy
+  armor_class: '16'
+  strength: Str 13
+  stealth: Disadvantage
+  weight: 55 lb.
+  cost: 75 GP
+  source:
+    book: srd521
+    page: 92
+  ac_mode: heavy
+  ac_base: 16
+- id: splint_armor
+  name: Splint Armor
+  category: Heavy
+  armor_class: '17'
+  strength: Str 15
+  stealth: Disadvantage
+  weight: 60 lb.
+  cost: 200 GP
+  source:
+    book: srd521
+    page: 92
+  ac_mode: heavy
+  ac_base: 17
+- id: plate_armor
+  name: Plate Armor
+  category: Heavy
+  armor_class: '18'
+  strength: Str 15
+  stealth: Disadvantage
+  weight: 65 lb.
+  cost: 1,500 GP
+  source:
+    book: srd521
+    page: 92
+  ac_mode: heavy
+  ac_base: 18
+- id: shield
+  name: Shield
+  category: Shield
+  armor_class: '+2'
+  strength: —
+  stealth: —
+  weight: 6 lb.
+  cost: 10 GP
+  source:
+    book: srd521
+    page: 92
+  ac_mode: shield
+  ac_base: 2

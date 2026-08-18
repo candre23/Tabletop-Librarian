@@ -1,0 +1,135 @@
+entity: language
+entries:
+- id: common
+  name: Common
+  tags:
+  - standard
+  source:
+    book: srd521
+    page: 20
+- id: common_sign_language
+  name: Common Sign Language
+  tags:
+  - standard
+  source:
+    book: srd521
+    page: 20
+- id: draconic
+  name: Draconic
+  tags:
+  - standard
+  source:
+    book: srd521
+    page: 20
+- id: dwarvish
+  name: Dwarvish
+  tags:
+  - standard
+  source:
+    book: srd521
+    page: 20
+- id: elvish
+  name: Elvish
+  tags:
+  - standard
+  source:
+    book: srd521
+    page: 20
+- id: giant
+  name: Giant
+  tags:
+  - standard
+  source:
+    book: srd521
+    page: 20
+- id: gnomish
+  name: Gnomish
+  tags:
+  - standard
+  source:
+    book: srd521
+    page: 20
+- id: goblin
+  name: Goblin
+  tags:
+  - standard
+  source:
+    book: srd521
+    page: 20
+- id: halfling
+  name: Halfling
+  tags:
+  - standard
+  source:
+    book: srd521
+    page: 20
+- id: orc
+  name: Orc
+  tags:
+  - standard
+  source:
+    book: srd521
+    page: 20
+- id: abyssal
+  name: Abyssal
+  tags:
+  - rare
+  source:
+    book: srd521
+    page: 20
+- id: celestial
+  name: Celestial
+  tags:
+  - rare
+  source:
+    book: srd521
+    page: 20
+- id: deep_speech
+  name: Deep Speech
+  tags:
+  - rare
+  source:
+    book: srd521
+    page: 20
+- id: druidic
+  name: Druidic
+  tags:
+  - rare
+  source:
+    book: srd521
+    page: 20
+- id: infernal
+  name: Infernal
+  tags:
+  - rare
+  source:
+    book: srd521
+    page: 20
+- id: primordial
+  name: Primordial
+  tags:
+  - rare
+  source:
+    book: srd521
+    page: 20
+- id: sylvan
+  name: Sylvan
+  tags:
+  - rare
+  source:
+    book: srd521
+    page: 20
+- id: thieves_cant
+  name: Thieves' Cant
+  tags:
+  - rare
+  source:
+    book: srd521
+    page: 20
+- id: undercommon
+  name: Undercommon
+  tags:
+  - rare
+  source:
+    book: srd521
+    page: 20

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tempfile
+import time
 from pathlib import Path
 from unittest import mock
 
@@ -225,3 +226,25 @@ def test_runtime_backend_matching() -> None:
     assert runtime_backend_matches("Windows", "vulkan", "vulkan")
     assert not runtime_backend_matches("Windows", "cuda", "cpu")
     assert runtime_backend_matches("Linux", "cuda", "vulkan")
+
+
+def test_server_process_intentional_stop_suppresses_exit_callback(tmp_path, monkeypatch):
+    import sys
+    from ttl_ai_backend.server import ServerProcess
+
+    exits: list[int] = []
+    process = ServerProcess(on_exit=exits.append)
+
+    class DummyCommand:
+        executable = Path(sys.executable)
+        arguments = ("-c", "import time; time.sleep(30)")
+
+    monkeypatch.setattr("ttl_ai_backend.server.build_server_command", lambda _settings: DummyCommand())
+    process.start(object())
+    assert process.running
+
+    process.stop()
+    time.sleep(0.2)
+
+    assert not process.running
+    assert exits == []

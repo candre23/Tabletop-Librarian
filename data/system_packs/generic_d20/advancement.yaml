@@ -1,0 +1,24 @@
+version: 1
+actions:
+- id: gain_level
+  title: Gain a Level
+  description: Increase level by 1, then update HP, class features, subclass, feats, expertise, and spell selections
+    according to SRD 5.2.1. Generic D20 v1 automates proficiency bonus and derived modifiers but leaves level-up
+    feature choices and HP increases under player/GM control.
+  available_when: level < 20
+  changes:
+    level: level + 1
+  steps:
+  - id: level_review
+    title: Level-Up Review
+    description: Apply the new class features for this level. Choose the SRD subclass at level 3.
+    fields:
+    - subclass
+    - hp_max
+    - class_features
+    - feats
+    - expertise_skills
+    - cantrips
+    - prepared_spells
+    - bonus_spells
+    - notes

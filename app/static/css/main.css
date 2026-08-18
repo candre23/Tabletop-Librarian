@@ -6006,3 +6006,157 @@ button.ttl-global-nav-brand:focus-visible {
 .ttl-state-swatch { width:10px; height:10px; display:inline-block; border:1px solid #3b6174; }
 .ttl-state-map { position:relative; display:block; min-height:140px; width:100%; }
 .ttl-state-map .ttl-state-cell { transform:translate(-50%, -50%); }
+
+
+/* Generic picker usability and compact numeric controls. */
+.ttl-character-ui .ttl-picker-dialog {
+    max-height: min(86vh, 820px);
+    overflow: hidden;
+}
+.ttl-character-ui .ttl-picker-dialog-card {
+    grid-template-rows: auto auto minmax(0, 1fr);
+    max-height: min(86vh, 820px);
+    box-sizing: border-box;
+}
+.ttl-character-ui .ttl-picker-results {
+    max-height: none;
+    min-height: 0;
+    overflow-y: auto;
+}
+.ttl-character-ui .ttl-picker-controls {
+    grid-template-columns: minmax(0, 1fr) 180px auto;
+    align-items: center;
+}
+.ttl-character-ui .ttl-picker-hide-unavailable {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    font-size: 10px;
+    font-weight: 700;
+}
+.ttl-character-ui input[id$="_base"],
+.ttl-character-ui input[id$="_boost"] {
+    max-width: 7rem;
+}
+@media (max-width: 760px) {
+    .ttl-character-ui .ttl-picker-controls { grid-template-columns: 1fr; }
+}
+
+
+/* Generic D20 compact ability-score construction. */
+.ttl-character-ui [data-system-pack-id="generic_d20"] {
+    --ttl-d20-number-width: 5.25rem;
+}
+
+.ttl-character-ui .ttl-d20-ability-method {
+    grid-column: 1 / -1;
+    max-width: 34rem;
+}
+
+.ttl-character-ui .ttl-d20-ability-pair {
+    min-width: 0;
+    padding: 0.35rem 0.45rem 0.45rem;
+    border: 1px solid var(--border-color, #9ab0bd);
+    background: rgba(255,255,255,0.45);
+}
+
+.ttl-character-ui .ttl-d20-ability-pair-title {
+    margin-bottom: 0.25rem;
+    font-weight: 700;
+    font-size: 0.76rem;
+    letter-spacing: 0.05em;
+}
+
+.ttl-character-ui .ttl-d20-ability-pair-values {
+    display: grid;
+    grid-template-columns: minmax(5rem, 1fr) minmax(5rem, 1fr);
+    gap: 0.45rem;
+    align-items: end;
+}
+
+.ttl-character-ui .ttl-d20-ability-pair .ttl-field {
+    min-width: 0;
+}
+
+.ttl-character-ui .ttl-d20-ability-pair input[type="number"] {
+    width: 100%;
+    max-width: var(--ttl-d20-number-width);
+}
+
+.ttl-character-ui .ttl-field.is-disabled {
+    opacity: 0.48;
+}
+
+.ttl-character-ui .ttl-field.is-disabled input,
+.ttl-character-ui .ttl-field.is-disabled select {
+    background: #e5e8ea;
+    cursor: not-allowed;
+}
+
+.ttl-character-ui [data-ttl-visible-when][hidden] {
+    display: none !important;
+}
+
+@media (max-width: 900px) {
+    .ttl-character-ui .ttl-d20-ability-pair-values {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* BEGIN Generic D20 skill-selection table proportions */
+/* Generic D20 skill-selection table proportions. */
+.ttl-character-ui .ttl-skill-table th:first-child,
+.ttl-character-ui .ttl-skill-table td:first-child {
+    width: 20%;
+    min-width: 9rem;
+}
+
+.ttl-character-ui .ttl-skill-table th:nth-child(2),
+.ttl-character-ui .ttl-skill-table td:nth-child(2) {
+    width: auto;
+}
+
+.ttl-character-ui .ttl-skill-table th:last-child,
+.ttl-character-ui .ttl-skill-table td:last-child {
+    width: 26px;
+    min-width: 26px;
+    max-width: 26px;
+    padding: 1px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.ttl-character-ui .ttl-skill-table .ttl-picker-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    min-height: 22px;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+}
+
+.ttl-character-ui .ttl-skill-description {
+    white-space: normal;
+    line-height: 1.25;
+}
+/* END Generic D20 skill-selection table proportions */
+
+
+/* Mixed compendium/custom description tables. */
+.ttl-character-ui .ttl-description-picker-table th:first-child,
+.ttl-character-ui .ttl-description-picker-table td:first-child { width: 20%; min-width: 9rem; }
+.ttl-character-ui .ttl-description-picker-table th:nth-child(2),
+.ttl-character-ui .ttl-description-picker-table td:nth-child(2) { width: auto; }
+.ttl-character-ui .ttl-description-picker-table th:last-child,
+.ttl-character-ui .ttl-description-picker-table td:last-child { width: 28px; min-width: 28px; max-width: 28px; padding: 2px; text-align: center; }
+.ttl-character-ui .ttl-description-picker-table .ttl-picker-chip-remove { width: 24px; height: 24px; min-width: 24px; padding: 0; }
+.ttl-character-ui .ttl-description-picker-table input.ttl-custom-reference-name,
+.ttl-character-ui .ttl-description-picker-table textarea.ttl-custom-reference-description { width: 100%; box-sizing: border-box; }
+.ttl-character-ui .ttl-description-picker-table textarea.ttl-custom-reference-description { resize: vertical; min-height: 2.5rem; }
+.ttl-character-ui .ttl-picker-result-custom { border-bottom: 2px solid var(--border-color, #8ca2af); }
+.ttl-character-ui .ttl-description-picker-table tr.is-custom td { background: rgba(255,255,255,0.28); }

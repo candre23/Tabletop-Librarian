@@ -44,7 +44,7 @@ def main() -> int:
     assert 'href="/search"' in nav_text
     assert 'href="/uploads"' in nav_text
 
-    pack_root = PROJECT_ROOT / "data" / "system_packs"
+    pack_root = PROJECT_ROOT / "tests" / "fixtures" / "system_packs"
     pack = load_system_pack(pack_root / "ttl_test_minimal")
     assert pack.valid and pack.manifest is not None
 
@@ -80,7 +80,7 @@ def main() -> int:
         )
         assert reopened.data["skills"] == ["athletics", "stealth"]
 
-    print("PASS: v0.4.8.2 navigation + multi-reference regression test")
+    print("PASS: navigation + multi-reference regression test")
     print("  global navigation templates: OK")
     print("  safe add/remove multi-reference widget: OK")
     print("  saved multi-reference values persist: OK")

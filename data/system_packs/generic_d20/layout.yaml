@@ -1,0 +1,337 @@
+tabs:
+- id: sheet
+  title: Character Sheet
+  sections:
+  - id: identity
+    title: Character
+    columns: 4
+    span: 12
+    color: teal
+    fields:
+    - name
+    - character_class
+    - subclass
+    - background
+    - species
+    - size
+    - alignment
+    - level
+    - xp
+    - id: proficiency_bonus
+      display: stat
+  - id: abilities
+    title: Abilities
+    columns: 2
+    span: 3
+    color: amber
+    fields:
+    - id: strength
+      display: stat
+    - id: strength_mod
+      display: stat
+    - id: dexterity
+      display: stat
+    - id: dexterity_mod
+      display: stat
+    - id: constitution
+      display: stat
+    - id: constitution_mod
+      display: stat
+    - id: intelligence
+      display: stat
+    - id: intelligence_mod
+      display: stat
+    - id: wisdom
+      display: stat
+    - id: wisdom_mod
+      display: stat
+    - id: charisma
+      display: stat
+    - id: charisma_mod
+      display: stat
+  - id: saves
+    title: Saving Throws
+    columns: 2
+    span: 3
+    color: blue
+    fields:
+    - id: strength_save
+      display: stat
+    - id: dexterity_save
+      display: stat
+    - id: constitution_save
+      display: stat
+    - id: intelligence_save
+      display: stat
+    - id: wisdom_save
+      display: stat
+    - id: charisma_save
+      display: stat
+  - id: combat
+    title: Combat
+    columns: 2
+    span: 3
+    color: red
+    fields:
+    - id: armor_class
+      display: stat
+    - id: initiative
+      display: stat
+    - id: speed
+      display: stat
+    - hp_current
+    - hp_max
+    - temp_hp
+    - death_successes
+    - death_failures
+  - id: skills
+    title: Skills
+    columns: 2
+    span: 3
+    color: green
+    fields:
+    - id: acrobatics_mod
+      display: stat
+    - id: animal_handling_mod
+      display: stat
+    - id: arcana_mod
+      display: stat
+    - id: athletics_mod
+      display: stat
+    - id: deception_mod
+      display: stat
+    - id: history_mod
+      display: stat
+    - id: insight_mod
+      display: stat
+    - id: intimidation_mod
+      display: stat
+    - id: investigation_mod
+      display: stat
+    - id: medicine_mod
+      display: stat
+    - id: nature_mod
+      display: stat
+    - id: perception_mod
+      display: stat
+    - id: performance_mod
+      display: stat
+    - id: persuasion_mod
+      display: stat
+    - id: religion_mod
+      display: stat
+    - id: sleight_of_hand_mod
+      display: stat
+    - id: stealth_mod
+      display: stat
+    - id: survival_mod
+      display: stat
+    - id: passive_perception
+      display: stat
+    - passive_perception_bonus
+  - id: proficiencies
+    title: Proficiencies & Languages
+    columns: 2
+    span: 12
+    color: teal
+    fields:
+    - class_skills
+    - expertise_skills
+    - languages
+    - tool_proficiencies
+    - other_proficiencies
+  - id: human_skill
+    title: Human Skill
+    columns: 1
+    span: 12
+    color: teal
+    visible_when:
+      field: species
+      equals: human
+    fields:
+    - bonus_skills
+  - id: features
+    title: Features & Feats
+    columns: 1
+    span: 12
+    color: plum
+    fields:
+    - origin_feat
+    - feats
+    - id: class_features
+      display: table
+  - id: human_feat
+    title: Human Bonus Origin Feat
+    columns: 1
+    span: 12
+    color: plum
+    visible_when:
+      field: species
+      equals: human
+    fields:
+    - bonus_origin_feat
+  - id: attacks
+    title: Weapons / Attacks
+    columns: 1
+    span: 8
+    color: red
+    fields:
+    - id: weapons
+      display: table
+  - id: armor
+    title: Armor & Defense
+    columns: 1
+    span: 4
+    color: amber
+    fields:
+    - id: armor_items
+      display: table
+  - id: spellcasting
+    title: Spellcasting
+    columns: 3
+    span: 12
+    color: blue
+    visible_when:
+      field: character_class
+      in:
+      - bard
+      - cleric
+      - druid
+      - paladin
+      - ranger
+      - sorcerer
+      - warlock
+      - wizard
+    fields:
+    - id: spellcasting_mod
+      display: stat
+    - id: spell_save_dc
+      display: stat
+    - id: spell_attack_bonus
+      display: stat
+    - cantrips
+    - prepared_spells
+    - id: bonus_spells
+      display: table
+  - id: species_size_choice
+    title: Size
+    columns: 1
+    span: 12
+    color: teal
+    visible_when:
+      field: species
+      in:
+      - human
+      - tiefling
+    fields:
+    - size_choice
+  - id: dragonborn_options
+    title: Dragonborn Ancestry
+    columns: 1
+    span: 12
+    color: teal
+    visible_when:
+      field: species
+      equals: dragonborn
+    fields:
+    - dragon_ancestry
+  - id: elf_options
+    title: Elf Lineage
+    columns: 2
+    span: 12
+    color: teal
+    visible_when:
+      field: species
+      equals: elf
+    fields:
+    - elf_lineage
+  - id: gnome_options
+    title: Gnome Lineage
+    columns: 2
+    span: 12
+    color: teal
+    visible_when:
+      field: species
+      equals: gnome
+    fields:
+    - gnome_lineage
+  - id: goliath_options
+    title: Goliath Ancestry
+    columns: 1
+    span: 12
+    color: teal
+    visible_when:
+      field: species
+      equals: goliath
+    fields:
+    - goliath_ancestry
+  - id: tiefling_options
+    title: Tiefling Legacy
+    columns: 2
+    span: 12
+    color: teal
+    visible_when:
+      field: species
+      equals: tiefling
+    fields:
+    - tiefling_legacy
+  - id: lineage_spellcasting
+    title: Lineage Spellcasting
+    columns: 1
+    span: 12
+    color: teal
+    visible_when:
+      field: species
+      in:
+      - elf
+      - gnome
+      - tiefling
+    fields:
+    - lineage_spellcasting_ability
+  - id: ability_build
+    title: Ability Score Construction
+    description: Base score and background boost are shown together for each ability.
+    columns: 3
+    span: 12
+    color: amber
+    fields:
+    - ability_method
+    - strength_base
+    - strength_boost
+    - dexterity_base
+    - dexterity_boost
+    - constitution_base
+    - constitution_boost
+    - intelligence_base
+    - intelligence_boost
+    - wisdom_base
+    - wisdom_boost
+    - charisma_base
+    - charisma_boost
+    - id: point_cost_total
+      display: stat
+  - id: equipment
+    title: Equipment
+    columns: 1
+    span: 6
+    color: green
+    fields:
+    - id: equipment
+      display: table
+    - coins_gp
+  - id: story
+    title: Background / Personality
+    columns: 1
+    span: 6
+    color: amber
+    fields:
+    - id: background_notes
+      display: block
+  - id: notes
+    title: Notes
+    columns: 1
+    span: 12
+    color: plum
+    fields:
+    - id: notes
+      display: block
