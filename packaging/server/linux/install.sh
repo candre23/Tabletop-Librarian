@@ -216,11 +216,9 @@ fi
 mkdir -p "$INSTALL_DIR" "$DATA_DIR" "$CACHE_DIR" "$LOG_DIR"
 cp -a "$PAYLOAD_DIR/app" "$PAYLOAD_DIR/pipelines" "$INSTALL_DIR/"
 cp "$PAYLOAD_DIR/pyproject.toml" "$PAYLOAD_DIR/run.py" "$INSTALL_DIR/"
-mkdir -p "$INSTALL_DIR/data"
+mkdir -p "$INSTALL_DIR/data" "$INSTALL_DIR/docs"
 cp -a "$PAYLOAD_DIR/data/system_packs" "$INSTALL_DIR/data/"
-if [[ -d "$SOURCE_DIR/documentation" ]]; then
-  cp -a "$SOURCE_DIR/documentation" "$INSTALL_DIR/"
-fi
+cp -a "$PAYLOAD_DIR/docs/reference" "$INSTALL_DIR/docs/"
 
 python3 -m venv "$INSTALL_DIR/.venv"
 "$INSTALL_DIR/.venv/bin/python" -m pip install --upgrade pip setuptools wheel

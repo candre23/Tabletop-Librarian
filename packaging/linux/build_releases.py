@@ -14,6 +14,7 @@ SERVER_FILES = [
     "app",
     "pipelines",
     "data/system_packs",
+    "docs/reference",
     "pyproject.toml",
     "run.py",
 ]

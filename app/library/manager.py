@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any, Callable
 
 from app.knowledgebase import mark_library_changed
-from app.config import LIBRARY_FILE, LIBRARY_MANIFEST_FILE, SUPPORTED_EXTENSIONS
-from app.library.covers import ensure_cover
+from app.config import LIBRARY_FILE, LIBRARY_MANIFEST_FILE, RESOURCE_ROOT, SUPPORTED_EXTENSIONS
+from app.library.covers import ensure_cover, save_manual_cover
 from app.library.pdf_status import detect_pdf_text_status
 from app.storage import read_json, write_json
 
@@ -15,6 +15,37 @@ logger = logging.getLogger(__name__)
 
 
 LIBRARY_MANIFEST_VERSION = 1
+
+
+BUNDLED_SRD_FOLDER_NAME = "D20 SRD"
+BUNDLED_SRD_PDF = RESOURCE_ROOT / "docs" / "reference" / "SRD_CC_v5.2.1.pdf"
+BUNDLED_SRD_COVER = RESOURCE_ROOT / "docs" / "reference" / "SRD_cover.jpg"
+
+
+def _seed_initial_library() -> dict[str, Any]:
+    data = _default_library()
+
+    if not BUNDLED_SRD_PDF.exists():
+        return data
+
+    resolved_pdf = BUNDLED_SRD_PDF.resolve(strict=False)
+    folder = {
+        "name": BUNDLED_SRD_FOLDER_NAME,
+        "visibility": "players",
+        "cover": str(resolved_pdf),
+        "sources": [{"type": "file", "path": str(resolved_pdf)}],
+        "file_visibility": {},
+    }
+    data.setdefault("folders", []).append(folder)
+
+    if BUNDLED_SRD_COVER.exists():
+        try:
+            save_manual_cover(str(resolved_pdf.parent), resolved_pdf.name, BUNDLED_SRD_COVER)
+        except Exception:
+            logger.exception("Unable to seed bundled SRD manual cover")
+
+    logger.info("Seeded initial library with bundled SRD folder")
+    return data
 
 
 def _default_manifest() -> dict[str, Any]:
@@ -196,6 +227,12 @@ def _normalize_library(data: dict[str, Any]) -> tuple[dict[str, Any], bool]:
 
 
 def get_library() -> dict[str, Any]:
+    if not LIBRARY_FILE.exists():
+        data = _seed_initial_library()
+        data, changed = _normalize_library(data)
+        save_library(data)
+        return data
+
     data = read_json(LIBRARY_FILE, _default_library())
     data, changed = _normalize_library(data)
     if changed:

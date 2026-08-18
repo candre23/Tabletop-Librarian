@@ -2,12 +2,12 @@
 
 Tabletop Librarian (TTL) is a self-hosted tabletop RPG library, rules reference, character manager, and AI-assisted game resource server.
 
-Version 1.0.0 consists of two independent products:
+Version 1.0.0 consists of two independent applications:
 
 - **Tabletop Librarian Server**: hosts the library, readers, users, characters, System Packs, search, OCR, knowledgebase, and AI/RAG interface.
-- **TTL Local AI Backend**: a separate llama.cpp manager that can run on the same computer or another machine on the LAN.
+- **TTL Local AI Backend**: an optional llama.cpp server to provide local inference, packaged with a basic GUI for ease of operation.
 
-The Server can also use hosted OpenAI-compatible providers instead of the Local AI Backend.
+The Server can also use Gemini or OpenAI-compatible APIs for cloud inference instead of the Local AI Backend.
 
 ## Highlights
 
@@ -19,23 +19,16 @@ The Server can also use hosted OpenAI-compatible providers instead of the Local 
 - Player and GM accounts with visibility-aware library and character access.
 - System-neutral character engine driven by portable `.ttlsys` System Packs.
 - Guided character creation, calculated rules, limits, advancement, temporary effects, and `.ttlchar` import/export.
-- Built-in **Generic D20** System Pack derived from SRD 5.2.1 under CC BY 4.0.
+- Bundled Generic D20 System Pack derived from SRD 5.2.1 under CC BY 4.0.
 - Independent local llama.cpp Backend Manager with hardware-aware CUDA/Vulkan/CPU choices and curated model/runtime downloads.
-- Windows x64 and Linux x86_64 release tooling.
+
 
 ## Supported release platforms
 
-### Server
+- **Windows x64**: Native installers
+- **Linux x86_64**: Fully automated install scripts tested on Ubuntu 26.04. Other versions or distros may or may not work without some manual fiddling on your part.
 
-- **Windows x64**: native installer; tested during the 1.0 release cycle.
-- **Linux x86_64**: officially tested on **Ubuntu 26.04 LTS**. Other distributions are community-supported and may require adaptation.
-
-### Local AI Backend
-
-- Windows x64.
-- Linux x86_64, officially tested on Ubuntu 26.04 LTS.
-
-A GPU is strongly recommended for local LLM inference. CPU mode exists as a functional fallback but can be very slow.
+A GPU is strongly recommended for local LLM inference. CPU mode exists as a functional fallback but will be very slow.
 
 ## Quick start
 
@@ -94,6 +87,4 @@ Tabletop Librarian source code and original project material are released under 
 
 The SRD 5.2.1, Generic D20's SRD-derived material, and third-party dependencies retain their own licenses. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-## Repository
 
-https://github.com/candre23/Tabletop-Librarian
