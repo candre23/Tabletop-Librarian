@@ -23,6 +23,14 @@ The Server can also use Gemini or OpenAI-compatible APIs for cloud inference ins
 - Bundled generic D20 system pack derived from SRD 5.2.1 under CC BY 4.0.
 - Additional system packs published here: https://github.com/candre23/TTL_System_Packs
 
+<img width="1317" height="968" alt="ttl1" src="https://github.com/user-attachments/assets/2ae7d364-f41c-4bbf-9095-dfb795160e7e" />
+
+<img width="1279" height="1079" alt="ttl2" src="https://github.com/user-attachments/assets/22622b2f-1fb7-4005-85d7-b5a9893729d2" />
+
+<img width="1280" height="1244" alt="ttl3" src="https://github.com/user-attachments/assets/0b8d65e9-b00c-446e-8cc8-bbe29608470c" />
+
+<img width="1668" height="1271" alt="ttl4" src="https://github.com/user-attachments/assets/82206583-f0c8-4478-9b1a-186ddcdc07a2" />
+
 
 ## Supported release platforms
 
