@@ -4,11 +4,21 @@
   }
   function fieldValue(fieldId) {
     const el = inputFor(fieldId);
-    if (!el) return undefined;
-    if (el.type === "checkbox") return !!el.checked;
-    if (el.multiple) return Array.from(el.selectedOptions).map(o => o.value);
-    if (el.type === "number") return el.value === "" ? null : Number(el.value);
-    return el.value;
+    if (el) {
+      if (el.type === "checkbox") return !!el.checked;
+      if (el.multiple) return Array.from(el.selectedOptions).map(o => o.value);
+      if (el.type === "number") return el.value === "" ? null : Number(el.value);
+      return el.value;
+    }
+
+    // Character-creation workflows render only the fields on the current step.
+    // Fall back to the saved character/draft state exposed by the page so a
+    // visibility condition may safely depend on a choice from an earlier step.
+    const saved = window.ttlCharacterState;
+    if (saved && Object.prototype.hasOwnProperty.call(saved, fieldId)) {
+      return saved[fieldId];
+    }
+    return undefined;
   }
   function conditionMatches(cond) {
     if (!cond || typeof cond !== "object") return true;
@@ -47,6 +57,9 @@
     return Number(Object.prototype.hasOwnProperty.call(spec, "default") ? spec.default : fallback);
   }
   function refreshVisibility() {
+    // The multi-step creation page has its own visibility evaluator because
+    // fields from earlier workflow steps are intentionally absent from the DOM.
+    if (window.ttlCreationPageOwnsVisibility) return;
     document.querySelectorAll("[data-ttl-visible-when]").forEach(el => {
       try {
         const cond = JSON.parse(el.dataset.ttlVisibleWhen || "{}");

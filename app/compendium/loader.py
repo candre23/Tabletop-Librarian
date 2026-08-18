@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 import copy
+from functools import lru_cache
 import re
 import yaml
 
@@ -137,8 +138,26 @@ def _validate_references(compendium: Compendium, issues: list[CompendiumIssue]) 
                     issues.append(CompendiumIssue("error", f"Unknown reference {target_type}:{target_id}.", file=entity.source_file, entity_type=entity_type, entity_id=entity_id, field=f"references[{index}]"))
 
 
-def load_compendium(root: Path | str, declared_files: list[str]) -> tuple[Compendium | None, list[CompendiumIssue]]:
-    root = Path(root)
+def _compendium_fingerprint(root: Path, declared_files: tuple[str, ...]) -> tuple[tuple[str, int, int], ...]:
+    rows: list[tuple[str, int, int]] = []
+    for relative_path in declared_files:
+        path = root / relative_path
+        try:
+            stat = path.stat()
+            rows.append((relative_path, stat.st_mtime_ns, stat.st_size))
+        except OSError:
+            rows.append((relative_path, -1, -1))
+    return tuple(rows)
+
+
+@lru_cache(maxsize=32)
+def _load_compendium_cached(
+    root_text: str,
+    declared_files: tuple[str, ...],
+    fingerprint: tuple[tuple[str, int, int], ...],
+) -> tuple[Compendium | None, tuple[CompendiumIssue, ...]]:
+    del fingerprint  # cache key only
+    root = Path(root_text)
     compendium = Compendium()
     issues: list[CompendiumIssue] = []
 
@@ -148,6 +167,17 @@ def load_compendium(root: Path | str, declared_files: list[str]) -> tuple[Compen
     _validate_references(compendium, issues)
 
     if any(issue.severity == "error" for issue in issues):
-        return None, issues
+        return None, tuple(issues)
 
-    return compendium, issues
+    return compendium, tuple(issues)
+
+
+def load_compendium(root: Path | str, declared_files: list[str]) -> tuple[Compendium | None, list[CompendiumIssue]]:
+    root = Path(root).expanduser().resolve()
+    declared = tuple(declared_files)
+    compendium, issues = _load_compendium_cached(
+        str(root),
+        declared,
+        _compendium_fingerprint(root, declared),
+    )
+    return compendium, list(issues)

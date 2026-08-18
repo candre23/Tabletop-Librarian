@@ -131,8 +131,9 @@
                     {% endif %}
                   {% endfor %}
 
-                  {% if section_ns.show %}
+                  {% if section_ns.show and not (mode == "play" and section.hide_in_play) %}
                     <section
+                      data-section-id="{{ section.id }}"
                       class="ttl-sheet-section ttl-section-color-{{ section.color or 'auto' }}{% if section.body_color %} ttl-section-body-color-{{ section.body_color }}{% endif %}"
                       style="--ttl-section-span: {{ section.span }}"
                     {% if section.visible_when %}data-ttl-visible-when='{{ section.visible_when|tojson|forceescape }}'{% endif %}
@@ -181,7 +182,7 @@
             {% if field_display in ["track", "grid", "clock", "counter", "icon", "state_track", "state_grid"] %}
               {{ packui.special_field(field_id, field, value, field_options, pack, not field_locked) }}
             {% elif field_locked %}
-              <div class="ttl-field {% if field.type in ["notes", "multi_reference", "collection"] %}ttl-field-wide{% endif %}">
+              <div class="ttl-field {% if field.type in ["notes", "multi_reference", "collection"] and not field_options.get("compact") %}ttl-field-wide{% endif %}">
                 <div class="ttl-lockable-label">
                   <label>{{ field.label }}</label>
                   {% if core_locked %}
@@ -200,6 +201,16 @@
                   <table class="ttl-skill-table ttl-play-table ttl-description-picker-table">
                     <thead><tr><th>{{ field.raw.get("row_label") or field.label }}</th><th>Description</th></tr></thead>
                     <tbody>
+                      {% for included_field_id in field_options.get("include_reference_fields", []) %}
+                        {% set included_value = record.data.get(included_field_id) %}
+                        {% if included_value %}
+                          {% for entity in reference_options.get(included_field_id, []) %}
+                            {% if entity.id == included_value %}
+                              <tr class="is-fixed"><td>{{ entity.name }}</td><td>{{ entity.data.get("description") or entity.data.get("summary") or "" }}</td></tr>
+                            {% endif %}
+                          {% endfor %}
+                        {% endif %}
+                      {% endfor %}
                       {% for selected_id in (value or []) %}
                         {% for entity in reference_options.get(field_id, []) %}
                           {% if entity.id == selected_id %}
@@ -258,8 +269,26 @@
                   <div class="ttl-readonly ttl-core-readonly">{{ display_field_value(field, value, reference_options) }}</div>
                 {% endif %}
               </div>
+            {% elif field.type == "integer" and field.raw.get("max_field") %}
+              {% set slot_max = record.data.get(field.raw.get("max_field"), 0)|int %}
+              {% if slot_max > 0 %}
+                <div class="ttl-field ttl-spell-slot-field">
+                  <label for="field__{{ field_id }}">
+                    {% if field.raw.get("slot_level") %}Level {{ field.raw.get("slot_level") }} Slots{% else %}Pact Slots{% endif %}
+                    {% if field.raw.get("slot_level_field") %}
+                      (Level {{ record.data.get(field.raw.get("slot_level_field"), 0) }})
+                    {% endif %}
+                  </label>
+                  <div class="ttl-resource-editor">
+                    <span>Used</span>
+                    <input type="number" min="0" max="{{ slot_max }}" id="field__{{ field_id }}" name="field__{{ field_id }}" value="{{ value or 0 }}" aria-label="{{ field.label }}">
+                    <span>/</span>
+                    <strong>{{ slot_max }} max</strong>
+                  </div>
+                </div>
+              {% endif %}
             {% elif field.type == "notes" %}
-              <div class="ttl-field ttl-field-wide">
+              <div class="ttl-field{% if not field_options.get('compact') %} ttl-field-wide{% endif %}">
                 <div class="ttl-lockable-label">
                   <label for="field__{{ field_id }}">{{ field.label }}</label>
                   {% if field_id in core_fields and field_id == unlocked_field %}
@@ -353,6 +382,20 @@
 
                 {% set custom_entries_field = field.raw.get("custom_entries_field") or "" %}
                 <div class="ttl-compendium-picker" data-compendium-picker data-picker-mode="multi" data-picker-label="{{ field.label }}" data-picker-entity="{{ field.entity or '' }}" data-picker-table-display="{{ field.raw.get('table_display') or '' }}" data-picker-row-label="{{ field.raw.get('row_label') or field.label }}" data-picker-custom-field="{{ custom_entries_field }}">
+                  {% if field_options.get("include_reference_fields") %}
+                    <div hidden data-picker-fixed-rows>
+                      {% for included_field_id in field_options.get("include_reference_fields", []) %}
+                        {% set included_value = record.data.get(included_field_id) %}
+                        {% if included_value %}
+                          {% for entity in reference_options.get(included_field_id, []) %}
+                            {% if entity.id == included_value %}
+                              <span data-picker-fixed-row data-picker-fixed-name="{{ entity.name|e }}" data-picker-fixed-description="{{ (entity.data.get('description') or entity.data.get('summary') or '')|e }}"></span>
+                            {% endif %}
+                          {% endfor %}
+                        {% endif %}
+                      {% endfor %}
+                    </div>
+                  {% endif %}
 
 
                   <select id="field__{{ field_id }}" name="field__{{ field_id }}" multiple class="ttl-picker-native ttl-multi-reference-native" aria-hidden="true" tabindex="-1">
@@ -376,7 +419,7 @@
                   <div class="ttl-picker-selected" data-picker-selected></div>
 
 
-                  <button type="button" class="secondary-button ttl-picker-open" data-picker-open>Add {{ field.label }}</button>
+                  {% if not (mode == "play" and field_options.get("hide_add_in_play")) %}<button type="button" class="secondary-button ttl-picker-open" data-picker-open>Add {{ field.label }}</button>{% endif %}
 
 
                   <dialog class="ttl-picker-dialog" data-picker-dialog>
@@ -560,12 +603,14 @@
                     </div>
                   </template>
 
+                  {% if not (mode == "play" and field_options.get("hide_add_in_play")) %}
                   <div class="ttl-collection-add-row">
                     <button type="button" class="secondary-button ttl-collection-add" data-collection-add>Add {{ field.label }} entry</button>
                     {% if field.raw.get("allow_custom") %}
                       <button type="button" class="secondary-button ttl-collection-add" data-collection-add-custom>Add Custom</button>
                     {% endif %}
                   </div>
+                  {% endif %}
                 </div>
               </div>
             {% elif field.type == "text" or field.type == "reference" %}
@@ -1323,12 +1368,13 @@
             const selected = Array.from(nativeSelect.options).filter(
               (option) => option.selected && option.value
             );
+            const fixedRows = Array.from(picker.querySelectorAll("[data-picker-fixed-row]"));
 
             if (mode === "single" && openButton) {
               openButton.textContent = `${selected.length ? "Change" : "Choose"} ${picker.dataset.pickerLabel || "selection"}`;
             }
 
-            if (!selected.length && !readCustomRows().length) {
+            if (!selected.length && !readCustomRows().length && !fixedRows.length) {
               const empty = document.createElement("span");
               empty.className = "ttl-picker-empty";
               empty.textContent = "None selected";
@@ -1347,6 +1393,20 @@
               table.className = "ttl-skill-table ttl-skill-table-removable ttl-description-picker-table";
               table.innerHTML = `<thead><tr><th>${rowLabel}</th><th>Description</th><th></th></tr></thead>`;
               const body = document.createElement("tbody");
+
+              fixedRows.forEach((fixed) => {
+                const row = document.createElement("tr");
+                row.className = "is-fixed";
+                const nameCell = document.createElement("td");
+                nameCell.className = "ttl-skill-name";
+                nameCell.textContent = fixed.dataset.pickerFixedName || "";
+                const descriptionCell = document.createElement("td");
+                descriptionCell.className = "ttl-skill-description";
+                descriptionCell.textContent = fixed.dataset.pickerFixedDescription || "";
+                const actionCell = document.createElement("td");
+                row.append(nameCell, descriptionCell, actionCell);
+                body.appendChild(row);
+              });
 
               selected.forEach((option) => {
                 const row = document.createElement("tr");
@@ -1433,7 +1493,7 @@
 
               table.appendChild(body);
               selectedBox.appendChild(table);
-              if (!selected.length && !customRows.length) {
+              if (!selected.length && !customRows.length && !fixedRows.length) {
                 selectedBox.innerHTML = "";
                 const empty = document.createElement("span");
                 empty.className = "ttl-picker-empty";
@@ -2108,6 +2168,9 @@
     })();
   </script>
 
-  <script src="/static/js/pack_widgets.js?v={{ app_version }}"></script>
+  <script>
+    window.ttlCharacterState = {{ record.data|tojson }};
+  </script>
+  <script src="/static/js/pack_widgets.js?v={{ pack_widgets_version }}"></script>
 </body>
 </html>

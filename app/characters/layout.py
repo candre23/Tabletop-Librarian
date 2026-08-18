@@ -55,6 +55,7 @@ class LayoutSection:
     field_options: dict[str, dict[str, Any]] = field(default_factory=dict)
     widgets: list[dict[str, Any]] = field(default_factory=list)
     visible_when: dict[str, Any] | None = None
+    hide_in_play: bool = False
 
     def display_for(self, field_id: str) -> str:
         return str(self.field_options.get(field_id, {}).get("display") or "default")
@@ -204,6 +205,8 @@ def _parse_section(
         issues.append(LayoutIssue("error", "span must be an integer from 1 to 12.", f"{location}.span"))
         span = 12
 
+    hide_in_play = bool(raw.get("hide_in_play", False))
+
     visible_when = raw.get("visible_when")
     if visible_when is not None and not isinstance(visible_when, dict):
         issues.append(LayoutIssue("error", "visible_when must be a mapping/object.", f"{location}.visible_when"))
@@ -268,6 +271,7 @@ def _parse_section(
         field_options=field_options,
         widgets=widgets,
         visible_when=visible_when,
+        hide_in_play=hide_in_play,
     )
 
 

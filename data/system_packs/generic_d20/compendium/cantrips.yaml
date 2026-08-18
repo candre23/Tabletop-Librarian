@@ -18,7 +18,11 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Evocation Cantrip (Sorcerer, Wizard)\nCasting Time: Action\nRange: 60 feet\nComponents: V, S\nDuration: Instantaneous\nYou
+    create an acidic bubble at a point within range,\nwhere it explodes in a 5-foot-radius Sphere. Each\ncreature in that
+    Sphere must succeed on a Dexterity\nsaving throw or take 1d6 Acid damage.\nCantrip Upgrade. The damage increases by 1d6\nwhen
+    you reach levels 5 (2d6), 11 (3d6), and 17\n(4d6).'
 - id: chill_touch
   name: Chill Touch
   level: 0
@@ -40,7 +44,11 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Necromancy Cantrip (Sorcerer, Warlock, Wizard)\nCasting Time: Action\nRange: Touch\nComponents: V, S\nDuration:
+    Instantaneous\nChanneling the chill of the grave, make a melee spell\nattack against a target within reach. On a hit,
+    the\ntarget takes 1d10 Necrotic damage, and it can’t re-\ngain Hit Points until the end of your next turn.\nCantrip Upgrade.
+    The damage increases by 1d10\nwhen you reach levels 5 (2d10), 11 (3d10), and 17\n(4d10).'
 - id: dancing_lights
   name: Dancing Lights
   level: 0
@@ -62,7 +70,14 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Illusion Cantrip (Bard, Sorcerer, Wizard)\nCasting Time: Action\nRange: 120 feet\nComponents: V, S, M (a bit
+    of phosphorus)\nDuration: Concentration, up to 1 minute\nSystem Reference Document 5.2.1\n122\nYou create up to four torch-size
+    lights within range,\nmaking them appear as torches, lanterns, or glow-\ning orbs that hover for the duration. Alternatively,\nyou
+    combine the four lights into one glowing Me-\ndium form that is vaguely humanlike. Whichever\nform you choose, each light
+    sheds Dim Light in a 10-\nfoot radius.\nAs a Bonus Action, you can move the lights up\nto 60 feet to a space within range.
+    A light must be\nwithin 20 feet of another light created by this spell,\nand a light vanishes if it exceeds the spell’s
+    range.'
 - id: druidcraft
   name: Druidcraft
   level: 0
@@ -79,7 +94,15 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Transmutation Cantrip (Druid)\nCasting Time: Action\nRange: 30 feet\nComponents: V, S\nDuration: Instantaneous\nWhispering
+    to the spirits of nature, you create one\nof the following effects within range.\nWeather Sensor. You create a Tiny, harmless
+    sen-\nsory effect that predicts what the weather will be at\nyour location for the next 24 hours. The effect might\nmanifest
+    as a golden orb for clear skies, a cloud for\nrain, falling snowflakes for snow, and so on. This\neffect persists for
+    1 round.\nBloom. You instantly make a flower blossom, a\nseed pod open, or a leaf bud bloom.\nSensory Effect. You create
+    a harmless sensory ef-\nfect, such as falling leaves, spectral dancing fairies,\na gentle breeze, the sound of an animal,
+    or the faint\nodor of skunk. The effect must fit in a 5-foot Cube.\nFire Play. You light or snuff out a candle, a torch,\nor
+    a campfire.\nSystem Reference Document 5.2.1\n127'
 - id: eldritch_blast
   name: Eldritch Blast
   level: 0
@@ -96,7 +119,12 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Evocation Cantrip (Warlock)\nCasting Time: Action\nRange: 120 feet\nComponents: V, S\nDuration: Instantaneous\nYou
+    hurl a beam of crackling energy. Make a ranged\nspell attack against one creature or object in range.\nOn a hit, the target
+    takes 1d10 Force damage.\nCantrip Upgrade. The spell creates two beams at\nlevel 5, three beams at level 11, and four
+    beams at\nlevel 17. You can direct the beams at the same target\nor at different ones. Make a separate attack roll for\neach
+    beam.'
 - id: elementalism
   name: Elementalism
   level: 0
@@ -118,7 +146,18 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Transmutation Cantrip (Druid, Sorcerer, Wizard)\nCasting Time: Action\nRange: 30 feet\nComponents: V, S\nDuration:
+    Instantaneous\nYou exert control over the elements, creating one of\nthe following effects within range.\nBeckon Air.
+    You create a breeze strong enough to\nripple cloth, stir dust, rustle leaves, and close open\ndoors and shutters, all
+    in a 5-foot Cube. Doors and\nshutters being held open by someone or something\naren’t affected.\nBeckon Earth. You create
+    a thin shroud of dust or\nsand that covers surfaces in a 5-foot-square area, or\nyou cause a single word to appear in
+    your handwrit-\ning in a patch of dirt or sand.\nBeckon Fire. You create a thin cloud of harmless\nembers and colored,
+    scented smoke in a 5-foot Cube.\nYou choose the color and scent, and the embers can\nlight candles, torches, or lamps
+    in that area. The\nsmoke’s scent lingers for 1 minute.\nBeckon Water. You create a spray of cool mist that\nlightly dampens
+    creatures and objects in a 5-foot\nCube. Alternatively, you create 1 cup of clean water\neither in an open container or
+    on a surface, and the\nwater evaporates in 1 minute.\nSculpt Element. You cause dirt, sand, fire, smoke,\nmist, or water
+    that can fit in a 1-foot Cube to assume\na crude shape (such as that of a creature) for 1 hour.'
 - id: fire_bolt
   name: Fire Bolt
   level: 0
@@ -137,7 +176,11 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Evocation Cantrip (Sorcerer, Wizard)\nCasting Time: Action\nRange: 120 feet\nComponents: V, S\nDuration: Instantaneous\nYou
+    hurl a mote of fire at a creature or an object\nwithin range. Make a ranged spell attack against the\ntarget. On a hit,
+    the target takes 1d10 Fire damage.\nA flammable object hit by this spell starts burning if\nit isn’t being worn or carried.\nCantrip
+    Upgrade. The damage increases by 1d10\nwhen you reach levels 5 (2d10), 11 (3d10), and 17\n(4d10).'
 - id: guidance
   name: Guidance
   level: 0
@@ -156,7 +199,10 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Divination Cantrip (Cleric, Druid)\nCasting Time: Action\nRange: Touch\nComponent: V, S\nDuration: Concentration,
+    up to 1 minute\nYou touch a willing creature and choose a skill. Until\nthe spell ends, the creature adds 1d4 to any ability\ncheck
+    using the chosen skill.'
 - id: light
   name: Light
   level: 0
@@ -175,12 +221,17 @@ entries:
   - class_sorcerer
   - class_wizard
   eligibility:
-    rule: (character_class == "bard" and level >= 1) or (character_class == "cleric" and level >= 1) or (character_class
-      == "sorcerer" and level >= 1) or (character_class == "wizard" and level >= 1)
+    rule: (character_class == "bard" and level >= 1) or (character_class == "cleric" and level >= 1) or (character_class ==
+      "sorcerer" and level >= 1) or (character_class == "wizard" and level >= 1)
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Evocation Cantrip (Bard, Cleric, Sorcerer, Wizard)\nCasting Time: Action\nRange: Touch\nComponents: V, M (a
+    firefly or phosphorescent moss)\nDuration: 1 hour\nYou touch one Large or smaller object that isn’t\nbeing worn or carried
+    by someone else. Until the\nspell ends, the object sheds Bright Light in a 20-foot\nradius and Dim Light for an additional
+    20 feet. The\nlight can be colored as you like.\nCovering the object with something opaque blocks\nthe light. The spell
+    ends if you cast it again.'
 - id: mage_hand
   name: Mage Hand
   level: 0
@@ -204,7 +255,14 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Conjuration Cantrip (Bard, Sorcerer, Warlock, Wizard)\nCasting Time: Action\nRange: 30 feet\nComponents: V,
+    S\nDuration: 1 minute\nA spectral, floating hand appears at a point you\nchoose within range. The hand lasts for the dura-\ntion.
+    The hand vanishes if it is ever more than 30\nfeet away from you or if you cast this spell again.\nWhen you cast the spell,
+    you can use the hand to\nmanipulate an object, open an unlocked door or\ncontainer, stow or retrieve an item from an open\ncontainer,
+    or pour the contents out of a vial.\nAs a Magic action on your later turns, you can con-\ntrol the hand thus again. As
+    part of that action, you\ncan move the hand up to 30 feet.\nThe hand can’t attack, activate magic items, or\ncarry more
+    than 10 pounds.'
 - id: mending
   name: Mending
   level: 0
@@ -225,13 +283,18 @@ entries:
   - class_sorcerer
   - class_wizard
   eligibility:
-    rule: (character_class == "bard" and level >= 1) or (character_class == "cleric" and level >= 1) or (character_class
-      == "druid" and level >= 1) or (character_class == "sorcerer" and level >= 1) or (character_class == "wizard"
-      and level >= 1)
+    rule: (character_class == "bard" and level >= 1) or (character_class == "cleric" and level >= 1) or (character_class ==
+      "druid" and level >= 1) or (character_class == "sorcerer" and level >= 1) or (character_class == "wizard" and level
+      >= 1)
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Transmutation Cantrip (Bard, Cleric, Druid, Sorcerer,\nWizard)\nCasting Time: 1 minute\nRange: Touch\nComponents:
+    V, S, M (two lodestones)\nDuration: Instantaneous\nThis spell repairs a single break or tear in an object\nyou touch,
+    such as a broken chain link, two halves of\na broken key, a torn cloak, or a leaking wineskin. As\nlong as the break or
+    tear is no larger than 1 foot in\nany dimension, you mend it, leaving no trace of the\nformer damage.\nThis spell can
+    physically repair a magic item, but\nit can’t restore magic to such an object.'
 - id: message
   name: Message
   level: 0
@@ -250,12 +313,17 @@ entries:
   - class_sorcerer
   - class_wizard
   eligibility:
-    rule: (character_class == "bard" and level >= 1) or (character_class == "druid" and level >= 1) or (character_class
-      == "sorcerer" and level >= 1) or (character_class == "wizard" and level >= 1)
+    rule: (character_class == "bard" and level >= 1) or (character_class == "druid" and level >= 1) or (character_class ==
+      "sorcerer" and level >= 1) or (character_class == "wizard" and level >= 1)
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Transmutation Cantrip (Bard, Druid, Sorcerer,\nWizard)\nCasting Time: Action\nRange: 120 feet\nComponents:
+    S, M (a copper wire)\nDuration: 1 round\nSystem Reference Document 5.2.1\n149\nYou point toward a creature within range
+    and\nwhisper a message. The target (and only the target)\nhears the message and can reply in a whisper that\nonly you
+    can hear.\nYou can cast this spell through solid objects if you\nare familiar with the target and know it is beyond\nthe
+    barrier. Magical silence; 1 foot of stone, metal,\nor wood; or a thin sheet of lead blocks the spell.'
 - id: minor_illusion
   name: Minor Illusion
   level: 0
@@ -279,7 +347,18 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Illusion Cantrip (Bard, Sorcerer, Warlock, Wizard)\nCasting Time: Action\nRange: 30 feet\nComponents: S, M
+    (a bit of fleece)\nDuration: 1 minute\nYou create a sound or an image of an object within\nrange that lasts for the duration.
+    See the descrip-\ntions below for the effects of each. The illusion ends\nif you cast this spell again.\nIf a creature
+    takes a Study action to examine the\nsound or image, the creature can determine that it\nis an illusion with a successful
+    Intelligence (Inves-\ntigation) check against your spell save DC. If a crea-\nture discerns the illusion for what it is,
+    the illusion\nbecomes faint to the creature.\nSound. If you create a sound, its volume can range\nfrom a whisper to a
+    scream. It can be your voice,\nsomeone else’s voice, a lion’s roar, a beating of\ndrums, or any other sound you choose.
+    The sound\ncontinues unabated throughout the duration, or you\ncan make discrete sounds at different times before\nthe
+    spell ends.\nImage. If you create an image of an object—such\nas a chair, muddy footprints, or a small chest—it\nmust
+    be no larger than a 5-foot Cube. The image\ncan’t create sound, light, smell, or any other sensory\neffect. Physical interaction
+    with the image reveals it\nto be an illusion, since things can pass through it.'
 - id: poison_spray
   name: Poison Spray
   level: 0
@@ -303,7 +382,11 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Necromancy Cantrip (Druid, Sorcerer, Warlock,\nWizard)\nCasting Time: Action\nRange: 30 feet\nComponents:
+    V, S\nDuration: Instantaneous\nYou spray toxic mist at a creature within range.\nMake a ranged spell attack against the
+    target. On a\nhit, the target takes 1d12 Poison damage.\nCantrip Upgrade. The damage increases by 1d12\nwhen you reach
+    levels 5 (2d12), 11 (3d12), and 17\n(4d12).'
 - id: prestidigitation
   name: Prestidigitation
   level: 0
@@ -327,7 +410,16 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Transmutation Cantrip (Bard, Sorcerer, Warlock,\nWizard)\nCasting Time: Action\nRange: 10 feet\nComponents:
+    V, S\nDuration: Up to 1 hour\nYou create a magical effect within range. Choose\nthe effect from the options below. If
+    you cast this\nspell multiple times, you can have up to three of its\nnon-instantaneous effects active at a time.\nSensory
+    Effect. You create an instantaneous,\nharmless sensory effect, such as a shower of sparks,\na puff of wind, faint musical
+    notes, or an odd odor.\nFire Play. You instantaneously light or snuff out a\ncandle, a torch, or a small campfire.\nClean
+    or Soil. You instantaneously clean or soil an\nobject no larger than 1 cubic foot.\nMinor Sensation. You chill, warm,
+    or flavor up to\n1 cubic foot of nonliving material for 1 hour.\nMagic Mark. You make a color, a small mark, or a\nsymbol
+    appear on an object or a surface for 1 hour.\nMinor Creation. You create a nonmagical trinket\nor an illusory image that
+    can fit in your hand. It\nlasts until the end of your next turn. A trinket can\ndeal no damage and has no monetary worth.'
 - id: produce_flame
   name: Produce Flame
   level: 0
@@ -344,7 +436,13 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Conjuration Cantrip (Druid)\nCasting Time: Bonus Action\nRange: Self\nComponents: V, S\nDuration: 10 minutes\nA
+    flickering flame appears in your hand and re-\nmains there for the duration. While there, the flame\nemits no heat and
+    ignites nothing, and it sheds\nBright Light in a 20-foot radius and Dim Light for an\nadditional 20 feet. The spell ends
+    if you cast it again.\nUntil the spell ends, you can take a Magic action to\nhurl fire at a creature or an object within
+    60 feet of\nyou. Make a ranged spell attack. On a hit, the target\ntakes 1d8 Fire damage.\nCantrip Upgrade. The damage
+    increases by 1d8\nwhen you reach levels 5 (2d8), 11 (3d8), and 17\n(4d8).'
 - id: ray_of_frost
   name: Ray of Frost
   level: 0
@@ -363,7 +461,12 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Evocation Cantrip (Sorcerer, Wizard)\nCasting Time: Action\nRange: 60 feet\nComponents: V, S\nDuration: Instantaneous\nA
+    frigid beam of blue-white light streaks toward a\ncreature within range. Make a ranged spell attack\nagainst the target.
+    On a hit, it takes 1d8 Cold dam-\nage, and its Speed is reduced by 10 feet until the\nstart of your next turn.\nCantrip
+    Upgrade. The damage increases by 1d8\nwhen you reach levels 5 (2d8), 11 (3d8), and 17\n(4d8).\nSystem Reference Document
+    5.2.1\n158'
 - id: resistance
   name: Resistance
   level: 0
@@ -382,7 +485,11 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Abjuration Cantrip (Cleric, Druid)\nCasting Time: Action\nRange: Touch\nComponent: V, S\nDuration: Concentration,
+    up to 1 minute\nYou touch a willing creature and choose a damage\ntype: Acid, Bludgeoning, Cold, Fire, Lightning, Ne-\ncrotic,
+    Piercing, Poison, Radiant, Slashing, or Thun-\nder. When the creature takes damage of the chosen\ntype before the spell
+    ends, the creature reduces the\ntotal damage taken by 1d4. A creature can benefit\nfrom this spell only once per turn.'
 - id: sacred_flame
   name: Sacred Flame
   level: 0
@@ -399,7 +506,11 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Evocation Cantrip (Cleric)\nCasting Time: Action\nRange: 60 feet\nComponents: V, S\nDuration: Instantaneous\nFlame-like
+    radiance descends on a creature that you\ncan see within range. The target must succeed on\na Dexterity saving throw or
+    take 1d8 Radiant dam-\nage. The target gains no benefit from Half Cover or\nThree-Quarters Cover for this save.\nCantrip
+    Upgrade. The damage increases by 1d8\nwhen you reach levels 5 (2d8), 11 (3d8), and 17\n(4d8).'
 - id: shillelagh
   name: Shillelagh
   level: 0
@@ -416,7 +527,13 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Transmutation Cantrip (Druid)\nCasting Time: Bonus Action\nRange: Self\nComponents: V, S, M (mistletoe)\nDuration:
+    1 minute\nA Club or Quarterstaff you are holding is imbued\nwith nature’s power. For the duration, you can use\nyour spellcasting
+    ability instead of Strength for the\nattack and damage rolls of melee attacks using that\nweapon, and the weapon’s damage
+    die becomes\na d8. If the attack deals damage, it can be Force\ndamage or the weapon’s normal damage type (your\nchoice).\nThe
+    spell ends early if you cast it again or if you let\ngo of the weapon.\nCantrip Upgrade. The damage die changes when\nyou
+    reach levels 5 (d10), 11 (d12), and 17 (2d6).'
 - id: shocking_grasp
   name: Shocking Grasp
   level: 0
@@ -435,7 +552,11 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Evocation Cantrip (Sorcerer, Wizard)\nCasting Time: Action\nRange: Touch\nComponents: V, S\nDuration: Instantaneous\nLightning
+    springs from you to a creature that you\ntry to touch. Make a melee spell attack against the\ntarget. On a hit, the target
+    takes 1d8 Lightning dam-\nage, and it can’t make Opportunity Attacks until the\nstart of its next turn.\nCantrip Upgrade.
+    The damage increases by 1d8\nwhen you reach levels 5 (2d8), 11 (3d8), and 17\n(4d8).'
 - id: sorcerous_burst
   name: Sorcerous Burst
   level: 0
@@ -452,7 +573,13 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Evocation Cantrip (Sorcerer)\nCasting Time: Action\nRange: 120 feet\nComponent: V, S\nDuration: Instantaneous\nYou
+    cast sorcerous energy at one creature or object\nwithin range. Make a ranged spell attack against the\ntarget. On a hit,
+    the target takes 1d8 damage of a\ntype you choose: Acid, Cold, Fire, Lightning, Poison,\nPsychic, or Thunder.\nIf you
+    roll an 8 on a d8 for this spell, you can roll\nanother d8, and add it to the damage. When you cast\nthis spell, the maximum
+    number of these d8s you\ncan add to the spell’s damage equals your spellcast-\ning ability modifier.\nCantrip Upgrade.
+    The damage increases by 1d8\nwhen you reach levels 5 (2d8), 11 (3d8), and 17\n(4d8).'
 - id: spare_the_dying
   name: Spare the Dying
   level: 0
@@ -471,7 +598,10 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Necromancy Cantrip (Cleric, Druid)\nCasting Time: Action\nRange: 15 feet\nComponents: V, S\nDuration: Instantaneous\nChoose
+    a creature within range that has 0 Hit Points\nand isn’t dead. The creature becomes Stable.\nCantrip Upgrade. The range
+    doubles when you\nreach levels 5 (30 feet), 11 (60 feet), and 17 (120\nfeet).\nSystem Reference Document 5.2.1\n164'
 - id: starry_wisp
   name: Starry Wisp
   level: 0
@@ -490,7 +620,12 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Evocation Cantrip (Bard, Druid)\nCasting Time: Action\nRange: 60 feet\nComponents: V, S\nDuration: Instantaneous\nYou
+    launch a mote of light at one creature or object\nwithin range. Make a ranged spell attack against the\ntarget. On a hit,
+    the target takes 1d8 Radiant dam-\nage, and until the end of your next turn, it emits Dim\nLight in a 10-foot radius and
+    can’t benefit from the\nInvisible condition.\nCantrip Upgrade. The damage increases by 1d8\nwhen you reach levels 5 (2d8),
+    11 (3d8), and 17\n(4d8).'
 - id: thaumaturgy
   name: Thaumaturgy
   level: 0
@@ -507,7 +642,15 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Transmutation Cantrip (Cleric)\nCasting Time: Action\nRange: 30 feet\nComponents: V\nDuration: Up to 1 minute\nYou
+    manifest a minor wonder within range. You cre-\nate one of the effects below within range. If you cast\nthis spell multiple
+    times, you can have up to three of\nits 1-minute effects active at a time.\nAltered Eyes. You alter the appearance of
+    your\neyes for 1 minute.\nBooming Voice. Your voice booms up to three\ntimes as loud as normal for 1 minute. For the dura-\ntion,
+    you have Advantage on Charisma (Intimida-\ntion) checks.\nFire Play. You cause flames to flicker, brighten,\ndim, or change
+    color for 1 minute.\nInvisible Hand. You instantaneously cause an un-\nlocked door or window to fly open or slam shut.\nPhantom
+    Sound. You create an instantaneous\nsound that originates from a point of your choice\nwithin range, such as a rumble
+    of thunder, the cry of\na raven, or ominous whispers.\nTremors. You cause harmless tremors in the\nground for 1 minute.'
 - id: true_strike
   name: True Strike
   level: 0
@@ -531,7 +674,13 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Divination Cantrip (Bard, Sorcerer, Warlock, Wizard)\nCasting Time: Action\nRange: Self\nComponents: S, M
+    (a weapon with which you have profi-\nciency and that is worth 1+ CP)\nDuration: Instantaneous\nGuided by a flash of magical
+    insight, you make one\nattack with the weapon used in the spell’s casting.\nThe attack uses your spellcasting ability
+    for the at-\ntack and damage rolls instead of using Strength or\nDexterity. If the attack deals damage, it can be Ra-\ndiant
+    damage or the weapon’s normal damage type\n(your choice).\nCantrip Upgrade. Whether you deal Radiant dam-\nage or the
+    weapon’s normal damage type, the attack\ndeals extra Radiant damage when you reach levels 5\n(1d6), 11 (2d6), and 17 (3d6).'
 - id: vicious_mockery
   name: Vicious Mockery
   level: 0
@@ -548,4 +697,9 @@ entries:
     message: This spell is not on your class list at your current level.
   source:
     book: srd521
-    section: Class spell lists
+    section: Spell Descriptions
+  description: 'Enchantment Cantrip (Bard)\nCasting Time: Action\nRange: 60 feet\nSystem Reference Document 5.2.1\n172\nComponents:
+    V\nDuration: Instantaneous\nYou unleash a string of insults laced with subtle\nenchantments at one creature you can see
+    or hear\nwithin range. The target must succeed on a Wisdom\nsaving throw or take 1d6 Psychic damage and have\nDisadvantage
+    on the next attack roll it makes before\nthe end of its next turn.\nCantrip Upgrade. The damage increases by 1d6\nwhen
+    you reach levels 5 (2d6), 11 (3d6), and 17\n(4d6).'

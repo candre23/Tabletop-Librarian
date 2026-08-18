@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+import hashlib
 import json
 import re
 
@@ -25,6 +26,7 @@ from app.config import (
     CHARACTER_DIR,
     CHARACTER_DRAFT_DIR,
     SYSTEM_PACKS_DIR,
+    STATIC_DIR,
     TEMPLATE_DIR,
 )
 from app.auth import get_user, list_users
@@ -76,6 +78,19 @@ from app.rules import (
 router = APIRouter()
 templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 templates.env.globals["app_version"] = APP_VERSION
+
+
+def _asset_version(path: Path) -> str:
+    try:
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()[:12]
+    except OSError:
+        digest = "missing"
+    return f"{APP_VERSION}-{digest}"
+
+
+templates.env.globals["pack_widgets_version"] = _asset_version(
+    STATIC_DIR / "js" / "pack_widgets.js"
+)
 
 PACK_ROOT = SYSTEM_PACKS_DIR
 CHARACTER_ROOT = CHARACTER_DIR

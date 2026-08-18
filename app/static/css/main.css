@@ -6160,3 +6160,91 @@ button.ttl-global-nav-brand:focus-visible {
 .ttl-character-ui .ttl-description-picker-table textarea.ttl-custom-reference-description { resize: vertical; min-height: 2.5rem; }
 .ttl-character-ui .ttl-picker-result-custom { border-bottom: 2px solid var(--border-color, #8ca2af); }
 .ttl-character-ui .ttl-description-picker-table tr.is-custom td { background: rgba(255,255,255,0.28); }
+
+
+/* Generic spellbook and spell-slot tracking. */
+.ttl-spell-slot-field .ttl-resource-editor {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.ttl-spell-slot-field .ttl-resource-editor input {
+  width: 4.5rem;
+}
+.ttl-description-picker-table td:nth-child(2) {
+  white-space: pre-line;
+  line-height: 1.3;
+}
+
+/* Generic D20 completed-sheet compact layout. */
+.ttl-character-ui .ttl-sheet-section[data-section-id="attacks"],
+.ttl-character-ui .ttl-sheet-section[data-section-id="armor"] {
+  min-width: 0;
+}
+
+.ttl-character-ui .ttl-sheet-section[data-section-id="attacks"] .ttl-collection-row-fields,
+.ttl-character-ui .ttl-sheet-section[data-section-id="armor"] .ttl-collection-row-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.ttl-character-ui .ttl-sheet-section[data-section-id="attacks"] .ttl-collection-cell,
+.ttl-character-ui .ttl-sheet-section[data-section-id="armor"] .ttl-collection-cell {
+  flex: 1 1 125px;
+  min-width: 100px;
+}
+
+.ttl-character-ui .ttl-sheet-section[data-section-id="attacks"] .ttl-collection-cell:has([data-collection-subfield="custom_name"]),
+.ttl-character-ui .ttl-sheet-section[data-section-id="armor"] .ttl-collection-cell:has([data-collection-subfield="custom_name"]) {
+  flex: 1.5 1 180px;
+}
+
+.ttl-character-ui .ttl-sheet-section[data-section-id="attacks"] .ttl-collection-cell:has([data-collection-subfield="notes"]),
+.ttl-character-ui .ttl-sheet-section[data-section-id="armor"] .ttl-collection-cell:has([data-collection-subfield="notes"]) {
+  flex: 2 1 240px;
+}
+
+.ttl-character-ui .ttl-sheet-section[data-section-id="attacks"] .ttl-collection-cell:has(input[type="checkbox"]),
+.ttl-character-ui .ttl-sheet-section[data-section-id="armor"] .ttl-collection-cell:has(input[type="checkbox"]) {
+  flex: 0 0 54px;
+  min-width: 54px;
+  max-width: 54px;
+  align-items: center;
+}
+
+.ttl-character-ui .ttl-sheet-section[data-section-id="attacks"] .ttl-collection-cell textarea,
+.ttl-character-ui .ttl-sheet-section[data-section-id="armor"] .ttl-collection-cell textarea {
+  min-height: 48px;
+  resize: vertical;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ttl-character-ui .ttl-play-collection-value,
+.ttl-character-ui .ttl-description-picker-table td {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.ttl-character-ui .ttl-sheet-section[data-section-id="spellcasting"] > .ttl-field-grid {
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  align-items: start;
+}
+
+.ttl-character-ui .ttl-sheet-section[data-section-id="spellcasting"] .ttl-description-picker-table,
+.ttl-character-ui .ttl-sheet-section[data-section-id="spellcasting"] .ttl-field-wide {
+  grid-column: 1 / -1;
+}
+
+.ttl-character-ui .ttl-sheet-section[data-section-id="spellcasting"] .ttl-spell-slot-field,
+.ttl-character-ui .ttl-sheet-section[data-section-id="spellcasting"] .ttl-field:has(.ttl-stat-value) {
+  min-width: 130px;
+}
+
+.ttl-character-ui .ttl-description-picker-table tr.is-fixed td:last-child {
+  background: inherit;
+}
+

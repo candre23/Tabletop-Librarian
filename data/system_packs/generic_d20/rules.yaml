@@ -285,6 +285,50 @@ calculated:
   size:
     formula: size_choice if species == "human" or species == "tiefling" else ("Small" if species == "gnome" or species ==
       "halfling" else "Medium")
+  spell_slot_1_max:
+    formula: ((4 if level >= 3 else (3 if level >= 2 else 2))) if (character_class == "bard" or character_class == "cleric"
+      or character_class == "druid" or character_class == "sorcerer" or character_class == "wizard") else (((4 if level >=
+      5 else (3 if level >= 3 else 2))) if (character_class == "paladin" or character_class == "ranger") else 0)
+  spell_slot_2_max:
+    formula: ((3 if level >= 4 else (2 if level >= 3 else 0))) if (character_class == "bard" or character_class == "cleric"
+      or character_class == "druid" or character_class == "sorcerer" or character_class == "wizard") else (((3 if level >=
+      7 else (2 if level >= 5 else 0))) if (character_class == "paladin" or character_class == "ranger") else 0)
+  spell_slot_3_max:
+    formula: ((3 if level >= 6 else (2 if level >= 5 else 0))) if (character_class == "bard" or character_class == "cleric"
+      or character_class == "druid" or character_class == "sorcerer" or character_class == "wizard") else (((3 if level >=
+      11 else (2 if level >= 9 else 0))) if (character_class == "paladin" or character_class == "ranger") else 0)
+  spell_slot_4_max:
+    formula: ((3 if level >= 9 else (2 if level >= 8 else (1 if level >= 7 else 0)))) if (character_class == "bard" or character_class
+      == "cleric" or character_class == "druid" or character_class == "sorcerer" or character_class == "wizard") else (((3
+      if level >= 17 else (2 if level >= 15 else (1 if level >= 13 else 0)))) if (character_class == "paladin" or character_class
+      == "ranger") else 0)
+  spell_slot_5_max:
+    formula: ((3 if level >= 18 else (2 if level >= 10 else (1 if level >= 9 else 0)))) if (character_class == "bard" or character_class
+      == "cleric" or character_class == "druid" or character_class == "sorcerer" or character_class == "wizard") else (((2
+      if level >= 19 else (1 if level >= 17 else 0))) if (character_class == "paladin" or character_class == "ranger") else
+      0)
+  spell_slot_6_max:
+    formula: ((2 if level >= 19 else (1 if level >= 11 else 0))) if (character_class == "bard" or character_class == "cleric"
+      or character_class == "druid" or character_class == "sorcerer" or character_class == "wizard") else ((0) if (character_class
+      == "paladin" or character_class == "ranger") else 0)
+  spell_slot_7_max:
+    formula: ((2 if level >= 20 else (1 if level >= 13 else 0))) if (character_class == "bard" or character_class == "cleric"
+      or character_class == "druid" or character_class == "sorcerer" or character_class == "wizard") else ((0) if (character_class
+      == "paladin" or character_class == "ranger") else 0)
+  spell_slot_8_max:
+    formula: ((1 if level >= 15 else 0)) if (character_class == "bard" or character_class == "cleric" or character_class ==
+      "druid" or character_class == "sorcerer" or character_class == "wizard") else ((0) if (character_class == "paladin"
+      or character_class == "ranger") else 0)
+  spell_slot_9_max:
+    formula: ((1 if level >= 17 else 0)) if (character_class == "bard" or character_class == "cleric" or character_class ==
+      "druid" or character_class == "sorcerer" or character_class == "wizard") else ((0) if (character_class == "paladin"
+      or character_class == "ranger") else 0)
+  pact_slots_max:
+    formula: ((4 if level >= 17 else (3 if level >= 11 else (2 if level >= 2 else 1)))) if character_class == "warlock" else
+      0
+  pact_slot_level:
+    formula: ((5 if level >= 9 else (4 if level >= 7 else (3 if level >= 5 else (2 if level >= 3 else 1))))) if character_class
+      == "warlock" else 0
 validation:
   background_boost_total:
     rule: strength_boost + dexterity_boost + constitution_boost + intelligence_boost + wisdom_boost + charisma_boost == 3
@@ -413,3 +457,44 @@ limits:
     require_full: true
     message: 'Prepared / Known Class Spells: {count} selected; choose {maximum} at level 1.'
     warning_message: 'Prepared / Known Class Spells: {count} / {maximum}.'
+validations:
+  spell_slot_1_used_limit:
+    rule: spell_slot_1_used <= spell_slot_1_max
+    message: Level 1 spell slots used cannot exceed the maximum available slots.
+    severity: error
+  spell_slot_2_used_limit:
+    rule: spell_slot_2_used <= spell_slot_2_max
+    message: Level 2 spell slots used cannot exceed the maximum available slots.
+    severity: error
+  spell_slot_3_used_limit:
+    rule: spell_slot_3_used <= spell_slot_3_max
+    message: Level 3 spell slots used cannot exceed the maximum available slots.
+    severity: error
+  spell_slot_4_used_limit:
+    rule: spell_slot_4_used <= spell_slot_4_max
+    message: Level 4 spell slots used cannot exceed the maximum available slots.
+    severity: error
+  spell_slot_5_used_limit:
+    rule: spell_slot_5_used <= spell_slot_5_max
+    message: Level 5 spell slots used cannot exceed the maximum available slots.
+    severity: error
+  spell_slot_6_used_limit:
+    rule: spell_slot_6_used <= spell_slot_6_max
+    message: Level 6 spell slots used cannot exceed the maximum available slots.
+    severity: error
+  spell_slot_7_used_limit:
+    rule: spell_slot_7_used <= spell_slot_7_max
+    message: Level 7 spell slots used cannot exceed the maximum available slots.
+    severity: error
+  spell_slot_8_used_limit:
+    rule: spell_slot_8_used <= spell_slot_8_max
+    message: Level 8 spell slots used cannot exceed the maximum available slots.
+    severity: error
+  spell_slot_9_used_limit:
+    rule: spell_slot_9_used <= spell_slot_9_max
+    message: Level 9 spell slots used cannot exceed the maximum available slots.
+    severity: error
+  pact_slots_used_limit:
+    rule: pact_slots_used <= pact_slots_max
+    message: Pact Magic slots used cannot exceed the maximum available slots.
+    severity: error

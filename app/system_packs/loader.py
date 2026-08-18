@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 import re
@@ -604,9 +605,44 @@ def validate_system_pack(root: Path | str) -> SystemPack:
     return pack
 
 
+def _system_pack_fingerprint(root: Path) -> tuple[tuple[str, int, int], ...]:
+    """Fingerprint pack files so validated runtime data can be reused safely.
+
+    System Pack source is immutable during ordinary requests. Import/replacement
+    changes file mtimes/sizes, which automatically produces a new cache key.
+    """
+    rows: list[tuple[str, int, int]] = []
+    try:
+        files = sorted(
+            (path for path in root.rglob("*") if path.is_file()),
+            key=lambda path: str(path.relative_to(root)).casefold(),
+        )
+    except OSError:
+        files = []
+
+    for path in files:
+        relative = str(path.relative_to(root))
+        try:
+            stat = path.stat()
+            rows.append((relative, stat.st_mtime_ns, stat.st_size))
+        except OSError:
+            rows.append((relative, -1, -1))
+    return tuple(rows)
+
+
+@lru_cache(maxsize=32)
+def _load_system_pack_cached(
+    root_text: str,
+    fingerprint: tuple[tuple[str, int, int], ...],
+) -> SystemPack:
+    del fingerprint  # cache key only
+    return validate_system_pack(root_text)
+
+
 def load_system_pack(root: Path | str) -> SystemPack:
-    """Load and validate one System Pack directory."""
-    return validate_system_pack(root)
+    """Load and validate one System Pack directory, reusing unchanged packs."""
+    resolved = Path(root).expanduser().resolve()
+    return _load_system_pack_cached(str(resolved), _system_pack_fingerprint(resolved))
 
 
 def discover_system_packs(base_dir: Path | str) -> list[SystemPack]:

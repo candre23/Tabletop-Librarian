@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable
 import ast
@@ -223,6 +224,7 @@ ALLOWED_NODES = (
 )
 
 
+@lru_cache(maxsize=4096)
 def _parse(expression: str) -> ast.Expression:
     if not isinstance(expression, str) or not expression.strip():
         raise RuleEngineError("Expression must be a non-empty string.")
@@ -635,7 +637,7 @@ class RuleEngine:
         return explanations
 
 
-def load_rule_engine(
+def _load_rule_engine_uncached(
     path: Path | str | None,
     *,
     known_fields: set[str] | None = None,
@@ -981,3 +983,41 @@ def load_rule_engine(
         return RuleEngine(calculated, validation, modifiers, limits), issues
     except RuleEngineError as exc:
         return None, [RuleIssue("error", str(exc))]
+
+def _rule_file_fingerprint(path: Path | None) -> tuple[int, int]:
+    if path is None:
+        return (0, 0)
+    try:
+        stat = path.stat()
+        return (stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        return (-1, -1)
+
+
+@lru_cache(maxsize=64)
+def _load_rule_engine_cached(
+    path_text: str | None,
+    known_fields: frozenset[str] | None,
+    fingerprint: tuple[int, int],
+) -> tuple[RuleEngine | None, tuple[RuleIssue, ...]]:
+    del fingerprint
+    engine, issues = _load_rule_engine_uncached(
+        Path(path_text) if path_text is not None else None,
+        known_fields=set(known_fields) if known_fields is not None else None,
+    )
+    return engine, tuple(issues)
+
+
+def load_rule_engine(
+    path: Path | str | None,
+    *,
+    known_fields: set[str] | None = None,
+) -> tuple[RuleEngine | None, list[RuleIssue]]:
+    resolved = Path(path).expanduser().resolve() if path is not None else None
+    engine, issues = _load_rule_engine_cached(
+        str(resolved) if resolved is not None else None,
+        frozenset(known_fields) if known_fields is not None else None,
+        _rule_file_fingerprint(resolved),
+    )
+    return engine, list(issues)
+

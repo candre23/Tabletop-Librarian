@@ -130,11 +130,13 @@ fields:
     entity: background_origin_feat
     required: true
     default: ''
+    ui_hidden: true
   bonus_origin_feat:
     type: reference
     label: Human Bonus Origin Feat
     entity: origin_feat_choice
     default: ''
+    ui_hidden: true
   languages:
     type: multi_reference
     label: Languages
@@ -418,7 +420,7 @@ fields:
     label: Passive Perception
   feats:
     type: multi_reference
-    label: Additional Feats
+    label: Feats
     entity: feat
     default: []
     custom_entries_field: feats_custom
@@ -460,10 +462,14 @@ fields:
           notes: $weapon_notes
         blank_label: Custom
       custom_name:
-        type: text
+        type: notes
         label: Custom Attack
         default: ''
         show_when_reference_blank: weapon
+      equipped:
+        type: boolean
+        label: Equipped
+        default: false
       attack_bonus:
         type: integer
         label: Attack Bonus
@@ -475,7 +481,7 @@ fields:
         label: Damage
         default: ''
       notes:
-        type: text
+        type: notes
         label: Properties / Notes
         default: ''
     allow_custom: true
@@ -496,7 +502,7 @@ fields:
           notes: $armor_notes
         blank_label: Custom
       custom_name:
-        type: text
+        type: notes
         label: Custom Armor
         default: ''
         show_when_reference_blank: armor
@@ -505,7 +511,7 @@ fields:
         label: Equipped
         default: false
       notes:
-        type: text
+        type: notes
         label: Notes
         default: ''
     allow_custom: true
@@ -543,11 +549,15 @@ fields:
     label: Class Cantrips
     entity: cantrip
     default: []
+    table_display: description
+    row_label: Cantrip
   prepared_spells:
     type: multi_reference
     label: Prepared / Known Class Spells
     entity: spell
     default: []
+    table_display: description
+    row_label: Spell
   bonus_spells:
     type: collection
     label: Species / Feat / Other Spells
@@ -577,6 +587,130 @@ fields:
   spell_attack_bonus:
     type: calculated
     label: Spell Attack Bonus
+  spell_slot_1_used:
+    type: integer
+    label: Level 1 Slots Used
+    default: 0
+    min: 0
+    play_editable: true
+    max_field: spell_slot_1_max
+    slot_level: 1
+  spell_slot_1_max:
+    type: calculated
+    label: Level 1 Slots Max
+    ui_hidden: true
+  spell_slot_2_used:
+    type: integer
+    label: Level 2 Slots Used
+    default: 0
+    min: 0
+    play_editable: true
+    max_field: spell_slot_2_max
+    slot_level: 2
+  spell_slot_2_max:
+    type: calculated
+    label: Level 2 Slots Max
+    ui_hidden: true
+  spell_slot_3_used:
+    type: integer
+    label: Level 3 Slots Used
+    default: 0
+    min: 0
+    play_editable: true
+    max_field: spell_slot_3_max
+    slot_level: 3
+  spell_slot_3_max:
+    type: calculated
+    label: Level 3 Slots Max
+    ui_hidden: true
+  spell_slot_4_used:
+    type: integer
+    label: Level 4 Slots Used
+    default: 0
+    min: 0
+    play_editable: true
+    max_field: spell_slot_4_max
+    slot_level: 4
+  spell_slot_4_max:
+    type: calculated
+    label: Level 4 Slots Max
+    ui_hidden: true
+  spell_slot_5_used:
+    type: integer
+    label: Level 5 Slots Used
+    default: 0
+    min: 0
+    play_editable: true
+    max_field: spell_slot_5_max
+    slot_level: 5
+  spell_slot_5_max:
+    type: calculated
+    label: Level 5 Slots Max
+    ui_hidden: true
+  spell_slot_6_used:
+    type: integer
+    label: Level 6 Slots Used
+    default: 0
+    min: 0
+    play_editable: true
+    max_field: spell_slot_6_max
+    slot_level: 6
+  spell_slot_6_max:
+    type: calculated
+    label: Level 6 Slots Max
+    ui_hidden: true
+  spell_slot_7_used:
+    type: integer
+    label: Level 7 Slots Used
+    default: 0
+    min: 0
+    play_editable: true
+    max_field: spell_slot_7_max
+    slot_level: 7
+  spell_slot_7_max:
+    type: calculated
+    label: Level 7 Slots Max
+    ui_hidden: true
+  spell_slot_8_used:
+    type: integer
+    label: Level 8 Slots Used
+    default: 0
+    min: 0
+    play_editable: true
+    max_field: spell_slot_8_max
+    slot_level: 8
+  spell_slot_8_max:
+    type: calculated
+    label: Level 8 Slots Max
+    ui_hidden: true
+  spell_slot_9_used:
+    type: integer
+    label: Level 9 Slots Used
+    default: 0
+    min: 0
+    play_editable: true
+    max_field: spell_slot_9_max
+    slot_level: 9
+  spell_slot_9_max:
+    type: calculated
+    label: Level 9 Slots Max
+    ui_hidden: true
+  pact_slots_used:
+    type: integer
+    label: Pact Slots Used
+    default: 0
+    min: 0
+    play_editable: true
+    max_field: pact_slots_max
+    slot_level_field: pact_slot_level
+  pact_slots_max:
+    type: calculated
+    label: Pact Slots Max
+    ui_hidden: true
+  pact_slot_level:
+    type: calculated
+    label: Pact Slot Level
+    ui_hidden: true
   tool_proficiencies:
     type: notes
     label: Tool Proficiencies

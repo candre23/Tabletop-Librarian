@@ -138,8 +138,10 @@ tabs:
     - class_skills
     - expertise_skills
     - languages
-    - tool_proficiencies
-    - other_proficiencies
+    - id: tool_proficiencies
+      compact: true
+    - id: other_proficiencies
+      compact: true
   - id: human_skill
     title: Human Skill
     columns: 1
@@ -156,24 +158,18 @@ tabs:
     span: 12
     color: plum
     fields:
-    - origin_feat
-    - feats
+    - id: feats
+      display: table
+      include_reference_fields:
+      - origin_feat
+      - bonus_origin_feat
     - id: class_features
       display: table
-  - id: human_feat
-    title: Human Bonus Origin Feat
-    columns: 1
-    span: 12
-    color: plum
-    visible_when:
-      field: species
-      equals: human
-    fields:
-    - bonus_origin_feat
+      hide_add_in_play: true
   - id: attacks
     title: Weapons / Attacks
     columns: 1
-    span: 8
+    span: 6
     color: red
     fields:
     - id: weapons
@@ -181,14 +177,14 @@ tabs:
   - id: armor
     title: Armor & Defense
     columns: 1
-    span: 4
+    span: 6
     color: amber
     fields:
     - id: armor_items
       display: table
   - id: spellcasting
     title: Spellcasting
-    columns: 3
+    columns: 4
     span: 12
     color: blue
     visible_when:
@@ -209,10 +205,30 @@ tabs:
       display: stat
     - id: spell_attack_bonus
       display: stat
-    - cantrips
-    - prepared_spells
+    - spell_slot_1_used
+    - spell_slot_2_used
+    - spell_slot_3_used
+    - spell_slot_4_used
+    - spell_slot_5_used
+    - spell_slot_6_used
+    - spell_slot_7_used
+    - spell_slot_8_used
+    - spell_slot_9_used
+    - pact_slots_used
+    - id: cantrips
+      display: table
+      span: 4
+      hide_add_in_play: true
+    - id: prepared_spells
+      display: table
+      span: 4
+      hide_add_in_play: true
     - id: bonus_spells
       display: table
+      span: 4
+      hide_add_in_play: true
+    description: Cantrips are unlimited. Track used spell slots above; leveled spells can use a slot of their level or higher
+      as described in the spell text.
   - id: species_size_choice
     title: Size
     columns: 1
@@ -310,6 +326,7 @@ tabs:
     - charisma_boost
     - id: point_cost_total
       display: stat
+    hide_in_play: true
   - id: equipment
     title: Equipment
     columns: 1
