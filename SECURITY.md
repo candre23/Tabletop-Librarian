@@ -4,7 +4,7 @@ Tabletop Librarian is intended primarily for trusted self-hosted/LAN environment
 
 ## Reporting
 
-Please report security issues privately to the repository owner rather than publishing exploit details in a public issue before a fix is available.
+Don't bother reporting security problems because I'm extremely unlikely to fix them.
 
 ## Deployment guidance
 
