@@ -17,16 +17,17 @@ The Server can also use Gemini or OpenAI-compatible APIs for cloud inference ins
 - Incremental extracted-text, chunk, and semantic-embedding knowledgebase.
 - Basic and Advanced Ask modes with citations to retrieved source material.
 - Player and GM accounts with visibility-aware library and character access.
-- System-neutral character engine driven by portable `.ttlsys` System Packs.
 - Guided character creation, calculated rules, limits, advancement, temporary effects, and `.ttlchar` import/export.
-- Bundled Generic D20 System Pack derived from SRD 5.2.1 under CC BY 4.0.
 - Independent local llama.cpp Backend Manager with hardware-aware CUDA/Vulkan/CPU choices and curated model/runtime downloads.
+- System-neutral character engine driven by portable `.ttlsys` System Packs.
+- Bundled generic D20 system pack derived from SRD 5.2.1 under CC BY 4.0.
+- Additional system packs published here: https://github.com/candre23/TTL_System_Packs
 
 
 ## Supported release platforms
 
 - **Windows x64**: Native installers
-- **Linux x86_64**: Fully automated install scripts tested on Ubuntu 26.04. Other versions or distros may or may not work without some manual fiddling on your part.
+- **Linux x86_64**: Automated install scripts tested on Ubuntu 26.04. Other versions or distros may or may not work without some manual fiddling on your part.
 
 A GPU is strongly recommended for local LLM inference. CPU mode exists as a functional fallback but will be very slow.
 
@@ -59,7 +60,7 @@ See [Installation](docs/INSTALLATION.md) and the [User Guide](docs/USER_GUIDE.md
 
 ## Built-in Generic D20 reference
 
-The repository includes the original SRD 5.2.1 PDF and a generic cover image under [`docs/reference/`](docs/reference/). Generic D20 is intentionally named and presented as a generic 5E-compatible System Pack rather than an official Dungeons & Dragons product.
+The repository includes the original SRD 5.2.1 (CC BY 4.0) PDF in [`docs/reference/`](docs/reference/).  The Generic D20 system pack is based on this document and installed by default.  It is presented as a generic 5E-compatible example pack and is not an official Dungeons & Dragons product.
 
 ## Source development
 
@@ -80,6 +81,10 @@ Run the regression suite with:
 ```bash
 python tests/run_regressions.py
 ```
+
+## AI & Safety Disclaimer
+The code and documentation included in this project is primarily vibeslop. The human writing this sentence in particular can barely code and doesn't really understand how any of this works. It Works On My Machine and hasn't caused my genitals to explode, but your mileage may vary. I make absolutely no guarantee as to the safety or security of the contents of this project. Use at your own risk. Or don't.  The TTL web server utilizes fairly basic authentication and is not hardened against attacks.  It has not been tested in any way for proper security.  This software is intended for LAN or secure proxy use only.
+
 
 ## License
 
